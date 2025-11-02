@@ -7,7 +7,7 @@ workflows:
       groups:
         - keystore_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
         JAVA_TOOL_OPTIONS: "-Xmx4096m"
         GRADLE_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
     cache:
@@ -28,7 +28,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   android-apk:
     name: Build Android APK
     environment:
@@ -37,7 +37,7 @@ workflows:
       groups:
         - keystore_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
     cache:
       cache_paths:
         - ~/.gradle/caches
@@ -54,16 +54,16 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   ios-release:
     name: Build iOS IPA
     environment:
       flutter: stable
       xcode: latest
       groups:
-        - app_store_credentials
+        - app_store_connect_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
     cache:
       cache_paths:
         - ~/.pub-cache
@@ -73,6 +73,16 @@ workflows:
         script: flutter clean
       - name: Get dependencies
         script: flutter pub get
+      - name: Set up automatic signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files \
+            --type IOS_APP_DEVELOPMENT \
+            --bundle-identifier com.mkeparkapp.app \
+            --team-id J8U8FW3PA8 \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: flutter build ipa --release
     artifacts:
@@ -80,7 +90,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   web-release:
     name: Build Web App
     environment:
@@ -102,7 +112,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   android-google-play:
     name: Publish Android to Google Play
     environment:
@@ -112,7 +122,7 @@ workflows:
         - keystore_credentials
         - google_play_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
     cache:
       cache_paths:
         - ~/.gradle/caches
@@ -134,7 +144,7 @@ workflows:
         track: internal
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   ios-app-store:
     name: Publish iOS to App Store
     environment:
@@ -143,7 +153,7 @@ workflows:
       groups:
         - app_store_connect_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
     cache:
       cache_paths:
         - ~/.pub-cache
@@ -153,6 +163,16 @@ workflows:
         script: flutter clean
       - name: Get dependencies
         script: flutter pub get
+      - name: Set up automatic signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files \
+            --type IOS_APP_STORE \
+            --bundle-identifier com.mkeparkapp.app \
+            --team-id J8U8FW3PA8 \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: flutter build ipa --release
     artifacts:
@@ -166,7 +186,7 @@ workflows:
         submit_to_testflight: false
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
   ios-testflight:
     name: Publish iOS to TestFlight
     environment:
@@ -175,7 +195,7 @@ workflows:
       groups:
         - app_store_connect_credentials
       vars:
-        PACKAGE_NAME: "com.example.app"
+        PACKAGE_NAME: "com.mkeparkapp.app"
     cache:
       cache_paths:
         - ~/.pub-cache
@@ -193,6 +213,16 @@ workflows:
           keychain add-certificates
       - name: Get dependencies
         script: flutter pub get
+      - name: Set up automatic signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files \
+            --type IOS_APP_DEVELOPMENT \
+            --bundle-identifier com.mkeparkapp.app \
+            --team-id J8U8FW3PA8 \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: flutter build ipa --release
     artifacts:
@@ -206,4 +236,4 @@ workflows:
         submit_to_testflight: true
       email:
         recipients:
-          - your@email.com
+          - mkeparkapp@gmail.com
