@@ -50,6 +50,12 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "flutter_lints",
+      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_lints-5.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "flutter_test",
       "rootUri": "file:///usr/local/Caskroom/flutter/3.29.3/flutter/packages/flutter_test",
       "packageUri": "lib/",
@@ -72,6 +78,12 @@
       "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
+    },
+    {
+      "name": "lints",
+      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/lints-5.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
     },
     {
       "name": "matcher",
@@ -152,15 +164,15 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "deezpark_flutter_web",
+      "name": "mkeparkapp_flutter",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.9"
     }
   ],
   "generator": "pub",
   "generatorVersion": "3.9.2",
   "flutterRoot": "file:///usr/local/Caskroom/flutter/3.29.3/flutter",
-  "flutterVersion": "3.35.6",
+  "flutterVersion": "3.35.7",
   "pubCache": "file:///Users/vincentrosso/.pub-cache"
 }

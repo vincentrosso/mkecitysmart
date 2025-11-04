@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "802081773281",
+    "project_id": "mkeparkapp-6edc3",
+    "storage_bucket": "mkeparkapp-6edc3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802081773281:android:ddbb1fd791a08a4e0009a0",
+        "android_client_info": {
+          "package_name": "com.example.deezpark_flutter_web"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh_ZSbyPodEEkBHSBlb9vksmVZnyDZf4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
