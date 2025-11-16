@@ -19,7 +19,7 @@ class AppDrawer extends StatelessWidget {
                 Icon(Icons.location_city, color: Colors.white, size: 40),
                 SizedBox(height: 16),
                 Text(
-                  'MKEPark',
+                  'CitySmart Parking App',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,

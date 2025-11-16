@@ -8,11 +8,11 @@ import 'providers/payment_provider.dart';
 import 'providers/notification_provider.dart';
 
 void main() {
-  runApp(const MKEParkApp());
+  runApp(const CitySmartParkingApp());
 }
 
-class MKEParkApp extends StatelessWidget {
-  const MKEParkApp({super.key});
+class CitySmartParkingApp extends StatelessWidget {
+  const CitySmartParkingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class MKEParkApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp.router(
-        title: 'MKEPark',
+        title: 'CitySmart Parking App',
         theme: ThemeData(
           primaryColor: const Color(0xFF003E29),
           scaffoldBackgroundColor: const Color(0xFF003E29),

@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mkeparkapp_flutter/main.dart';
+import 'package:citysmart_parking_app/main.dart';
 
 void main() {
   testWidgets('App renders WelcomeScreen and navigates to Landing', (
     tester,
   ) async {
     // Build the app
-    await tester.pumpWidget(const MKEParkApp());
+    await tester.pumpWidget(const CitySmartParkingApp());
 
     // Verify WelcomeScreen content
-    expect(find.text('Welcome to MKEPark'), findsOneWidget);
+    expect(find.text('Welcome to CitySmart Parking App'), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 
     // Navigate to Landing
@@ -17,8 +17,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify LandingScreen content
-    expect(find.text('MKEPark'), findsOneWidget);
-    expect(find.text('Welcome to MKEPark'), findsOneWidget);
+    expect(find.text('CitySmart Parking App'), findsOneWidget);
+    expect(find.text('Welcome to CitySmart Parking App'), findsOneWidget);
     expect(find.text('Monitor parking regulations in your area'), findsOneWidget);
   });
 }

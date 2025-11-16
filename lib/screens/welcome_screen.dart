@@ -48,7 +48,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
               const SizedBox(height: 40),
               const Text(
-                'Welcome to MKEPark',
+                'Welcome to CitySmart Parking App',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,

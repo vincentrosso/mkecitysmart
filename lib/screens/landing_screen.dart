@@ -11,7 +11,7 @@ class LandingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'MKEPark',
+              'CitySmart Parking App',
               style: TextStyle(
                 color: Color(0xFFFFB612),
                 fontSize: 40,
@@ -20,7 +20,7 @@ class LandingScreen extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Welcome to MKEPark',
+              'Welcome to CitySmart Parking App',
               style: TextStyle(color: Colors.white, fontSize: 22),
             ),
             SizedBox(height: 10),

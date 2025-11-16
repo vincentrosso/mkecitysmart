@@ -6,7 +6,7 @@ import '../models/parking_reservation.dart';
 import '../models/permit.dart';
 
 class PaymentService {
-  static const String _baseUrl = 'https://api.mkeparkapp.com/payments';
+  static const String _baseUrl = 'https://api.citysmartparking.com/payments';
 
   // Mock payment processing - in production this would integrate with Stripe, PayPal, etc.
   Future<PaymentTransaction> processPayment({

@@ -1,10 +1,10 @@
 {
   "roots": [
-    "mkeparkapp_flutter"
+    "citysmart_parking_app"
   ],
   "packages": [
     {
-      "name": "mkeparkapp_flutter",
+      "name": "citysmart_parking_app",
       "version": "1.0.0+1",
       "dependencies": [
         "cached_network_image",

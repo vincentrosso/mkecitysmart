@@ -620,7 +620,7 @@
       "languageVersion": "3.8"
     },
     {
-      "name": "mkeparkapp_flutter",
+      "name": "citysmart_parking_app",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.9"
