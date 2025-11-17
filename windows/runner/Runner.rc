@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "MKEPark_flutter_web" "\0"
+            VALUE "FileDescription", "CitySmart Parking App" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "MKEPark_flutter_web" "\0"
+            VALUE "InternalName", "CitySmart_Parking_App" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "MKEPark_flutter_web.exe" "\0"
-            VALUE "ProductName", "MKEPark_flutter_web" "\0"
+            VALUE "OriginalFilename", "CitySmart_Parking_App.exe" "\0"
+            VALUE "ProductName", "CitySmart Parking App" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

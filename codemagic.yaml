@@ -1,5 +1,161 @@
 workflows:
+  # Web deployment workflow with comprehensive checks
+  web-deployment:
+    name: CitySmart Web Deployment
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+      node: latest
+      vars:
+        VERCEL_TOKEN: $VERCEL_TOKEN  # Add in Codemagic UI
+        FIREBASE_TOKEN: $FIREBASE_TOKEN  # Add in Codemagic UI
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - node_modules
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+        - pattern: 'feature/*'
+          include: true
+      cancel_previous_builds: true
+    scripts:
+      - name: Clean and setup
+        script: |
+          flutter clean
+          flutter pub get
+          
+      - name: Static analysis and linting
+        script: |
+          echo "🔍 Running static analysis..."
+          flutter analyze
+          
+      - name: Navigation pattern validation
+        script: |
+          echo "🧭 Checking for deprecated navigation patterns..."
+          if grep -r "Navigator\.pushNamed" lib/ 2>/dev/null; then
+            echo "❌ Found Navigator.pushNamed usage. Use GoRouter context.go() instead."
+            exit 1
+          fi
+          echo "✅ Navigation patterns validated!"
+          
+      - name: Font asset validation
+        script: |
+          echo "🔤 Validating font assets..."
+          MISSING_FONTS=0
+          while IFS= read -r font_path; do
+            if [[ "$font_path" == *"asset:"* ]]; then
+              asset_path=$(echo "$font_path" | sed 's/.*asset: *//' | sed 's/ *$//')
+              if [ ! -f "$asset_path" ]; then
+                echo "⚠️  Missing font asset: $asset_path"
+                MISSING_FONTS=1
+              fi
+            fi
+          done < <(grep -A 10 "fonts:" pubspec.yaml | grep "asset:" || true)
+          
+          if [ $MISSING_FONTS -eq 1 ]; then
+            echo "⚠️  Some font assets missing - app will use system fallbacks"
+          else
+            echo "✅ All font assets validated!"
+          fi
+          
+      - name: Run tests
+        script: |
+          echo "🧪 Running tests..."
+          flutter test --coverage
+          
+      - name: Build web release
+        script: |
+          echo "🏗️  Building web release..."
+          flutter build web --release --web-renderer canvaskit --dart-define=FLUTTER_WEB_USE_SKIA=true
+          
+      - name: Build size analysis
+        script: |
+          BUILD_SIZE=$(du -sh build/web 2>/dev/null | cut -f1 || echo "Unknown")
+          echo "📦 Build output size: $BUILD_SIZE"
+          ls -la build/web/
+          
+      - name: Deploy to Vercel (main branch only)
+        script: |
+          if [ "$CM_BRANCH" = "main" ] && [ -n "$VERCEL_TOKEN" ]; then
+            echo "🚀 Deploying to Vercel..."
+            npm i -g vercel
+            echo "$VERCEL_TOKEN" | vercel login --stdin
+            vercel --prod build/web --yes --token "$VERCEL_TOKEN"
+            echo "✅ Successfully deployed to Vercel!"
+          else
+            echo "⏭️  Skipping Vercel deployment (not main branch or no token)"
+          fi
+          
+    artifacts:
+      - build/web/**/*
+      - coverage/**/*
+      
+    publishing:
+      email:
+        recipients:
+          - mkeparkapp@gmail.com
+        notify:
+          success: true
+          failure: true
+          
+  # Enhanced Android workflow with pre-deploy checks  
   android-google-play:
+    name: Publish Android to Google Play
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      flutter: stable
+      java: 17
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - ~/.gradle/caches
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*.*.*'
+          include: true
+    scripts:
+      - name: Clean build directories
+        script: |
+          flutter clean
+          rm -rf ~/.gradle/caches/*/fileHashes
+          
+      - name: Get dependencies and validate
+        script: |
+          flutter pub get
+          flutter analyze
+          flutter test
+          
+      - name: Navigation pattern validation
+        script: |
+          if grep -r "Navigator\.pushNamed" lib/ 2>/dev/null; then
+            echo "❌ Found Navigator.pushNamed usage. Fix before release."
+            exit 1
+          fi
+          
+      - name: Build app bundle
+        script: flutter build appbundle --release
+        
+    artifacts:
+      - build/app/outputs/bundle/release/app-release.aab
+      
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT
+        track: internal
+      email:
+        recipients:
+          - mkeparkapp@gmail.com
+          
+  # Enhanced iOS workflow with pre-deploy checks
+  ios-testflight:
     name: Publish Android to Google Play
     environment:
       flutter: stable
@@ -23,7 +179,11 @@ workflows:
         recipients:
           - mkeparkapp@gmail.com
   ios-testflight:
+  # Enhanced iOS workflow with pre-deploy checks
+  ios-testflight:
     name: Publish iOS to TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 45
     environment:
       flutter: stable
       xcode: latest
@@ -33,11 +193,29 @@ workflows:
       cache_paths:
         - ~/.pub-cache
         - ~/Library/Caches/CocoaPods
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*.*.*'
+          include: true
     scripts:
       - name: Clean build directories
         script: flutter clean
-      - name: Get dependencies
-        script: flutter pub get
+        
+      - name: Get dependencies and validate
+        script: |
+          flutter pub get
+          flutter analyze
+          flutter test
+          
+      - name: Navigation pattern validation
+        script: |
+          if grep -r "Navigator\.pushNamed" lib/ 2>/dev/null; then
+            echo "❌ Found Navigator.pushNamed usage. Fix before release."
+            exit 1
+          fi
+          
       - name: Set up automatic signing
         script: |
           keychain initialize
@@ -47,10 +225,13 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
+          
       - name: Build IPA
         script: flutter build ipa --release
+        
     artifacts:
       - build/ios/ipa/*.ipa
+      
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_API_KEY

@@ -1,10 +1,10 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(MKEPark_flutter_web LANGUAGES CXX)
+project(CitySmart_Parking_App LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "MKEPark_flutter_web")
+set(BINARY_NAME "CitySmart_Parking_App")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

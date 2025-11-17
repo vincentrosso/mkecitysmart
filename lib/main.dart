@@ -1,73 +1,55 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
-import 'screens/parking_screen.dart';
-import 'screens/permit_screen.dart';
-import 'screens/street_sweeping_screen.dart';
-import 'screens/history_screen.dart';
-import 'screens/landing_screen.dart';
-import 'citysmart/branding_preview.dart';
+import 'package:provider/provider.dart';
+import 'utils/app_router.dart';
+import 'providers/parking_provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/user_provider.dart';
+import 'providers/payment_provider.dart';
+import 'providers/notification_provider.dart';
 
 void main() {
-  runApp(const MKEParkApp());
+  runApp(const CitySmartParkingApp());
 }
 
-class MKEParkApp extends StatelessWidget {
-  const MKEParkApp({super.key});
-
-  Widget withDrawer(Widget child) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF003E29),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF003E29),
-        title: const Text('MKEPark'),
-        iconTheme: const IconThemeData(color: Colors.white), // ← sets hamburger AND back arrow
-      ),
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF003E29),
-        child: Builder(
-          builder: (context) => ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Color(0xFF003E29)),
-                child: Text('Milwaukee, WI', style: TextStyle(color: Colors.white, fontSize: 20)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.brush_outlined, color: Colors.white),
-                title: const Text('Branding Preview', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context); // close the drawer first
-                  Navigator.pushNamed(context, '/branding');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: child,
-    );
-  }
+class CitySmartParkingApp extends StatelessWidget {
+  const CitySmartParkingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MKEPark',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF003E29),
-        scaffoldBackgroundColor: const Color(0xFF003E29),
-        textTheme: const TextTheme(bodyMedium: TextStyle(color: Colors.white)),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => ParkingProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: MaterialApp.router(
+        title: 'CitySmart Parking App',
+        theme: ThemeData(
+          primaryColor: const Color(0xFF003E29),
+          scaffoldBackgroundColor: const Color(0xFF003E29),
+          textTheme: const TextTheme(
+            bodyMedium: TextStyle(color: Colors.white),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF003E29),
+            foregroundColor: Colors.white,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF003E29),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFF006A3B),
+            ),
+          ),
+        ),
+        debugShowCheckedModeBanner: false,
+        routerConfig: AppRouter.router,
       ),
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const WelcomeScreen(),
-        '/parking': (context) => const ParkingScreen(),
-        '/permit': (context) => const PermitScreen(),
-        '/sweeping': (context) => const StreetSweepingScreen(),
-        '/history': (context) => HistoryScreen(),
-        '/landing': (context) => LandingScreen(),
-        '/branding': (context) => const BrandingPreviewPage(),
-      },
     );
   }
 }
