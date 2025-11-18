@@ -1,5 +1,5 @@
+
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class LandingScreen extends StatelessWidget {
   @override
@@ -11,7 +11,7 @@ class LandingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'CitySmart Parking App',
+              'MKEPark',
               style: TextStyle(
                 color: Color(0xFFFFB612),
                 fontSize: 40,
@@ -20,13 +20,19 @@ class LandingScreen extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Welcome to CitySmart Parking App',
-              style: TextStyle(color: Colors.white, fontSize: 22),
+              'Welcome to MKEPark',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+              ),
             ),
             SizedBox(height: 10),
             Text(
               'Monitor parking regulations in your area',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 40),
@@ -37,10 +43,10 @@ class LandingScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
               onPressed: () {
-                context.go('/history');
+                Navigator.pushNamed(context, '/history');
               },
               child: Text('View History'),
-            ),
+            )
           ],
         ),
       ),

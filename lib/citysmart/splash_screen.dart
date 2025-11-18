@@ -1,11 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 class SplashScreen extends StatefulWidget { const SplashScreen({super.key}); @override State<SplashScreen> createState()=>_SplashState(); }
 class _SplashState extends State<SplashScreen>{
   late bool showSpinner;
   @override void initState(){ super.initState(); showSpinner = Random().nextBool();
-    Future.delayed(const Duration(seconds: 2), ()=> context.go('/home')); }
+    Future.delayed(const Duration(seconds: 2), ()=> Navigator.pushReplacementNamed(context, '/home')); }
   @override Widget build(BuildContext context){
     return Scaffold(
       body: Container(
