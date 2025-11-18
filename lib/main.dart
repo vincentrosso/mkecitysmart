@@ -1,73 +1,60 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
-import 'screens/parking_screen.dart';
-import 'screens/permit_screen.dart';
-import 'screens/street_sweeping_screen.dart';
+import 'package:provider/provider.dart';
+
+import 'citysmart/branding_preview.dart';
+import 'providers/user_provider.dart';
+import 'screens/auth_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/landing_screen.dart';
-import 'citysmart/branding_preview.dart';
+import 'screens/parking_screen.dart';
+import 'screens/preferences_screen.dart';
+import 'screens/permit_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/street_sweeping_screen.dart';
+import 'screens/vehicle_management_screen.dart';
+import 'screens/welcome_screen.dart';
+import 'services/user_repository.dart';
 
-void main() {
-  runApp(const MKEParkApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final repository = await UserRepository.create();
+  runApp(MKEParkApp(userRepository: repository));
 }
 
 class MKEParkApp extends StatelessWidget {
-  const MKEParkApp({super.key});
+  const MKEParkApp({super.key, required this.userRepository});
 
-  Widget withDrawer(Widget child) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF003E29),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF003E29),
-        title: const Text('MKEPark'),
-        iconTheme: const IconThemeData(color: Colors.white), // ← sets hamburger AND back arrow
-      ),
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF003E29),
-        child: Builder(
-          builder: (context) => ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Color(0xFF003E29)),
-                child: Text('Milwaukee, WI', style: TextStyle(color: Colors.white, fontSize: 20)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.brush_outlined, color: Colors.white),
-                title: const Text('Branding Preview', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context); // close the drawer first
-                  Navigator.pushNamed(context, '/branding');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: child,
-    );
-  }
+  final UserRepository userRepository;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MKEPark',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF003E29),
-        scaffoldBackgroundColor: const Color(0xFF003E29),
-        textTheme: const TextTheme(bodyMedium: TextStyle(color: Colors.white)),
+    return ChangeNotifierProvider(
+      create: (_) => UserProvider(userRepository: userRepository)..initialize(),
+      child: MaterialApp(
+        title: 'MKEPark',
+        theme: ThemeData(
+          primaryColor: const Color(0xFF003E29),
+          scaffoldBackgroundColor: const Color(0xFF003E29),
+          textTheme: const TextTheme(
+            bodyMedium: TextStyle(color: Colors.white),
+          ),
+        ),
+        debugShowCheckedModeBanner: false,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const WelcomeScreen(),
+          '/auth': (context) => const AuthScreen(),
+          '/landing': (context) => LandingScreen(),
+          '/parking': (context) => const ParkingScreen(),
+          '/permit': (context) => const PermitScreen(),
+          '/sweeping': (context) => const StreetSweepingScreen(),
+          '/history': (context) => HistoryScreen(),
+          '/branding': (context) => const BrandingPreviewPage(),
+          '/profile': (context) => const ProfileScreen(),
+          '/vehicles': (context) => const VehicleManagementScreen(),
+          '/preferences': (context) => const PreferencesScreen(),
+        },
       ),
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const WelcomeScreen(),
-        '/parking': (context) => const ParkingScreen(),
-        '/permit': (context) => const PermitScreen(),
-        '/sweeping': (context) => const StreetSweepingScreen(),
-        '/history': (context) => HistoryScreen(),
-        '/landing': (context) => LandingScreen(),
-        '/branding': (context) => const BrandingPreviewPage(),
-      },
     );
   }
 }

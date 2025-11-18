@@ -1,20 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:MKEPark_flutter_web/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:mkeparkapp_flutter/main.dart';
+import 'package:mkeparkapp_flutter/services/user_repository.dart';
 
 void main() {
-  testWidgets('App renders WelcomeScreen and navigates to Parking', (tester) async {
-    // Build the app
-    await tester.pumpWidget(const MKEParkApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify WelcomeScreen content
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('Welcome screen directs unauthenticated users to auth flow', (
+    tester,
+  ) async {
+    final repository = await UserRepository.create();
+    await tester.pumpWidget(MKEParkApp(userRepository: repository));
+    await tester.pumpAndSettle();
+
     expect(find.text('Welcome to MKEPark'), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 
-    // Navigate to Parking
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
 
-    // Verify ParkingScreen content
-    expect(find.text('Park on the odd-numbered side'), findsOneWidget);
+    expect(find.text('Account Access'), findsOneWidget);
   });
 }

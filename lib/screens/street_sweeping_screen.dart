@@ -9,7 +9,10 @@ class StreetSweepingScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF003E29),
       appBar: AppBar(
         backgroundColor: const Color(0xFF003E29),
-        title: const Text('Street Sweeping', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Street Sweeping',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: Center(
         child: Padding(
@@ -19,7 +22,11 @@ class StreetSweepingScreen extends StatelessWidget {
             children: [
               const Text(
                 'Street Sweeping',
-                style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               Container(
