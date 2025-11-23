@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/ev_stations.dart';
 import '../models/ev_station.dart';
@@ -105,6 +106,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
           if (_selected != null)
             _StationDetailCard(
               station: _selected!,
+              onDirections: () => _openDirections(_selected!),
               onClose: () => setState(() => _selected = null),
             ),
         ],
@@ -217,10 +219,15 @@ class _StationMarker extends StatelessWidget {
 }
 
 class _StationDetailCard extends StatelessWidget {
-  const _StationDetailCard({required this.station, required this.onClose});
+  const _StationDetailCard({
+    required this.station,
+    required this.onClose,
+    required this.onDirections,
+  });
 
   final EVStation station;
   final VoidCallback onClose;
+  final VoidCallback onDirections;
 
   @override
   Widget build(BuildContext context) {
@@ -303,12 +310,29 @@ class _StationDetailCard extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: () {},
+            onPressed: onDirections,
             icon: const Icon(Icons.directions),
             label: const Text('Get directions'),
           ),
         ],
       ),
     );
+  }
+}
+
+extension on _ChargingMapScreenState {
+  Future<void> _openDirections(EVStation station) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${station.latitude},${station.longitude}',
+    );
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open maps app.')),
+      );
+    }
   }
 }
