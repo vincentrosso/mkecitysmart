@@ -13,7 +13,7 @@ class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  final _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? _messaging;
   final _local = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
@@ -28,6 +28,7 @@ class NotificationService {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      _messaging = FirebaseMessaging.instance;
       await _requestPermissions();
       await _setupLocalNotifications();
       await _registerToken();
@@ -107,7 +108,8 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    final settings = await _messaging.requestPermission(
+    if (_messaging == null) return;
+    final settings = await _messaging!.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -135,8 +137,9 @@ class NotificationService {
   }
 
   Future<void> _registerToken() async {
+    if (_messaging == null) return;
     try {
-      final token = await _messaging.getToken();
+      final token = await _messaging!.getToken();
       if (token == null) return;
       final client = ApiClient();
       await client.post(
