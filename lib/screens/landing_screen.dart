@@ -122,6 +122,12 @@ class LandingScreen extends StatelessWidget {
                     onTap: () => Navigator.pushNamed(context, '/preferences'),
                   ),
                   _OverviewTile(
+                    icon: Icons.electric_bolt,
+                    label: 'EV charging',
+                    value: 'Map',
+                    onTap: () => Navigator.pushNamed(context, '/charging'),
+                  ),
+                  _OverviewTile(
                     icon: Icons.history,
                     label: 'History',
                     value: 'View',

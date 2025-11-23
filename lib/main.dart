@@ -14,6 +14,7 @@ import 'screens/street_sweeping_screen.dart';
 import 'screens/vehicle_management_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'services/user_repository.dart';
+import 'screens/charging_map_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class MKEParkApp extends StatelessWidget {
           '/profile': (context) => const ProfileScreen(),
           '/vehicles': (context) => const VehicleManagementScreen(),
           '/preferences': (context) => const PreferencesScreen(),
+          '/charging': (context) => const ChargingMapScreen(),
         },
       ),
     );
