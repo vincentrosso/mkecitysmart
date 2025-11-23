@@ -18,12 +18,15 @@ import '../models/maintenance_report.dart';
 import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
 import '../data/sample_tickets.dart';
+import '../services/report_api_service.dart';
+import '../services/api_client.dart';
 
 class UserProvider extends ChangeNotifier {
   UserProvider({required UserRepository userRepository})
     : _repository = userRepository;
 
   final UserRepository _repository;
+  final ReportApiService _reportApi = ReportApiService(ApiClient());
 
   UserProfile? _profile;
   bool _initializing = true;
@@ -203,6 +206,7 @@ class UserProvider extends ChangeNotifier {
     final deduped = _dedupeSighting(report);
     _sightings = deduped;
     await _repository.saveSightings(_sightings);
+    _reportApi.sendSighting(report);
     notifyListeners();
   }
 
@@ -431,6 +435,7 @@ class UserProvider extends ChangeNotifier {
     );
     _maintenanceReports = [report, ..._maintenanceReports];
     await _repository.saveMaintenanceReports(_maintenanceReports);
+    _reportApi.sendMaintenance(report);
     notifyListeners();
     return report;
   }
