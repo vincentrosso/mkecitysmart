@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import '../providers/user_provider.dart';
+import 'notification_service.dart';
 
 /// Lightweight in-app risk watcher. In background, this should be replaced by
 /// a push-based solution (FCM/APNs) driven by the backend.
@@ -31,8 +32,11 @@ class RiskAlertService {
       if (_lastHighAlert == null ||
           now.difference(_lastHighAlert!).inMinutes >= 60) {
         _lastHighAlert = now;
-        // TODO: replace with local notification or push trigger.
-        log('High tow risk detected ($score). Consider notifying user.');
+        log('High tow risk detected ($score). Triggering local alert.');
+        NotificationService.instance.showLocal(
+          title: 'High tow/ticket risk',
+          body: 'Recent enforcers or sweeps nearby. Check parking status.',
+        );
       }
     }
   }

@@ -48,6 +48,25 @@ class NotificationService {
     _initialized = true;
   }
 
+  Future<void> showLocal({
+    required String title,
+    required String body,
+  }) async {
+    await _local.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'risk_alerts',
+          'Risk Alerts',
+          importance: Importance.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   Future<void> _requestPermissions() async {
     final settings = await _messaging.requestPermission(
       alert: true,
