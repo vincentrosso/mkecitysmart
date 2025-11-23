@@ -19,36 +19,46 @@ class NotificationService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await _requestPermissions();
-    await _setupLocalNotifications();
-    await _registerToken();
-    _initTimeZones();
+    // Skip push setup on web to avoid service worker/service constraints unless configured.
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      await _requestPermissions();
+      await _setupLocalNotifications();
+      await _registerToken();
+      _initTimeZones();
 
-    FirebaseMessaging.onMessage.listen((message) {
-      final notification = message.notification;
-      final android = message.notification?.android;
-      if (notification != null) {
-        _local.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              'risk_alerts',
-              'Risk Alerts',
-              importance: Importance.high,
-              icon: android?.smallIcon,
+      FirebaseMessaging.onMessage.listen((message) {
+        final notification = message.notification;
+        final android = message.notification?.android;
+        if (notification != null) {
+          _local.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              android: AndroidNotificationDetails(
+                'risk_alerts',
+                'Risk Alerts',
+                importance: Importance.high,
+                icon: android?.smallIcon,
+              ),
+              iOS: const DarwinNotificationDetails(),
             ),
-            iOS: const DarwinNotificationDetails(),
-          ),
-        );
-      }
-    });
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    _initialized = true;
+          );
+        }
+      });
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      _initialized = true;
+    } catch (e) {
+      log('Notification init skipped: $e');
+      _initialized = true;
+    }
   }
 
   Future<void> showLocal({
