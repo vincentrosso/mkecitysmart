@@ -8,10 +8,12 @@ import 'screens/charging_map_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/landing_screen.dart';
 import 'screens/parking_screen.dart';
+import 'screens/permit_workflow_screen.dart';
 import 'screens/preferences_screen.dart';
 import 'screens/permit_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/report_sighting_screen.dart';
+import 'screens/ticket_workflow_screen.dart';
 import 'screens/street_sweeping_screen.dart';
 import 'screens/vehicle_management_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -49,6 +51,7 @@ class MKEParkApp extends StatelessWidget {
           '/landing': (context) => LandingScreen(),
           '/parking': (context) => const ParkingScreen(),
           '/permit': (context) => const PermitScreen(),
+          '/permit-workflow': (context) => const PermitWorkflowScreen(),
           '/sweeping': (context) => const StreetSweepingScreen(),
           '/history': (context) => HistoryScreen(),
           '/branding': (context) => const BrandingPreviewPage(),
@@ -57,6 +60,7 @@ class MKEParkApp extends StatelessWidget {
           '/preferences': (context) => const PreferencesScreen(),
           '/charging': (context) => const ChargingMapScreen(),
           '/report-sighting': (context) => const ReportSightingScreen(),
+          '/tickets': (context) => const TicketWorkflowScreen(),
         },
       ),
     );

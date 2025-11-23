@@ -116,6 +116,12 @@ class LandingScreen extends StatelessWidget {
                     onTap: () => Navigator.pushNamed(context, '/vehicles'),
                   ),
                   _OverviewTile(
+                    icon: Icons.badge,
+                    label: 'Permit workflow',
+                    value: 'Eligibility',
+                    onTap: () => Navigator.pushNamed(context, '/permit-workflow'),
+                  ),
+                  _OverviewTile(
                     icon: Icons.notifications_active_outlined,
                     label: 'Alerts',
                     value: alertsLabel,
@@ -133,6 +139,12 @@ class LandingScreen extends StatelessWidget {
                     value: 'Tow/Enforcer',
                     onTap: () =>
                         Navigator.pushNamed(context, '/report-sighting'),
+                  ),
+                  _OverviewTile(
+                    icon: Icons.receipt_long,
+                    label: 'Tickets',
+                    value: 'Lookup',
+                    onTap: () => Navigator.pushNamed(context, '/tickets'),
                   ),
                   _OverviewTile(
                     icon: Icons.history,

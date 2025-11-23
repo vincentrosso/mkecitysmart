@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/permit.dart';
+import '../models/payment_receipt.dart';
+import '../models/permit_eligibility.dart';
 import '../models/reservation.dart';
 import '../models/street_sweeping.dart';
 import '../models/sighting_report.dart';
+import '../models/ticket.dart';
 import '../models/user_preferences.dart';
 import '../models/user_profile.dart';
 import '../models/vehicle.dart';
 import '../services/user_repository.dart';
+import '../data/sample_tickets.dart';
 
 class UserProvider extends ChangeNotifier {
   UserProvider({required UserRepository userRepository})
@@ -21,6 +25,7 @@ class UserProvider extends ChangeNotifier {
   List<Permit> _guestPermits = const [];
   List<Reservation> _guestReservations = const [];
   List<StreetSweepingSchedule> _guestSweepingSchedules = const [];
+  List<Ticket> _tickets = const [];
   List<SightingReport> _sightings = const [];
 
   bool get isInitializing => _initializing;
@@ -32,6 +37,7 @@ class UserProvider extends ChangeNotifier {
       _profile?.reservations ?? _guestReservations;
   List<StreetSweepingSchedule> get sweepingSchedules =>
       _profile?.sweepingSchedules ?? _guestSweepingSchedules;
+  List<Ticket> get tickets => _tickets;
   List<SightingReport> get sightings => _sightings;
   List<String> get cityParkingSuggestions {
     final set = <String>{};
@@ -43,6 +49,7 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     _profile = await _repository.loadProfile();
+    _tickets = List<Ticket>.from(sampleTickets);
     _sightings = await _repository.loadSightings();
     _initializing = false;
     _guestMode = false;
@@ -114,6 +121,7 @@ class UserProvider extends ChangeNotifier {
     _guestPermits = const [];
     _guestReservations = const [];
     _guestSweepingSchedules = const [];
+    _tickets = const [];
     _sightings = const [];
     await _repository.clearProfile();
     await _repository.saveSightings(const []);
@@ -157,6 +165,162 @@ class UserProvider extends ChangeNotifier {
     _sightings = [report, ..._sightings];
     await _repository.saveSightings(_sightings);
     notifyListeners();
+  }
+
+  PermitEligibilityResult evaluatePermitEligibility({
+    required PermitType type,
+    required bool hasProofOfResidence,
+    required int unpaidTicketCount,
+    required bool isLowIncome,
+    required bool isSenior,
+    required bool ecoVehicle,
+  }) {
+    final baseFees = {
+      PermitType.residential: 45.0,
+      PermitType.visitor: 20.0,
+      PermitType.business: 120.0,
+      PermitType.handicap: 0.0,
+      PermitType.monthly: 90.0,
+      PermitType.annual: 250.0,
+      PermitType.temporary: 35.0,
+    };
+    final base = baseFees[type] ?? 50.0;
+    final surcharge = (unpaidTicketCount * 12).toDouble();
+
+    if (!hasProofOfResidence) {
+      return PermitEligibilityResult(
+        permitType: type,
+        eligible: false,
+        reason: 'Proof of residency required.',
+        baseFee: base,
+        surcharges: surcharge,
+        waiverAmount: 0,
+        totalDue: 0,
+        notes: ['Upload ID or utility bill to continue.'],
+      );
+    }
+    if (unpaidTicketCount > 3) {
+      return PermitEligibilityResult(
+        permitType: type,
+        eligible: false,
+        reason: 'Resolve outstanding tickets before applying.',
+        baseFee: base,
+        surcharges: surcharge,
+        waiverAmount: 0,
+        totalDue: 0,
+        notes: ['Unpaid tickets: $unpaidTicketCount'],
+      );
+    }
+
+    final beforeWaiver = base + surcharge;
+    double waiverPct = 0;
+    final notes = <String>[];
+    if (isLowIncome) {
+      waiverPct += 0.4;
+      notes.add('Low-income waiver applied (-40%).');
+    }
+    if (ecoVehicle) {
+      waiverPct += 0.15;
+      notes.add('EV/Hybrid discount applied (-15%).');
+    }
+    if (isSenior) {
+      waiverPct += 0.1;
+      notes.add('Senior discount applied (-10%).');
+    }
+    waiverPct = waiverPct.clamp(0, 0.6);
+    final waiverAmount = beforeWaiver * waiverPct;
+    final total =
+        (beforeWaiver - waiverAmount).clamp(0, double.infinity).toDouble();
+
+    return PermitEligibilityResult(
+      permitType: type,
+      eligible: true,
+      reason: 'Eligible for issuance',
+      baseFee: base,
+      surcharges: surcharge,
+      waiverAmount: waiverAmount,
+      totalDue: total,
+      notes: notes,
+    );
+  }
+
+  PaymentReceipt settlePermit({
+    required PermitEligibilityResult result,
+    required String method,
+  }) {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    return PaymentReceipt(
+      id: id,
+      amountCharged: result.totalDue,
+      method: method,
+      reference: 'PERMIT-$id',
+      createdAt: DateTime.now(),
+      waivedAmount: result.waiverAmount,
+      description: 'Permit settlement for ${result.permitType.name}',
+    );
+  }
+
+  Ticket? findTicket(String plate, String ticketId) {
+    try {
+      return _tickets.firstWhere(
+        (ticket) =>
+            ticket.plate.toUpperCase() == plate.toUpperCase() &&
+            ticket.id.toUpperCase() == ticketId.toUpperCase(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  PaymentReceipt settleTicket({
+    required Ticket ticket,
+    required String method,
+    required bool lowIncome,
+    required bool firstOffense,
+    required bool resident,
+  }) {
+    final overduePenalty = ticket.isOverdue ? 15.0 : 0.0;
+    final base = ticket.amount + overduePenalty;
+    double waiverPct = 0;
+    final waiverNotes = <String>[];
+    if (lowIncome) {
+      waiverPct += 0.35;
+      waiverNotes.add('Low-income relief (-35%)');
+    }
+    if (firstOffense) {
+      waiverPct += 0.25;
+      waiverNotes.add('First-offense forgiveness (-25%)');
+    }
+    if (resident) {
+      waiverPct += 0.1;
+      waiverNotes.add('Resident discount (-10%)');
+    }
+    waiverPct = waiverPct.clamp(0, 0.6);
+    final waiverAmount = base * waiverPct;
+    final totalDue =
+        (base - waiverAmount).clamp(0, double.infinity).toDouble();
+
+    final updated = ticket.copyWith(
+      status: totalDue == 0 ? TicketStatus.waived : TicketStatus.paid,
+      paidAt: DateTime.now(),
+      waiverReason: waiverNotes.join('; '),
+      paymentMethod: method,
+    );
+    _tickets = _tickets
+        .map((t) => t.id == ticket.id ? updated : t)
+        .toList();
+    notifyListeners();
+
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    return PaymentReceipt(
+      id: id,
+      amountCharged: totalDue,
+      waivedAmount: waiverAmount,
+      method: method,
+      reference: 'TICKET-$id',
+      createdAt: DateTime.now(),
+      description: 'Settlement for ${ticket.id}',
+    );
   }
 
   Future<void> changePassword(String password) async {
