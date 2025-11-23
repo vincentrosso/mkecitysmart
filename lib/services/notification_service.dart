@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../firebase_options.dart';
 import 'api_client.dart';
@@ -23,6 +25,7 @@ class NotificationService {
     await _requestPermissions();
     await _setupLocalNotifications();
     await _registerToken();
+    _initTimeZones();
 
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
@@ -64,6 +67,32 @@ class NotificationService {
         ),
         iOS: DarwinNotificationDetails(),
       ),
+    );
+  }
+
+  Future<void> scheduleLocal({
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    final tzTime = tz.TZDateTime.from(when, tz.local);
+    await _local.zonedSchedule(
+      when.millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      tzTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'risk_alerts',
+          'Risk Alerts',
+          importance: Importance.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidAllowWhileIdle: true,
+      payload: 'scheduled',
     );
   }
 
@@ -110,6 +139,16 @@ class NotificationService {
       log('Registered push token: $token');
     } catch (e) {
       log('Failed to register push token: $e');
+    }
+  }
+
+  void _initTimeZones() {
+    try {
+      tz.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('America/Chicago'));
+    } catch (_) {
+      // Best-effort.
+    }
   }
 }
 
@@ -125,5 +164,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Optionally handle background payloads for risk alerts.
 }
 
-  String _platform() => kIsWeb ? 'web' : 'mobile';
-}
+String _platform() => kIsWeb ? 'web' : 'mobile';
+
+// Re-export for consumers if needed.
+String platformLabel() => _platform();

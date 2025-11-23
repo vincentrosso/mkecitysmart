@@ -167,6 +167,18 @@ class LandingScreen extends StatelessWidget {
                     onTap: () => Navigator.pushNamed(context, '/subscriptions'),
                   ),
                   _OverviewTile(
+                    icon: Icons.insights,
+                    label: 'Predictions',
+                    value: 'Heatmap',
+                    onTap: () => Navigator.pushNamed(context, '/predictions'),
+                  ),
+                  _OverviewTile(
+                    icon: Icons.delete_outline,
+                    label: 'Garbage day',
+                    value: 'Schedule',
+                    onTap: () => Navigator.pushNamed(context, '/garbage'),
+                  ),
+                  _OverviewTile(
                     icon: Icons.home_repair_service,
                     label: 'Maintenance',
                     value: 'Report',

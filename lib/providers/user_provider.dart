@@ -15,11 +15,14 @@ import '../models/user_preferences.dart';
 import '../models/user_profile.dart';
 import '../models/vehicle.dart';
 import '../models/maintenance_report.dart';
+import '../models/garbage_schedule.dart';
 import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
 import '../data/sample_tickets.dart';
 import '../services/report_api_service.dart';
 import '../services/api_client.dart';
+import '../data/sample_schedules.dart';
+import '../services/notification_service.dart';
 
 class UserProvider extends ChangeNotifier {
   UserProvider({required UserRepository userRepository})
@@ -40,6 +43,7 @@ class UserProvider extends ChangeNotifier {
   AdPreferences _adPreferences = const AdPreferences();
   SubscriptionTier _tier = SubscriptionTier.free;
   List<MaintenanceReport> _maintenanceReports = const [];
+  List<GarbageSchedule> _garbageSchedules = const [];
 
   bool get isInitializing => _initializing;
   bool get isLoggedIn => _profile != null;
@@ -62,6 +66,7 @@ class UserProvider extends ChangeNotifier {
   double get planFeeWaiverCap => subscriptionPlan.feeWaiverPct;
   bool get prioritySupport => subscriptionPlan.prioritySupport;
   List<MaintenanceReport> get maintenanceReports => _maintenanceReports;
+  List<GarbageSchedule> get garbageSchedules => _garbageSchedules;
 
   /// Computes a rough risk score (0–100) based on recent enforcement sightings,
   /// expiring permits, overdue tickets, and impending street sweeping.
@@ -108,6 +113,9 @@ class UserProvider extends ChangeNotifier {
     _adPreferences = _profile?.adPreferences ?? _adPreferences;
     _tier = _profile?.tier ?? _tier;
     _maintenanceReports = await _repository.loadMaintenanceReports();
+    _garbageSchedules = sampleSchedules(
+      _profile?.address ?? '1234 E Sample St',
+    );
     _tickets = storedTickets.isNotEmpty
         ? storedTickets
         : List<Ticket>.from(sampleTickets);
@@ -188,6 +196,7 @@ class UserProvider extends ChangeNotifier {
     _tier = SubscriptionTier.free;
     _receipts = const [];
     _maintenanceReports = const [];
+    _garbageSchedules = const [];
     await _repository.clearProfile();
     await _repository.saveSightings(const []);
     await _repository.saveTickets(const []);
@@ -489,6 +498,76 @@ class UserProvider extends ChangeNotifier {
       case MaintenanceCategory.water:
         return 'Water Works';
     }
+  }
+
+  Future<void> scheduleGarbageReminders({
+    Duration nightBefore = const Duration(hours: 12),
+    Duration morningOf = const Duration(hours: 2),
+    String languageCode = 'en',
+  }) async {
+    final now = DateTime.now();
+    final upcoming = _garbageSchedules.where((g) => g.pickupDate.isAfter(now));
+    for (final sched in upcoming) {
+      final before = sched.pickupDate.subtract(nightBefore);
+      final morning = sched.pickupDate.subtract(morningOf);
+      final typeLabel = _pickupLabel(sched.type, languageCode);
+      final address = sched.address;
+      if (before.isAfter(now)) {
+        await NotificationService.instance.scheduleLocal(
+          title: _translate('Reminder', languageCode),
+          body: '$typeLabel pickup soon near $address',
+          when: before,
+        );
+      }
+      if (morning.isAfter(now)) {
+        await NotificationService.instance.scheduleLocal(
+          title: _translate('Reminder', languageCode),
+          body: '$typeLabel pickup today near $address',
+          when: morning,
+        );
+      }
+    }
+  }
+
+  String _pickupLabel(PickupType type, String lang) {
+    final map = {
+      'en': {
+        PickupType.garbage: 'Garbage',
+        PickupType.recycling: 'Recycling',
+      },
+      'fr': {
+        PickupType.garbage: 'Ordures',
+        PickupType.recycling: 'Recyclage',
+      },
+      'zh': {
+        PickupType.garbage: '垃圾',
+        PickupType.recycling: '回收',
+      },
+      'hi': {
+        PickupType.garbage: 'कचरा',
+        PickupType.recycling: 'रीसाइक्लिंग',
+      },
+      'el': {
+        PickupType.garbage: 'Σκουπίδια',
+        PickupType.recycling: 'Ανακύκλωση',
+      },
+    };
+    return map[lang]?[type] ?? map['en']![type]!;
+  }
+
+  String _translate(String text, String lang) {
+    final dict = {
+      'Reminder': {
+        'en': 'Reminder',
+        'fr': 'Rappel',
+        'zh': '提醒',
+        'hi': 'स्मरण',
+        'el': 'Υπενθύμιση',
+      },
+    };
+    final translations = dict[text];
+    if (translations == null) return text;
+    return translations[lang] ?? translations['en'] ?? text;
   }
 
   List<SightingReport> _dedupeSighting(SightingReport incoming) {
