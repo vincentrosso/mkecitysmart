@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../data/ev_stations.dart';
 import '../models/ev_station.dart';
+import '../models/parking_prediction.dart';
+import '../providers/user_provider.dart';
+import '../services/api_client.dart';
+import '../services/prediction_api_service.dart';
 
 class ChargingMapScreen extends StatefulWidget {
   const ChargingMapScreen({super.key});
@@ -17,6 +21,8 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   bool _showFastOnly = false;
   bool _showAvailableOnly = true;
   EVStation? _selected;
+  List<ParkingPrediction> _predictions = const [];
+  bool _loadingPredictions = false;
 
   List<EVStation> get _stations {
     return mockEvStations.where((station) {
@@ -27,9 +33,16 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPredictions());
+  }
+
+  @override
   Widget build(BuildContext context) {
     const center = LatLng(43.0389, -87.9065); // Milwaukee
     final stations = _stations;
+    final predictions = _predictions;
     return Scaffold(
       appBar: AppBar(
         title: const Text('EV charging map'),
@@ -81,6 +94,21 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.mkeparkapp.app',
                 ),
+                if (predictions.isNotEmpty)
+                  CircleLayer(
+                    circles: predictions
+                        .map(
+                          (p) => CircleMarker(
+                            point: LatLng(p.lat, p.lng),
+                            radius: (50 + (p.score * 80)).clamp(40, 120),
+                            useRadiusInMeter: false,
+                            color: _scoreColor(p.score).withOpacity(0.35),
+                            borderColor: _scoreColor(p.score),
+                            borderStrokeWidth: 1.5,
+                          ),
+                        )
+                        .toList(),
+                  ),
                 MarkerLayer(
                   markers: stations
                       .map<Marker>(
@@ -109,9 +137,86 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
               onDirections: () => _openDirections(_selected!),
               onClose: () => setState(() => _selected = null),
             ),
+          if (_loadingPredictions)
+            const LinearProgressIndicator(minHeight: 3),
+          if (predictions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Availability preview'),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _HeatLegend(color: _scoreColor(0.8), label: 'High'),
+                      _HeatLegend(color: _scoreColor(0.5), label: 'Med'),
+                      _HeatLegend(color: _scoreColor(0.2), label: 'Low'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...predictions.take(5).map(
+                        (p) => ListTile(
+                          dense: true,
+                          leading: Icon(Icons.local_parking,
+                              color: _scoreColor(p.score)),
+                          title: Text('Block ${p.blockId}'),
+                          subtitle: Text(
+                            'Score ${(p.score * 100).round()}% • Hour ${p.hour} • D${p.dayOfWeek}',
+                          ),
+                        ),
+                      ),
+                ],
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  Future<void> _loadPredictions() async {
+    setState(() => _loadingPredictions = true);
+    final provider = context.read<UserProvider>();
+    final radius = provider.profile?.preferences.geoRadiusMiles ?? 5;
+    const centerLat = 43.0389;
+    const centerLng = -87.9065;
+    final api = PredictionApiService(ApiClient());
+    final result = await api.fetchPredictions(
+      lat: centerLat,
+      lng: centerLng,
+      radiusMiles: radius,
+      includeEvents: true,
+      includeWeather: true,
+    );
+    if (!mounted) return;
+    setState(() {
+      _predictions = result.isNotEmpty ? result : _mockPredictions();
+      _loadingPredictions = false;
+    });
+  }
+
+  List<ParkingPrediction> _mockPredictions() {
+    final now = DateTime.now();
+    final baseHour = now.hour;
+    return List<ParkingPrediction>.generate(mockEvStations.length, (index) {
+      final station = mockEvStations[index];
+      final score = (0.6 +
+              0.25 * (index % 3 == 0 ? 1 : -1) +
+              0.05 * (baseHour >= 17 && baseHour <= 19 ? -1 : 1))
+          .clamp(0.05, 0.95);
+      return ParkingPrediction(
+        id: 'pred-$index',
+        blockId: 'B-${index + 1}',
+        lat: station.latitude,
+        lng: station.longitude,
+        score: score,
+        hour: baseHour,
+        dayOfWeek: now.weekday,
+        eventScore: 0.1,
+        weatherScore: 0.05,
+      );
+    });
   }
 
   void _openDetails(BuildContext context) {
@@ -165,6 +270,27 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+Color _scoreColor(double score) {
+  if (score >= 0.7) return Colors.green;
+  if (score >= 0.45) return Colors.orange;
+  return Colors.redAccent;
+}
+
+class _HeatLegend extends StatelessWidget {
+  const _HeatLegend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      backgroundColor: color.withOpacity(0.15),
+      label: Text(label, style: TextStyle(color: color)),
     );
   }
 }
