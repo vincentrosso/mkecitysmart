@@ -23,6 +23,9 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   EVStation? _selected;
   List<ParkingPrediction> _predictions = const [];
   bool _loadingPredictions = false;
+  bool _includeEvents = true;
+  bool _includeWeather = true;
+  _PredictionMode _mode = _PredictionMode.heatmap;
 
   List<EVStation> get _stations {
     return mockEvStations.where((station) {
@@ -47,6 +50,11 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
       appBar: AppBar(
         title: const Text('EV charging map'),
         actions: [
+          IconButton(
+            onPressed: _loadPredictions,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh predictions',
+          ),
           IconButton(
             onPressed: () => _openDetails(context),
             icon: const Icon(Icons.list_alt_outlined),
@@ -75,9 +83,48 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                   onSelected: (value) => setState(() => _showFastOnly = value),
                 ),
                 const Spacer(),
-                Text(
-                  '${stations.length} spots',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                Text('${stations.length} spots',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilterChip(
+                  selected: _includeEvents,
+                  label: const Text('Events on'),
+                  onSelected: (v) {
+                    setState(() => _includeEvents = v);
+                    _loadPredictions();
+                  },
+                ),
+                FilterChip(
+                  selected: _includeWeather,
+                  label: const Text('Weather on'),
+                  onSelected: (v) {
+                    setState(() => _includeWeather = v);
+                    _loadPredictions();
+                  },
+                ),
+                ChoiceChip(
+                  selected: _mode == _PredictionMode.heatmap,
+                  label: const Text('Heatmap'),
+                  onSelected: (_) {
+                    setState(() => _mode = _PredictionMode.heatmap);
+                    _loadPredictions();
+                  },
+                ),
+                ChoiceChip(
+                  selected: _mode == _PredictionMode.points,
+                  label: const Text('Points'),
+                  onSelected: (_) {
+                    setState(() => _mode = _PredictionMode.points);
+                    _loadPredictions();
+                  },
                 ),
               ],
             ),
@@ -94,7 +141,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.mkeparkapp.app',
                 ),
-                if (predictions.isNotEmpty)
+                if (predictions.isNotEmpty && _mode == _PredictionMode.heatmap)
                   CircleLayer(
                     circles: predictions
                         .map(
@@ -105,6 +152,24 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                             color: _scoreColor(p.score).withOpacity(0.35),
                             borderColor: _scoreColor(p.score),
                             borderStrokeWidth: 1.5,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                if (predictions.isNotEmpty && _mode == _PredictionMode.points)
+                  MarkerLayer(
+                    markers: predictions
+                        .map(
+                          (p) => Marker(
+                            point: LatLng(p.lat, p.lng),
+                            width: 20,
+                            height: 20,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: _scoreColor(p.score),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                           ),
                         )
                         .toList(),
@@ -182,13 +247,24 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     const centerLat = 43.0389;
     const centerLng = -87.9065;
     final api = PredictionApiService(ApiClient());
-    final result = await api.fetchPredictions(
-      lat: centerLat,
-      lng: centerLng,
-      radiusMiles: radius,
-      includeEvents: true,
-      includeWeather: true,
-    );
+    List<ParkingPrediction> result;
+    if (_mode == _PredictionMode.points) {
+      result = await api.fetchPoints(
+        lat: centerLat,
+        lng: centerLng,
+        radiusMiles: radius,
+        includeEvents: _includeEvents,
+        includeWeather: _includeWeather,
+      );
+    } else {
+      result = await api.fetchPredictions(
+        lat: centerLat,
+        lng: centerLng,
+        radiusMiles: radius,
+        includeEvents: _includeEvents,
+        includeWeather: _includeWeather,
+      );
+    }
     if (!mounted) return;
     setState(() {
       _predictions = result.isNotEmpty ? result : _mockPredictions();
@@ -294,6 +370,8 @@ class _HeatLegend extends StatelessWidget {
     );
   }
 }
+
+enum _PredictionMode { heatmap, points }
 
 class _StationMarker extends StatelessWidget {
   const _StationMarker({required this.station, required this.isSelected});
