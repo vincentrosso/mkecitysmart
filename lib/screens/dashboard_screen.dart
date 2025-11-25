@@ -28,9 +28,10 @@ class DashboardScreen extends StatelessWidget {
                 mainAxisSpacing: 16,
                 childAspectRatio: 1.1,
                 children: [
-                  DashboardCard(
+                  HomeTile(
                     icon: Icons.local_parking,
-                    label: 'Parking',
+                    title: 'Parking',
+                    subtitle: 'Find, monitor, pay',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -38,9 +39,10 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DashboardCard(
+                  HomeTile(
                     icon: Icons.delete_outline,
-                    label: 'Garbage Day',
+                    title: 'Garbage Day',
+                    subtitle: 'Pickup schedules',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -48,9 +50,10 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DashboardCard(
+                  HomeTile(
                     icon: Icons.ev_station_outlined,
-                    label: 'EV Chargers',
+                    title: 'EV Chargers',
+                    subtitle: 'Nearby stations',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -58,9 +61,10 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DashboardCard(
+                  HomeTile(
                     icon: Icons.notifications_active_outlined,
-                    label: 'Alerts',
+                    title: 'Alerts',
+                    subtitle: 'Risks & reminders',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -83,35 +87,59 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class DashboardCard extends StatelessWidget {
-  const DashboardCard({
+class HomeTile extends StatelessWidget {
+  const HomeTile({
     super.key,
     required this.icon,
-    required this.label,
-    required this.onTap,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    const tileBg = Color(0xFF0D2A26);
+    const tileBorder = Color(0xFF174139);
+    const accent = Color(0xFFF8C660);
+    const textColor = Colors.white;
+
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap ?? () {},
+        child: Ink(
+          decoration: BoxDecoration(
+            color: tileBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: tileBorder, width: 1),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, size: 34, color: kCitySmartYellow),
-              const SizedBox(height: 8),
+              Icon(icon, size: 40, color: accent),
+              const Spacer(),
               Text(
-                label,
-                style: Theme.of(context).textTheme.titleMedium,
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: textColor,
+                ),
               ),
             ],
           ),
