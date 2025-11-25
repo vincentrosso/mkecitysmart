@@ -11,7 +11,7 @@ class MapScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {},
         ),
         title: const Text('Smart Map'),
       ),

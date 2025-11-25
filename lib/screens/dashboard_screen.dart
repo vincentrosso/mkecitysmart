@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'citysmart_shell_screens.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -30,22 +31,42 @@ class DashboardScreen extends StatelessWidget {
                   DashboardCard(
                     icon: Icons.local_parking,
                     label: 'Parking',
-                    onTap: () => Navigator.pushNamed(context, '/parking'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ParkingShellScreen(),
+                      ),
+                    ),
                   ),
                   DashboardCard(
                     icon: Icons.delete_outline,
                     label: 'Garbage Day',
-                    onTap: () => Navigator.pushNamed(context, '/garbage'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const GarbageDayShellScreen(),
+                      ),
+                    ),
                   ),
                   DashboardCard(
                     icon: Icons.ev_station_outlined,
                     label: 'EV Chargers',
-                    onTap: () => Navigator.pushNamed(context, '/charging'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EVChargersShellScreen(),
+                      ),
+                    ),
                   ),
                   DashboardCard(
                     icon: Icons.notifications_active_outlined,
                     label: 'Alerts',
-                    onTap: () => Navigator.pushNamed(context, '/preferences'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AlertsShellScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),

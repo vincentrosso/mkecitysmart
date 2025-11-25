@@ -1,70 +1,116 @@
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
+// Palette
+const Color kCitySmartGreen = Color(0xFF081D19); // main background
+const Color kCitySmartCard = Color(0xFF0C241F); // tiles / cards
+const Color kCitySmartYellow = Color(0xFFE0C164); // accent / buttons
+const Color kCitySmartText = Color(0xFFFDF7EC); // primary text
+const Color kCitySmartMuted = Color(0xFF9BA59C); // secondary text
 
 ThemeData buildCitySmartTheme() {
-  const radius = 16.0;
+  final base = ThemeData.dark();
 
-  return ThemeData(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.background,
+  return base.copyWith(
     useMaterial3: true,
-    fontFamily: 'SF Pro Text',
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.accentTeal,
-      secondary: AppColors.accentOrange,
-      background: AppColors.background,
-      surface: AppColors.card,
+    scaffoldBackgroundColor: kCitySmartGreen,
+    colorScheme: base.colorScheme.copyWith(
+      brightness: Brightness.dark,
+      primary: kCitySmartYellow,
+      onPrimary: kCitySmartGreen,
+      surface: kCitySmartCard,
+      onSurface: kCitySmartText,
+      background: kCitySmartGreen,
+      onBackground: kCitySmartText,
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
+      backgroundColor: kCitySmartGreen,
       elevation: 0,
-      centerTitle: true,
-      foregroundColor: Colors.white,
-    ),
-    cardTheme: CardThemeData(
-      color: AppColors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radius),
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: kCitySmartYellow,
       ),
+      iconTheme: IconThemeData(color: kCitySmartYellow),
+    ),
+    cardTheme: CardTheme(
+      color: kCitySmartCard,
       elevation: 0,
       margin: EdgeInsets.zero,
-    ),
-    textTheme: const TextTheme(
-      headlineMedium: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-      titleMedium: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: Colors.white70,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: AppColors.background,
-      selectedItemColor: AppColors.bottomNavIcon,
-      unselectedItemColor: AppColors.mutedIcon,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      type: BottomNavigationBarType.fixed,
-    ),
-    iconTheme: const IconThemeData(
-      color: AppColors.accentTeal,
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.card,
-        foregroundColor: Colors.white,
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: kCitySmartYellow,
+        foregroundColor: kCitySmartGreen,
+        minimumSize: const Size.fromHeight(52),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.4,
         ),
       ),
     ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: kCitySmartYellow,
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ),
+    textTheme: base.textTheme.copyWith(
+      headlineMedium: const TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        color: kCitySmartText,
+      ),
+      titleLarge: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: kCitySmartText,
+      ),
+      titleMedium: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: kCitySmartText,
+      ),
+      bodyMedium: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: kCitySmartMuted,
+      ),
+      labelSmall: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: kCitySmartMuted,
+        letterSpacing: 0.6,
+      ),
+    ),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: kCitySmartGreen,
+      selectedItemColor: kCitySmartYellow,
+      unselectedItemColor: kCitySmartMuted,
+      type: BottomNavigationBarType.fixed,
+      selectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+      ),
+    ),
+    listTileTheme: const ListTileThemeData(
+      tileColor: kCitySmartCard,
+      iconColor: kCitySmartYellow,
+      textColor: kCitySmartText,
+    ),
+    dividerColor: const Color(0xFF29332E),
   );
 }
