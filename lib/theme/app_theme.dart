@@ -82,13 +82,13 @@ ThemeData buildCitySmartTheme() {
       ),
       bodyMedium: const TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: kCitySmartMuted,
+        fontWeight: FontWeight.w500,
+        color: kCitySmartText,
       ),
       labelSmall: const TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w500,
-        color: kCitySmartMuted,
+        color: kCitySmartText,
         letterSpacing: 0.6,
       ),
     ),
