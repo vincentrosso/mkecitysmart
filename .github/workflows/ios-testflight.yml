@@ -44,6 +44,8 @@ jobs:
           echo "APP_STORE_CONNECT_API_KEY_PATH=$PWD/AuthKey.p8" >> $GITHUB_ENV
         env:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
 
       - name: Fastlane beta
         working-directory: ios
