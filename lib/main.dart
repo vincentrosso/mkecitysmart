@@ -26,6 +26,7 @@ import 'screens/garbage_schedule_screen.dart';
 import 'screens/city_settings_screen.dart';
 import 'services/notification_service.dart';
 import 'screens/alternate_side_parking_screen.dart';
+import 'screens/parking_heatmap_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,8 @@ class MKEParkApp extends StatelessWidget {
           '/city-settings': (context) => const CitySettingsScreen(),
           '/alternate-parking': (context) =>
               const AlternateSideParkingScreen(),
+          '/parking-heatmap': (context) =>
+              const ParkingHeatmapScreen(),
         },
       ),
     );
