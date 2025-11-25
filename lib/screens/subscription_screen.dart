@@ -151,7 +151,7 @@ const _plans = [
     alertVolumePerDay: 10,
     feeWaiverPct: 0.15,
     prioritySupport: false,
-    monthlyPrice: 6.99,
+    monthlyPrice: 3.99,
   ),
   SubscriptionPlan(
     tier: SubscriptionTier.pro,
@@ -159,6 +159,6 @@ const _plans = [
     alertVolumePerDay: 25,
     feeWaiverPct: 0.35,
     prioritySupport: true,
-    monthlyPrice: 14.99,
+    monthlyPrice: 4.99,
   ),
 ];
