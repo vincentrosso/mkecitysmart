@@ -135,8 +135,8 @@ class WelcomeScreen extends StatelessWidget {
                             ],
                             const SizedBox(height: 24),
                             SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
+                            width: double.infinity,
+                              child: FilledButton.icon(
                                 icon: const Icon(Icons.dashboard_customize),
                                 onPressed: isLoading
                                     ? null
@@ -151,19 +151,44 @@ class WelcomeScreen extends StatelessWidget {
                                       ? 'Go to dashboard'
                                       : 'Get Started',
                                 ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 18, horizontal: 20),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 12),
-                            if (!isLoggedIn) ...[
+                              if (!isLoggedIn) ...[
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
                                   icon: const Icon(Icons.person_add_alt),
                                   onPressed: isLoading
                                       ? null
-                                      : () => Navigator.pushNamed(
-                                          context, '/auth'),
+                                      : () =>
+                                          Navigator.pushNamed(context, '/auth'),
                                   label: const Text('Create an account'),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 18, horizontal: 20),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    side: const BorderSide(
+                                      color: CSTheme.border,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 10),
@@ -179,6 +204,17 @@ class WelcomeScreen extends StatelessWidget {
                                       },
                                 icon: const Icon(Icons.visibility_outlined),
                                 label: const Text('Continue as guest'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: CSTheme.text,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 14, horizontal: 12),
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 6),
                               const Text(

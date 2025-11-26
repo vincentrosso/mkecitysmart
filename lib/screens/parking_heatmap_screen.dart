@@ -1,0 +1,149 @@
+import 'package:flutter/material.dart';
+
+import '../services/parking_prediction_service.dart';
+
+class ParkingHeatmapScreen extends StatefulWidget {
+  const ParkingHeatmapScreen({super.key});
+
+  @override
+  State<ParkingHeatmapScreen> createState() => _ParkingHeatmapScreenState();
+}
+
+class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
+  final _service = ParkingPredictionService();
+  final _centerLat = 43.0389;
+  final _centerLng = -87.9065;
+  final _eventLoad = 0.2;
+  late List<PredictedPoint> _points;
+
+  @override
+  void initState() {
+    super.initState();
+    _points = _service.predictNearby(
+      when: DateTime.now(),
+      latitude: _centerLat,
+      longitude: _centerLng,
+      eventLoad: _eventLoad,
+      samples: 30,
+    );
+  }
+
+  Color _scoreColor(double score) {
+    // 0 -> red, 0.5 -> yellow, 1 -> green
+    if (score < 0.33) {
+      return Colors.redAccent.withOpacity(0.6 + score * 0.2);
+    } else if (score < 0.66) {
+      return Colors.orangeAccent.withOpacity(0.6 + (score - 0.33) * 0.2);
+    }
+    return Colors.greenAccent.withOpacity(0.6 + (score - 0.66) * 0.2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Parking Heatmap'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Predicted availability',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Map coords to a simple grid for demo purposes.
+                  final minLat = _centerLat - 0.002;
+                  final maxLat = _centerLat + 0.002;
+                  final minLng = _centerLng - 0.002;
+                  final maxLng = _centerLng + 0.002;
+
+                  double toX(double lng) =>
+                      ((lng - minLng) / (maxLng - minLng)) *
+                      constraints.maxWidth;
+                  double toY(double lat) =>
+                      constraints.maxHeight -
+                      ((lat - minLat) / (maxLat - minLat)) *
+                          constraints.maxHeight;
+
+                  return Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black12,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      ..._points.map((p) {
+                        final x = toX(p.longitude);
+                        final y = toY(p.latitude);
+                        return Positioned(
+                          left: x - 10,
+                          top: y - 10,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: _scoreColor(p.score),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        );
+                      }),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: const [
+                            _LegendDot(color: Colors.greenAccent, label: 'Higher chance'),
+                            SizedBox(height: 6),
+                            _LegendDot(color: Colors.orangeAccent, label: 'Medium'),
+                            SizedBox(height: 6),
+                            _LegendDot(color: Colors.redAccent, label: 'Lower chance'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}

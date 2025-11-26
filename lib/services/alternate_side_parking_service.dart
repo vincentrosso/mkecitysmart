@@ -14,24 +14,14 @@ class ParkingDayInfo {
   ParkingDayInfo({
     required this.date,
     required this.side,
+    required this.isToday,
+    required this.isTomorrow,
   });
 
   final DateTime date;
   final ParkingSide side;
-
-  bool get isToday {
-    final now = DateTime.now();
-    return now.year == date.year &&
-        now.month == date.month &&
-        now.day == date.day;
-  }
-
-  bool get isTomorrow {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    return tomorrow.year == date.year &&
-        tomorrow.month == date.month &&
-        tomorrow.day == date.day;
-  }
+  final bool isToday;
+  final bool isTomorrow;
 }
 
 class ParkingStatus {
@@ -75,7 +65,10 @@ class AlternateSideParkingService {
   final DateTime Function() _clock;
 
   ParkingSide sideForDate(DateTime date) {
-    return date.day.isOdd ? ParkingSide.odd : ParkingSide.even;
+    // Use day-of-year parity for continuous alternation; special-case Feb 29 as odd.
+    if (date.month == 2 && date.day == 29) return ParkingSide.odd;
+    final ordinal = _dayOfYear(date);
+    return ordinal.isOdd ? ParkingSide.odd : ParkingSide.even;
   }
 
   DateTime nextSwitchTime(DateTime from) {
@@ -122,7 +115,12 @@ class AlternateSideParkingService {
     final begin = start ?? _clock();
     return List.generate(days, (index) {
       final date = DateTime(begin.year, begin.month, begin.day + index);
-      return ParkingDayInfo(date: date, side: sideForDate(date));
+      return ParkingDayInfo(
+        date: date,
+        side: sideForDate(date),
+        isToday: index == 0,
+        isTomorrow: index == 1,
+      );
     });
   }
 
@@ -163,4 +161,9 @@ class AlternateSideParkingService {
         );
     }
   }
+}
+
+int _dayOfYear(DateTime date) {
+  final start = DateTime(date.year, 1, 1);
+  return date.difference(start).inDays + 1;
 }

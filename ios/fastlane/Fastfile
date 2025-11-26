@@ -5,11 +5,13 @@ platform :ios do
   lane :beta do
     # Use App Store Connect API key if provided; otherwise fall back to Apple ID auth.
     api_key_path = ENV['APP_STORE_CONNECT_API_KEY_PATH']
+    key_id = ENV['APP_STORE_CONNECT_API_KEY_ID'] || ENV['APP_STORE_CONNECT_API_KEY_KEY_ID']
+    issuer_id = ENV['APP_STORE_CONNECT_API_ISSUER_ID'] || ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID']
     if api_key_path && File.exist?(api_key_path)
       app_store_connect_api_key(
-        key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
-        issuer_id: ENV['APP_STORE_CONNECT_API_ISSUER_ID'],
-        keyfile: api_key_path,
+        key_id: key_id,
+        issuer_id: issuer_id,
+        key_filepath: api_key_path,
         is_key_content_base64: api_key_path.strip.start_with?('LS0t'),
       )
     else

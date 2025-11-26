@@ -3,6 +3,7 @@ class UserPreferences {
     required this.parkingNotifications,
     required this.towAlerts,
     required this.reminderNotifications,
+    this.ticketRiskAlerts = true,
     this.geoRadiusMiles = 5,
     this.defaultVehicleId,
   });
@@ -10,6 +11,7 @@ class UserPreferences {
   final bool parkingNotifications;
   final bool towAlerts;
   final bool reminderNotifications;
+  final bool ticketRiskAlerts;
   final int geoRadiusMiles;
   final String? defaultVehicleId;
 
@@ -17,6 +19,7 @@ class UserPreferences {
     parkingNotifications: true,
     towAlerts: true,
     reminderNotifications: true,
+    ticketRiskAlerts: true,
     geoRadiusMiles: 5,
   );
 
@@ -24,6 +27,7 @@ class UserPreferences {
     bool? parkingNotifications,
     bool? towAlerts,
     bool? reminderNotifications,
+    bool? ticketRiskAlerts,
     int? geoRadiusMiles,
     String? defaultVehicleId,
   }) {
@@ -32,6 +36,7 @@ class UserPreferences {
       towAlerts: towAlerts ?? this.towAlerts,
       reminderNotifications:
           reminderNotifications ?? this.reminderNotifications,
+      ticketRiskAlerts: ticketRiskAlerts ?? this.ticketRiskAlerts,
       geoRadiusMiles: geoRadiusMiles ?? this.geoRadiusMiles,
       defaultVehicleId: defaultVehicleId ?? this.defaultVehicleId,
     );
@@ -42,6 +47,7 @@ class UserPreferences {
       parkingNotifications: json['parkingNotifications'] as bool? ?? true,
       towAlerts: json['towAlerts'] as bool? ?? true,
       reminderNotifications: json['reminderNotifications'] as bool? ?? true,
+      ticketRiskAlerts: json['ticketRiskAlerts'] as bool? ?? true,
       geoRadiusMiles: json['geoRadiusMiles'] as int? ?? 5,
       defaultVehicleId: json['defaultVehicleId'] as String?,
     );
@@ -51,6 +57,7 @@ class UserPreferences {
     'parkingNotifications': parkingNotifications,
     'towAlerts': towAlerts,
     'reminderNotifications': reminderNotifications,
+    'ticketRiskAlerts': ticketRiskAlerts,
     'geoRadiusMiles': geoRadiusMiles,
     'defaultVehicleId': defaultVehicleId,
   };

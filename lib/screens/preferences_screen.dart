@@ -64,6 +64,13 @@ class PreferencesScreen extends StatelessWidget {
                 onChanged: (value) =>
                     provider.updatePreferences(reminderNotifications: value),
               ),
+              SwitchListTile(
+                title: const Text('Ticket risk alerts'),
+                subtitle: const Text('Automatic alerts when ticket risk is high'),
+                value: prefs.ticketRiskAlerts,
+                onChanged: (value) =>
+                    provider.updatePreferences(ticketRiskAlerts: value),
+              ),
               const Divider(height: 32),
               Text(
                 'Alert radius (miles)',
