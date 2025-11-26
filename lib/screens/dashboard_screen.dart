@@ -100,6 +100,18 @@ class DashboardScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/subscriptions'),
                   ),
                   HomeTile(
+                    icon: Icons.construction,
+                    title: 'Maintenance',
+                    subtitle: 'City reports',
+                    onTap: () => Navigator.pushNamed(context, '/maintenance'),
+                  ),
+                  HomeTile(
+                    icon: Icons.history,
+                    title: 'History',
+                    subtitle: 'Alerts & receipts',
+                    onTap: () => Navigator.pushNamed(context, '/history'),
+                  ),
+                  HomeTile(
                     icon: Icons.settings,
                     title: 'City settings',
                     subtitle: 'City & language',
