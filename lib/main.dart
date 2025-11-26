@@ -99,6 +99,7 @@ class CitySmartShell extends StatefulWidget {
 class _CitySmartShellState extends State<CitySmartShell> {
   int _index = 0;
   bool _quickShown = false;
+  bool _tutorialDone = false;
 
   @override
   void initState() {
@@ -138,7 +139,7 @@ class _CitySmartShellState extends State<CitySmartShell> {
   }
 
   void _showQuickStart() {
-    if (_quickShown) return;
+    if (_quickShown || _tutorialDone) return;
     _quickShown = true;
     if (!mounted) return;
     showModalBottomSheet(
@@ -171,7 +172,10 @@ class _CitySmartShellState extends State<CitySmartShell> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: () {
+                      _tutorialDone = true;
+                      Navigator.pop(ctx);
+                    },
                     child: const Text('Skip'),
                   ),
                 ],
@@ -193,7 +197,10 @@ class _CitySmartShellState extends State<CitySmartShell> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
+                  onPressed: () {
+                    _tutorialDone = true;
+                    Navigator.pop(ctx);
+                  },
                   child: const Text('Got it'),
                 ),
               ),
