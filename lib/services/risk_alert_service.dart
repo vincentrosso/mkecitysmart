@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as dev;
 import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
@@ -43,7 +43,7 @@ class RiskAlertService {
       if (_lastHighAlert == null ||
           now.difference(_lastHighAlert!).inMinutes >= 60) {
         _lastHighAlert = now;
-        log('High tow risk detected ($score). Triggering local alert.');
+        dev.log('High tow risk detected ($score). Triggering local alert.');
         NotificationService.instance.showLocal(
           title: 'High tow/ticket risk',
           body: 'Recent enforcers or sweeps nearby. Check parking status.',
@@ -96,7 +96,7 @@ class RiskAlertService {
     } on PermissionDeniedException {
       // Silently ignore; user declined location.
     } catch (e) {
-      log('Ticket risk check skipped: $e');
+      dev.log('Ticket risk check skipped: $e');
     }
   }
 
