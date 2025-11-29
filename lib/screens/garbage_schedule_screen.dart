@@ -201,7 +201,8 @@ class _GarbageScheduleScreenState extends State<GarbageScheduleScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load schedule: $e';
+          _error =
+              'Failed to load schedule. Please retry or enter an address. Details: $e';
         });
       }
     } finally {

@@ -10,6 +10,16 @@ class GarbageScheduleService {
   final String baseUrl;
   final String? authToken;
 
+  Future<http.Response> _safeGet(Uri uri) async {
+    try {
+      return await http.get(uri, headers: _headers());
+    } on http.ClientException catch (e) {
+      throw Exception(
+        'Network blocked fetching schedule (CORS/offline): ${e.message}',
+      );
+    }
+  }
+
   Map<String, String> _headers() {
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -26,14 +36,15 @@ class GarbageScheduleService {
   }) async {
     final uri = Uri.parse('$baseUrl/query').replace(queryParameters: {
       'f': 'json',
-      'geometry': '$longitude,$latitude',
+      // ArcGIS expects x,y = lon,lat
+      'geometry': '${longitude.toStringAsFixed(6)},${latitude.toStringAsFixed(6)}',
       'geometryType': 'esriGeometryPoint',
       'inSR': '4326',
       'spatialRel': 'esriSpatialRelIntersects',
       'outFields': '*',
       'returnGeometry': 'false',
     });
-    final resp = await http.get(uri, headers: _headers());
+    final resp = await _safeGet(uri);
     if (resp.statusCode != 200) {
       throw Exception('Failed to fetch schedule: ${resp.statusCode}');
     }
@@ -51,7 +62,7 @@ class GarbageScheduleService {
       'outFields': '*',
       'returnGeometry': 'false',
     });
-    final resp = await http.get(uri, headers: _headers());
+    final resp = await _safeGet(uri);
     if (resp.statusCode != 200) {
       throw Exception('Failed to fetch schedule: ${resp.statusCode}');
     }
