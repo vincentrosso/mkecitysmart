@@ -14,6 +14,7 @@
         "flutter_local_notifications",
         "flutter_map",
         "geolocator",
+        "google_mobile_ads",
         "http",
         "image_picker",
         "intl",
@@ -51,6 +52,17 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "google_mobile_ads",
+      "version": "4.0.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "webview_flutter",
+        "webview_flutter_android",
+        "webview_flutter_wkwebview"
       ]
     },
     {
@@ -966,6 +978,43 @@
       "version": "1.0.1",
       "dependencies": [
         "meta"
+      ]
+    },
+    {
+      "name": "webview_flutter",
+      "version": "4.9.0",
+      "dependencies": [
+        "flutter",
+        "webview_flutter_android",
+        "webview_flutter_platform_interface",
+        "webview_flutter_wkwebview"
+      ]
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "version": "2.14.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_android",
+      "version": "3.16.9",
+      "dependencies": [
+        "flutter",
+        "webview_flutter_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "version": "3.23.4",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "webview_flutter_platform_interface"
       ]
     }
   ],

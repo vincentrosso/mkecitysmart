@@ -63,28 +63,34 @@ class GarbageScheduleService {
 
   GarbageSchedule _fromFeature(Map<String, dynamic> feature) {
     final attrs = feature['attributes'] as Map<String, dynamic>? ?? {};
-    final typeStr =
-        (attrs['type'] ?? attrs['service'] ?? attrs['material'] ?? '')
-            .toString()
-            .toLowerCase();
-    final type = typeStr.contains('recycl') ? PickupType.recycling : PickupType.garbage;
-    final route = (attrs['route'] ??
-            attrs['routeId'] ??
-            attrs['ROUTE'] ??
-            'unknown')
-        .toString();
+    final typeStr = (attrs['type'] ??
+            attrs['TYPE'] ??
+            attrs['service'] ??
+            attrs['SERVICE'] ??
+            attrs['material'] ??
+            '')
+        .toString()
+        .toLowerCase();
+    final type =
+        typeStr.contains('recycl') ? PickupType.recycling : PickupType.garbage;
+    final route =
+        (attrs['route'] ?? attrs['ROUTE'] ?? attrs['routeId'] ?? 'unknown')
+            .toString();
     final addr = (attrs['address'] ??
             attrs['ADDRESS'] ??
             attrs['location'] ??
             attrs['LOCATION'] ??
             '')
         .toString();
-    final pickupDate = _parseDate(
-      attrs['pickupDate'] ??
-          attrs['PICKUPDATE'] ??
-          attrs['nextPickup'] ??
-          attrs['NEXT_PICKUP'],
-    );
+
+    final dynamic pickupRaw = attrs['pickupDate'] ??
+        attrs['PICKUPDATE'] ??
+        attrs['nextPickup'] ??
+        attrs['NEXT_PICKUP'] ??
+        attrs['NEXT_PICKUPDATE'] ??
+        attrs['PICKUPDAY'];
+    final pickupDate = _toDateFromAttribute(pickupRaw);
+
     return GarbageSchedule(
       routeId: route,
       address: addr,
@@ -93,14 +99,36 @@ class GarbageScheduleService {
     );
   }
 
-  DateTime _parseDate(dynamic value) {
-    if (value == null) return DateTime.now();
+  DateTime _toDateFromAttribute(dynamic value) {
+    final now = DateTime.now();
+    if (value == null) return now;
     if (value is int) {
+      // assume epoch millis
       return DateTime.fromMillisecondsSinceEpoch(value);
     }
     if (value is String) {
-      return DateTime.tryParse(value) ?? DateTime.now();
+      // try ISO
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed;
+      // try day-of-week name
+      final day = _weekdayFromName(value);
+      if (day != null) {
+        final daysToAdd = (day - now.weekday + 7) % 7;
+        return now.add(Duration(days: daysToAdd == 0 ? 7 : daysToAdd));
+      }
     }
-    return DateTime.now();
+    return now;
+  }
+
+  int? _weekdayFromName(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('mon')) return DateTime.monday;
+    if (lower.contains('tue')) return DateTime.tuesday;
+    if (lower.contains('wed')) return DateTime.wednesday;
+    if (lower.contains('thu')) return DateTime.thursday;
+    if (lower.contains('fri')) return DateTime.friday;
+    if (lower.contains('sat')) return DateTime.saturday;
+    if (lower.contains('sun')) return DateTime.sunday;
+    return null;
   }
 }

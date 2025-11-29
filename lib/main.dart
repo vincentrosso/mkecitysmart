@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'citysmart/branding_preview.dart';
 import 'providers/user_provider.dart';
@@ -108,11 +109,13 @@ class _CitySmartShellState extends State<CitySmartShell> {
   bool _quickShown = false;
   bool _tutorialDone = false;
   int _tutorialStep = 0;
+  bool _welcomeChecked = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _showQuickStart());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowWelcome());
   }
 
   @override
@@ -218,6 +221,60 @@ class _CitySmartShellState extends State<CitySmartShell> {
                 ],
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _maybeShowWelcome() async {
+    if (_welcomeChecked) return;
+    _welcomeChecked = true;
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('seen_welcome_v1') ?? false;
+    if (seen || !mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: kCitySmartCard,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome to CitySmart',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Start with the Dashboard tiles to explore Parking, Alt-side, Heatmap, and Alerts. You can change city/language anytime in City settings.',
+                  style: TextStyle(color: kCitySmartText),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      await prefs.setBool('seen_welcome_v1', true);
+                      if (mounted) Navigator.pop(ctx);
+                    },
+                    child: const Text('Get started'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await prefs.setBool('seen_welcome_v1', true);
+                    if (mounted) Navigator.pop(ctx);
+                  },
+                  child: const Text('Skip'),
+                ),
+              ],
+            ),
           ),
         );
       },
