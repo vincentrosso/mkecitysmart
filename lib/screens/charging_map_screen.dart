@@ -11,6 +11,8 @@ import '../providers/user_provider.dart';
 import '../services/api_client.dart';
 import '../services/prediction_api_service.dart';
 import '../widgets/openchargemap_embed.dart';
+import '../services/location_service.dart';
+import '../services/open_charge_map_service.dart';
 
 class ChargingMapScreen extends StatefulWidget {
   const ChargingMapScreen({super.key});
@@ -20,8 +22,12 @@ class ChargingMapScreen extends StatefulWidget {
 }
 
 class _ChargingMapScreenState extends State<ChargingMapScreen> {
+  final _ocm = OpenChargeMapService();
   bool _showFastOnly = false;
   bool _showAvailableOnly = true;
+  bool _loadingStations = true;
+  String? _stationError;
+  List<EVStation> _stations = mockEvStations;
   EVStation? _selected;
   List<ParkingPrediction> _predictions = const [];
   bool _loadingPredictions = false;
@@ -29,8 +35,8 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   bool _includeWeather = true;
   _PredictionMode _mode = _PredictionMode.heatmap;
 
-  List<EVStation> get _stations {
-    return mockEvStations.where((station) {
+  List<EVStation> _filterStations() {
+    return _stations.where((station) {
       if (_showFastOnly && !station.hasFastCharging) return false;
       if (_showAvailableOnly && !station.hasAvailability) return false;
       return true;
@@ -40,13 +46,14 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStations());
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPredictions());
   }
 
   @override
   Widget build(BuildContext context) {
-    const center = LatLng(43.0389, -87.9065); // Milwaukee
-    final stations = _stations;
+    const center = LatLng(43.0389, -87.9065); // Default to Milwaukee
+    final stations = _filterStations();
     final predictions = _predictions;
     return Scaffold(
       appBar: AppBar(
@@ -206,6 +213,17 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
               onDirections: () => _openDirections(_selected!),
               onClose: () => setState(() => _selected = null),
             ),
+          if (_loadingStations)
+            const LinearProgressIndicator(minHeight: 3),
+          if (_stationError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Text(
+                _stationError!,
+                style:
+                    const TextStyle(color: Colors.redAccent, fontSize: 12),
+              ),
+            ),
           if (_loadingPredictions)
             const LinearProgressIndicator(minHeight: 3),
           if (predictions.isNotEmpty)
@@ -297,6 +315,43 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
         weatherScore: 0.05,
       );
     });
+  }
+
+  Future<void> _loadStations() async {
+    setState(() {
+      _loadingStations = true;
+      _stationError = null;
+    });
+
+    double lat = 43.0389;
+    double lng = -87.9065;
+
+    try {
+      final pos = await LocationService().getCurrentPosition();
+      if (pos != null) {
+        lat = pos.latitude;
+        lng = pos.longitude;
+      }
+    } catch (_) {
+      // ignore and use defaults
+    }
+
+    try {
+      final stations =
+          await _ocm.fetchStations(lat: lat, lng: lng, distanceKm: 15);
+      if (!mounted) return;
+      setState(() {
+        _stations = stations.isEmpty ? mockEvStations : stations;
+        _loadingStations = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stationError = 'Could not load live charging stations.';
+        _stations = mockEvStations;
+        _loadingStations = false;
+      });
+    }
   }
 
   void _openDetails(BuildContext context) {
