@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import '../models/parking_prediction.dart';
 import '../providers/user_provider.dart';
 import '../services/api_client.dart';
 import '../services/prediction_api_service.dart';
+import '../widgets/openchargemap_embed.dart';
 
 class ChargingMapScreen extends StatefulWidget {
   const ChargingMapScreen({super.key});
@@ -129,6 +131,8 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
               ],
             ),
           ),
+          // OpenChargeMap embed (web) or CTA (mobile/desktop).
+          OpenChargeMapEmbed(onOpenExternal: _openExternalMap),
           Expanded(
             child: FlutterMap(
               options: const MapOptions(
@@ -538,5 +542,15 @@ extension on _ChargingMapScreenState {
         const SnackBar(content: Text('Could not open maps app.')),
       );
     }
+  }
+
+  Future<void> _openExternalMap() async {
+    final uri = Uri.parse('https://map.openchargemap.io/?mode=embedded');
+    await launchUrl(
+      uri,
+      mode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
+    );
   }
 }
