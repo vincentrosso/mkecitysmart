@@ -120,8 +120,8 @@ class _Typography extends StatelessWidget {
       ),
       SizedBox(height: 6),
       Text(
-        'Body — Inter Regular 16. Clean, modern, legible.',
-        style: TextStyle(fontFamily: 'Inter', fontSize: 16),
+        'Body — Poppins Regular 16. Clean, modern, legible.',
+      style: TextStyle(fontFamily: 'Poppins', fontSize: 16),
       ),
     ],
   );
@@ -155,7 +155,7 @@ class _Buttons extends StatelessWidget {
           side: const BorderSide(color: Color(0xFFE0B000), width: 1.5),
           foregroundColor: const Color(0xFFE0B000),
           textStyle: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -167,7 +167,7 @@ class _Buttons extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFF5E8A45),
           textStyle: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -214,13 +214,13 @@ class _InputCard extends StatelessWidget {
         children: [
           Text(
             'Address',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 6),
           TextField(
             decoration: InputDecoration(
               hintText: '123 W Main St',
-              hintStyle: TextStyle(fontFamily: 'Inter'),
+              hintStyle: TextStyle(fontFamily: 'Poppins'),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Color(0xFF7CA726)),
                 borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -235,7 +235,7 @@ class _InputCard extends StatelessWidget {
           SizedBox(height: 10),
           Text(
             'Tip: set garbage reminders in Settings → Notifications.',
-            style: TextStyle(fontFamily: 'Inter', color: Colors.black54),
+            style: TextStyle(fontFamily: 'Poppins', color: Colors.black54),
           ),
         ],
       ),
@@ -292,7 +292,7 @@ class _AdPlaceholder extends StatelessWidget {
     child: const Center(
       child: Text(
         'AdMob Banner (ca-app-pub-xxxx/yyyy)',
-        style: TextStyle(fontFamily: 'Inter', color: Colors.black54),
+        style: TextStyle(fontFamily: 'Poppins', color: Colors.black54),
       ),
     ),
   );
@@ -356,7 +356,7 @@ class _ColorTile extends StatelessWidget {
     child: Text(
       label,
       style: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: 'Poppins',
         fontWeight: FontWeight.w600,
         color: outlined ? color : _on(color),
       ),
@@ -395,7 +395,7 @@ class _Tile extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
