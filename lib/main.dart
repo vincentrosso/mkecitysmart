@@ -33,6 +33,7 @@ import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/ad_service.dart';
+import 'screens/risk_reminders_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +73,7 @@ class MKEParkApp extends StatelessWidget {
           '/profile': (context) => const ProfileScreen(),
           '/vehicles': (context) => const VehicleManagementScreen(),
           '/preferences': (context) => const PreferencesScreen(),
-          '/alerts': (context) => const PreferencesScreen(),
+          '/alerts': (context) => const RiskRemindersScreen(),
           '/charging': (context) => const ChargingMapScreen(),
           '/report-sighting': (context) => const ReportSightingScreen(),
           '/tickets': (context) => const TicketWorkflowScreen(),
