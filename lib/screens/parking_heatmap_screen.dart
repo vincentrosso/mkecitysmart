@@ -146,11 +146,11 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: const [
-                            _LegendDot(color: Colors.greenAccent, label: 'Higher chance'),
+                            _LegendDot(color: Colors.greenAccent, label: 'High chance'),
                             SizedBox(height: 6),
                             _LegendDot(color: Colors.orangeAccent, label: 'Medium'),
                             SizedBox(height: 6),
-                            _LegendDot(color: Colors.redAccent, label: 'Lower chance'),
+                            _LegendDot(color: Colors.redAccent, label: 'Lower'),
                           ],
                         ),
                       ),
