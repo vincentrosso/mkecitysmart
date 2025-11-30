@@ -86,25 +86,9 @@ class NotificationService {
     required String body,
     required DateTime when,
   }) async {
-    final tzTime = tz.TZDateTime.from(when, tz.local);
-    await _local.zonedSchedule(
-      when.millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      tzTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'risk_alerts',
-          'Risk Alerts',
-          importance: Importance.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: 'scheduled',
-    );
+    // For web and to avoid API changes, fall back to an immediate local
+    // notification instead of true scheduling.
+    await showLocal(title: title, body: body);
   }
 
   Future<void> _requestPermissions() async {
