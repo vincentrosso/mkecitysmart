@@ -24,7 +24,6 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
   Position? _lastPosition;
   final _locationService = LocationService();
   String? _resolvedAddress;
-  String? _resolvedAddress;
 
   @override
   void dispose() {

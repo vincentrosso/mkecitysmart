@@ -70,17 +70,13 @@ class TicketLookupService {
   Ticket _ticketFromJson(Map<String, dynamic> json) {
     return Ticket(
       id: json['id'] as String,
-      status: _statusFromString(json['status'] as String? ?? 'open'),
+      plate: json['plate'] as String? ?? '',
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      currency: json['currency'] as String? ?? 'USD',
-      dueDate: _parseDate(json['dueDate']),
-      issueDate: _parseDate(json['issueDate']),
-      violation: json['violation'] as String? ?? '',
-      issuer: json['issuer'] as String? ?? '',
+      reason: json['violation'] as String? ?? '',
       location: json['location'] as String? ?? '',
-      feeWaiverEligible: json['feeWaiverEligible'] as bool? ?? false,
-      lateFees: (json['lateFees'] as num?)?.toDouble() ?? 0,
-      paymentUrl: json['paymentUrl'] as String?,
+      issuedAt: _parseDate(json['issueDate']),
+      dueDate: _parseDate(json['dueDate']),
+      status: _statusFromString(json['status'] as String? ?? 'open'),
     );
   }
 
@@ -89,7 +85,8 @@ class TicketLookupService {
       case 'paid':
         return TicketStatus.paid;
       case 'void':
-        return TicketStatus.voided;
+      case 'voided':
+        return TicketStatus.waived;
       default:
         return TicketStatus.open;
     }

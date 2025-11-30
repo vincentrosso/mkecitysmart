@@ -180,7 +180,7 @@ class LocationProvider extends ChangeNotifier {
     );
     if (urgent.nextSweep.difference(now).inHours <= 6) {
       _emergencyMessage =
-          '${urgent.zone} sweep within 6 hours. Park on ${urgent.allowedSide}.';
+          '${urgent.zone} sweep within 6 hours. Park on ${urgent.side}.';
     } else {
       _emergencyMessage = null;
     }

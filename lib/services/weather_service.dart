@@ -55,8 +55,8 @@ class WeatherService {
     if (periods == null || periods.isEmpty) return null;
     final first = periods.first as Map<String, dynamic>;
     final temp = (first['temperature'] as num?)?.toDouble();
-    final precip = (first['probabilityOfPrecipitation']?['value'] as num?)
-            ?.toDouble()
+    final precip = ((first['probabilityOfPrecipitation']?['value'] as num?)
+                ?.toDouble())
             ?.round() ??
         0;
     final short = (first['shortForecast'] as String?) ?? 'N/A';

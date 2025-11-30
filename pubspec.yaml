@@ -38,17 +38,18 @@ dependencies:
   shared_preferences: ^2.3.2
   qr_flutter: ^4.1.0
   intl: ^0.20.2
-  flutter_map: ^7.0.2
+  flutter_map: ^8.2.2
   latlong2: ^0.9.1
   url_launcher: ^6.3.0
-  geolocator: ^10.1.0
-  geocoding: ^2.1.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
   image_picker: ^1.1.2
   http: ^1.2.2
-  firebase_core: ^2.32.0
-  firebase_messaging: ^14.9.4
-  flutter_local_notifications: ^17.2.3
-  google_mobile_ads: ^4.0.0
+  firebase_core: ^4.2.1
+  firebase_messaging: ^16.0.4
+  flutter_local_notifications: ^19.5.0
+  google_mobile_ads: ^6.0.0
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:
