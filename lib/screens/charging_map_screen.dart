@@ -14,6 +14,7 @@ import '../widgets/openchargemap_embed.dart';
 import '../services/location_service.dart';
 import '../services/open_charge_map_service.dart';
 import '../services/weather_service.dart';
+import '../models/sighting_report.dart';
 
 class ChargingMapScreen extends StatefulWidget {
   const ChargingMapScreen({super.key});
@@ -40,6 +41,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   List<WeatherAlert> _weatherAlerts = const [];
   double _currentLat = 43.0389;
   double _currentLng = -87.9065;
+  bool _showSightings = true;
 
   bool get _hasFastStation =>
       _stations.any((s) => s.hasFastCharging && s.maxPowerKw >= 50);
@@ -66,6 +68,11 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     const center = LatLng(43.0389, -87.9065); // Default to Milwaukee
     final stations = _filterStations();
     final predictions = _predictions;
+    final sightings = context
+        .watch<UserProvider>()
+        .sightings
+        .where((s) => s.latitude != null && s.longitude != null)
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('EV charging map'),
@@ -174,6 +181,12 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                     setState(() => _mode = _PredictionMode.points);
                     _loadPredictions();
                   },
+                ),
+                FilterChip(
+                  selected: _showSightings,
+                  label: const Text('Sightings'),
+                  avatar: const Icon(Icons.visibility_outlined, size: 18),
+                  onSelected: (v) => setState(() => _showSightings = v),
                 ),
               ],
             ),
@@ -294,6 +307,27 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                       )
                       .toList(),
                 ),
+                if (_showSightings && sightings.isNotEmpty)
+                  MarkerLayer(
+                    markers: sightings.map((s) {
+                      final isTow = s.type == SightingType.towTruck;
+                      return Marker(
+                        width: 36,
+                        height: 36,
+                        point: LatLng(s.latitude!, s.longitude!),
+                        child: Tooltip(
+                          message: '${isTow ? 'Tow' : 'Enforcer'} • ${s.location}',
+                          child: Icon(
+                            isTow
+                                ? Icons.local_shipping_outlined
+                                : Icons.shield_moon_outlined,
+                            color: isTow ? Colors.redAccent : Colors.blueGrey,
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
               ],
             ),
           ),
