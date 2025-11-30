@@ -85,10 +85,9 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
                   DropdownMenuItem(value: 'es', child: Text('Español')),
-                  DropdownMenuItem(value: 'zh', child: Text('中文')),
+                  DropdownMenuItem(value: 'hmn', child: Text('Hmoob')),
+                  DropdownMenuItem(value: 'ar', child: Text('العربية')),
                   DropdownMenuItem(value: 'fr', child: Text('Français')),
-                  DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
-                  DropdownMenuItem(value: 'el', child: Text('Ελληνικά')),
                 ],
                 onChanged: (value) => setState(() => _languageCode = value ?? 'en'),
               ),

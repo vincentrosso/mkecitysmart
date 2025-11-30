@@ -6,6 +6,8 @@ import '../providers/user_provider.dart';
 import '../services/alternate_side_parking_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
+import 'alerts_landing_screen.dart';
+import 'risk_reminders_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -55,7 +57,12 @@ class DashboardScreen extends StatelessWidget {
                     icon: Icons.notifications_active_outlined,
                     title: 'Risk & reminders',
                     subtitle: 'Alerts, radius, preferences',
-                    onTap: () => Navigator.pushNamed(context, '/alerts'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AlertsLandingScreen(),
+                      ),
+                    ),
                   ),
                   FutureBuilder<String>(
                     future: _resolveAltSubtitle(provider),

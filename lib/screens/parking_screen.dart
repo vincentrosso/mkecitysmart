@@ -25,37 +25,15 @@ class ParkingScreen extends StatelessWidget {
             const SizedBox(height: 8),
             _AltSideCard(provider: provider),
             const SizedBox(height: 16),
-            Text('Actions', style: textTheme.titleLarge),
+            const _NearbyParkingCard(),
+            const SizedBox(height: 16),
+            Text('Predict & find', style: textTheme.titleLarge),
             const SizedBox(height: 12),
             _ActionRow(
               icon: Icons.map,
               title: 'Parking heatmap',
-              subtitle: 'See likely open spots nearby',
+              subtitle: 'See likely open spots nearby (predictive)',
               onTap: () => Navigator.pushNamed(context, '/parking-heatmap'),
-            ),
-            _ActionRow(
-              icon: Icons.compare_arrows,
-              title: 'Alt-side schedule',
-              subtitle: 'Full 14-day view & notifications',
-              onTap: () => Navigator.pushNamed(context, '/alternate-parking'),
-            ),
-            _ActionRow(
-              icon: Icons.warning_amber_rounded,
-              title: 'Report enforcer/tow',
-              subtitle: 'Send a sighting with location/time',
-              onTap: () => Navigator.pushNamed(context, '/report-sighting'),
-            ),
-            _ActionRow(
-              icon: Icons.history,
-              title: 'Parking history',
-              subtitle: 'View past alerts and receipts',
-              onTap: () => Navigator.pushNamed(context, '/history'),
-            ),
-            _ActionRow(
-              icon: Icons.notifications_active_outlined,
-              title: 'Alerts & preferences',
-              subtitle: 'Tow/ticket alerts, radius, reminders',
-              onTap: () => Navigator.pushNamed(context, '/preferences'),
             ),
           ],
         ),
@@ -172,6 +150,146 @@ class _ActionRow extends StatelessWidget {
         onTap: onTap,
       ),
     );
+  }
+}
+
+class _NearbyParkingCard extends StatefulWidget {
+  const _NearbyParkingCard();
+
+  @override
+  State<_NearbyParkingCard> createState() => _NearbyParkingCardState();
+}
+
+class _NearbyParkingCardState extends State<_NearbyParkingCard> {
+  final _locationService = LocationService();
+  bool _loading = true;
+  String? _error;
+  Position? _pos;
+
+  static final _spots = <_ParkingSpot>[
+    _ParkingSpot('Metered – Water St', 'Metered', 43.0389, -87.9069),
+    _ParkingSpot('Garage – 2nd & Michigan', 'Garage', 43.0380, -87.9115),
+    _ParkingSpot('Lot – Brady & Humboldt', 'Lot', 43.0543, -87.8906),
+    _ParkingSpot('Garage – Public Market', 'Garage', 43.0338, -87.9074),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final pos = await _locationService.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _pos = pos;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Location unavailable; showing default picks.';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = _spots..sort((a, b) => a.distanceTo(_pos).compareTo(b.distanceTo(_pos)));
+    return Card(
+      color: kCitySmartCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF1F3A34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Nearby parking',
+                  style: TextStyle(
+                    color: kCitySmartText,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 6),
+              Text(_error!, style: const TextStyle(color: Colors.orangeAccent)),
+            ],
+            const SizedBox(height: 8),
+            ...sorted.take(3).map(
+              (spot) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  spot.type == 'Garage'
+                      ? Icons.local_parking
+                      : spot.type == 'Metered'
+                          ? Icons.attach_money
+                          : Icons.place,
+                  color: kCitySmartYellow,
+                ),
+                title: Text(
+                  spot.name,
+                  style: const TextStyle(
+                    color: kCitySmartText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  '${spot.type} • ${spot.distanceTo(_pos).toStringAsFixed(1)} mi away',
+                  style: const TextStyle(color: kCitySmartText),
+                ),
+                trailing: TextButton(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/parking-heatmap'),
+                  child: const Text('Predictive'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ParkingSpot {
+  _ParkingSpot(this.name, this.type, this.lat, this.lng);
+  final String name;
+  final String type;
+  final double lat;
+  final double lng;
+
+  double distanceTo(Position? pos) {
+    if (pos == null) return 0.5;
+    final meters = Geolocator.distanceBetween(
+      pos.latitude,
+      pos.longitude,
+      lat,
+      lng,
+    );
+    return meters / 1609.34;
   }
 }
 
