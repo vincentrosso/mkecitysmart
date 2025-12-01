@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/maintenance_report.dart';
 import '../providers/user_provider.dart';
 import '../services/location_service.dart';
+import '../widgets/publicstuff_embed.dart';
 
 class MaintenanceReportScreen extends StatefulWidget {
   const MaintenanceReportScreen({super.key});
@@ -88,6 +89,13 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Text(
+                'Submit via City portal (PublicStuff)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const PublicStuffEmbed(),
+              const SizedBox(height: 16),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
