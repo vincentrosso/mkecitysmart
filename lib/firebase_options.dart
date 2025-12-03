@@ -13,12 +13,6 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
-      case TargetPlatform.windows:
-        return windows;
-      case TargetPlatform.linux:
-        return linux;
       default:
         return android;
     }
@@ -105,84 +99,7 @@ class DefaultFirebaseOptions {
     ),
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: String.fromEnvironment(
-      'FIREBASE_MACOS_API_KEY',
-      defaultValue: 'MISSING_FIREBASE_MACOS_API_KEY',
-    ),
-    appId: String.fromEnvironment(
-      'FIREBASE_MACOS_APP_ID',
-      defaultValue: 'MISSING_FIREBASE_MACOS_APP_ID',
-    ),
-    messagingSenderId: String.fromEnvironment(
-      'FIREBASE_MACOS_MESSAGING_SENDER_ID',
-      defaultValue: 'MISSING_FIREBASE_MACOS_MESSAGING_SENDER_ID',
-    ),
-    projectId: String.fromEnvironment(
-      'FIREBASE_MACOS_PROJECT_ID',
-      defaultValue: 'MISSING_FIREBASE_MACOS_PROJECT_ID',
-    ),
-    storageBucket: String.fromEnvironment(
-      'FIREBASE_MACOS_STORAGE_BUCKET',
-      defaultValue: 'MISSING_FIREBASE_MACOS_STORAGE_BUCKET',
-    ),
-    iosBundleId: String.fromEnvironment(
-      'FIREBASE_MACOS_BUNDLE_ID',
-      defaultValue: 'MISSING_FIREBASE_MACOS_BUNDLE_ID',
-    ),
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: String.fromEnvironment(
-      'FIREBASE_WINDOWS_API_KEY',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_API_KEY',
-    ),
-    appId: String.fromEnvironment(
-      'FIREBASE_WINDOWS_APP_ID',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_APP_ID',
-    ),
-    messagingSenderId: String.fromEnvironment(
-      'FIREBASE_WINDOWS_MESSAGING_SENDER_ID',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_MESSAGING_SENDER_ID',
-    ),
-    projectId: String.fromEnvironment(
-      'FIREBASE_WINDOWS_PROJECT_ID',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_PROJECT_ID',
-    ),
-    authDomain: String.fromEnvironment(
-      'FIREBASE_WINDOWS_AUTH_DOMAIN',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_AUTH_DOMAIN',
-    ),
-    storageBucket: String.fromEnvironment(
-      'FIREBASE_WINDOWS_STORAGE_BUCKET',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_STORAGE_BUCKET',
-    ),
-    measurementId: String.fromEnvironment(
-      'FIREBASE_WINDOWS_MEASUREMENT_ID',
-      defaultValue: 'MISSING_FIREBASE_WINDOWS_MEASUREMENT_ID',
-    ),
-  );
-
-  static const FirebaseOptions linux = FirebaseOptions(
-    apiKey: String.fromEnvironment(
-      'FIREBASE_LINUX_API_KEY',
-      defaultValue: 'MISSING_FIREBASE_LINUX_API_KEY',
-    ),
-    appId: String.fromEnvironment(
-      'FIREBASE_LINUX_APP_ID',
-      defaultValue: 'MISSING_FIREBASE_LINUX_APP_ID',
-    ),
-    messagingSenderId: String.fromEnvironment(
-      'FIREBASE_LINUX_MESSAGING_SENDER_ID',
-      defaultValue: 'MISSING_FIREBASE_LINUX_MESSAGING_SENDER_ID',
-    ),
-    projectId: String.fromEnvironment(
-      'FIREBASE_LINUX_PROJECT_ID',
-      defaultValue: 'MISSING_FIREBASE_LINUX_PROJECT_ID',
-    ),
-    storageBucket: String.fromEnvironment(
-      'FIREBASE_LINUX_STORAGE_BUCKET',
-      defaultValue: 'MISSING_FIREBASE_LINUX_STORAGE_BUCKET',
-    ),
-  );
+  static const FirebaseOptions macos = android;
+  static const FirebaseOptions windows = android;
+  static const FirebaseOptions linux = android;
 }
