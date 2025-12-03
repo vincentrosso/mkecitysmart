@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -29,10 +30,12 @@ import '../data/city_rule_packs.dart';
 import '../services/location_service.dart';
 
 class UserProvider extends ChangeNotifier {
-  UserProvider({required UserRepository userRepository})
-    : _repository = userRepository;
+  UserProvider({required UserRepository userRepository, FirebaseAuth? auth})
+    : _repository = userRepository,
+      _auth = auth ?? FirebaseAuth.instance;
 
   final UserRepository _repository;
+  final FirebaseAuth _auth;
   final ReportApiService _reportApi = ReportApiService(ApiClient());
 
   UserProfile? _profile;
@@ -67,8 +70,7 @@ class UserProvider extends ChangeNotifier {
   List<SightingReport> get sightings => _sightings;
   DateTime? get alertsMutedUntil => _alertsMutedUntil;
   List<PaymentReceipt> get receipts => _receipts;
-  AdPreferences get adPreferences =>
-      _profile?.adPreferences ?? _adPreferences;
+  AdPreferences get adPreferences => _profile?.adPreferences ?? _adPreferences;
   SubscriptionTier get tier => _profile?.tier ?? _tier;
   SubscriptionPlan get subscriptionPlan => _planForTier(tier);
   double get maxAlertRadiusMiles => subscriptionPlan.maxAlertRadiusMiles;
@@ -98,12 +100,14 @@ class UserProvider extends ChangeNotifier {
       }
     }
     // Overdue tickets increase risk.
-    final overdueTickets =
-        _tickets.where((t) => t.isOverdue && t.status == TicketStatus.open);
+    final overdueTickets = _tickets.where(
+      (t) => t.isOverdue && t.status == TicketStatus.open,
+    );
     score += overdueTickets.length * 8;
     // Expiring permits (<7 days) increase risk.
-    final expiringPermits =
-        permits.where((p) => p.endDate.difference(now).inDays <= 7);
+    final expiringPermits = permits.where(
+      (p) => p.endDate.difference(now).inDays <= 7,
+    );
     score += expiringPermits.length * 6;
     // Upcoming street sweeping within 48h increases risk.
     final sweepingSoon = sweepingSchedules.where(
@@ -112,6 +116,7 @@ class UserProvider extends ChangeNotifier {
     score += sweepingSoon.length * 12;
     return score.clamp(0, 100).toInt();
   }
+
   List<String> get cityParkingSuggestions {
     final set = <String>{};
     for (final schedule in sweepingSchedules) {
@@ -121,7 +126,23 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _repository.setActiveUser(user.uid);
+    } else {
+      await _repository.setActiveUser(null);
+    }
     _profile = await _repository.loadProfile();
+    await _hydrateFromStorage();
+    _initializing = false;
+    _guestMode = false;
+    _guestPermits = const [];
+    _guestReservations = const [];
+    _guestSweepingSchedules = const [];
+    notifyListeners();
+  }
+
+  Future<void> _hydrateFromStorage() async {
     final storedTickets = await _repository.loadTickets();
     _receipts = await _repository.loadReceipts();
     _adPreferences = _profile?.adPreferences ?? _adPreferences;
@@ -138,12 +159,33 @@ class UserProvider extends ChangeNotifier {
         ? storedTickets
         : List<Ticket>.from(sampleTickets);
     _sightings = await _repository.loadSightings();
-    _initializing = false;
-    _guestMode = false;
-    _guestPermits = const [];
-    _guestReservations = const [];
-    _guestSweepingSchedules = const [];
-    notifyListeners();
+  }
+
+  String _mapAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'This email already has an account.';
+      case 'invalid-email':
+        return 'The email address looks invalid.';
+      case 'weak-password':
+        return 'Choose a stronger password (6+ characters).';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'network-request-failed':
+        return 'Network error. Check your connection and try again.';
+      default:
+        return 'Authentication failed (${e.code}). Try again.';
+    }
+  }
+
+  String _nameFromEmail(String email) {
+    final parts = email.split('@');
+    if (parts.isNotEmpty && parts.first.trim().isNotEmpty) {
+      return parts.first.trim();
+    }
+    return 'CitySmart Driver';
   }
 
   void muteAlerts(Duration duration) {
@@ -156,7 +198,9 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void continueAsGuest() {
+  Future<void> continueAsGuest() async {
+    await _auth.signOut();
+    await _repository.setActiveUser(null);
     _guestMode = true;
     _profile = null;
     _guestPermits = _seedPermits();
@@ -171,48 +215,91 @@ class UserProvider extends ChangeNotifier {
     required String password,
     String? phone,
   }) async {
-    if (_profile != null) {
+    if (_auth.currentUser != null && !_guestMode) {
       return 'An account is already signed in on this device.';
     }
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       return 'All fields are required.';
     }
 
-    final newProfile = UserProfile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      email: email,
-      password: password,
-      phone: phone,
-      preferences: UserPreferences.defaults(),
-      vehicles: const [],
-      permits: _seedPermits(ownerHint: name),
-      reservations: _seedReservations(ownerHint: name),
-      sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
-    );
-    await _repository.saveProfile(newProfile);
-    _profile = newProfile;
-    _guestMode = false;
-    notifyListeners();
-    return null;
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user;
+      if (user == null) {
+        return 'Account creation failed. Please try again.';
+      }
+      await _repository.setActiveUser(user.uid);
+      final newProfile = UserProfile(
+        id: user.uid,
+        name: name,
+        email: email,
+        phone: phone,
+        preferences: UserPreferences.defaults(),
+        vehicles: const [],
+        permits: _seedPermits(ownerHint: name),
+        reservations: _seedReservations(ownerHint: name),
+        sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+      );
+      await _repository.saveProfile(newProfile);
+      _profile = newProfile;
+      _guestMode = false;
+      await _hydrateFromStorage();
+      notifyListeners();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e);
+    } catch (_) {
+      return 'Unable to create account right now.';
+    }
   }
 
   Future<String?> login(String email, String password) async {
-    final stored = await _repository.loadProfile();
-    if (stored == null) {
-      return 'No account found on this device.';
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user;
+      if (user == null) {
+        return 'Unable to sign in right now.';
+      }
+      await _repository.setActiveUser(user.uid);
+      var stored = await _repository.loadProfile();
+      if (stored == null) {
+        final fallbackName = user.displayName?.trim().isNotEmpty == true
+            ? user.displayName!.trim()
+            : _nameFromEmail(email);
+        stored = UserProfile(
+          id: user.uid,
+          name: fallbackName,
+          email: user.email ?? email,
+          phone: user.phoneNumber,
+          preferences: UserPreferences.defaults(),
+          vehicles: const [],
+          permits: _seedPermits(ownerHint: fallbackName),
+          reservations: _seedReservations(ownerHint: fallbackName),
+          sweepingSchedules: _seedSweepingSchedules(ownerHint: fallbackName),
+        );
+        await _repository.saveProfile(stored);
+      }
+      _profile = stored;
+      _guestMode = false;
+      await _hydrateFromStorage();
+      notifyListeners();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e);
+    } catch (_) {
+      return 'Unable to sign in right now.';
     }
-    if (stored.email.trim().toLowerCase() != email.trim().toLowerCase() ||
-        stored.password != password) {
-      return 'Invalid email or password.';
-    }
-    _profile = stored;
-    _guestMode = false;
-    notifyListeners();
-    return null;
   }
 
   Future<void> logout() async {
+    await _auth.signOut();
+    await _repository.setActiveUser(null);
     _profile = null;
     _guestMode = false;
     _guestPermits = const [];
@@ -229,11 +316,6 @@ class UserProvider extends ChangeNotifier {
     _cityId = 'default';
     _tenantId = 'default';
     _languageCode = 'en';
-    await _repository.clearProfile();
-    await _repository.saveSightings(const []);
-    await _repository.saveTickets(const []);
-    await _repository.saveReceipts(const []);
-    await _repository.saveMaintenanceReports(const []);
     notifyListeners();
   }
 
@@ -307,7 +389,8 @@ class UserProvider extends ChangeNotifier {
     // Respect toggles: tow alerts for tow, parkingNotifications for enforcer.
     if (report.type == SightingType.towTruck && !prefs.towAlerts) return;
     if (report.type == SightingType.parkingEnforcer &&
-        !prefs.parkingNotifications) return;
+        !prefs.parkingNotifications)
+      return;
 
     try {
       final pos = await LocationService().getCurrentPosition();
@@ -323,12 +406,8 @@ class UserProvider extends ChangeNotifier {
         final title = report.type == SightingType.towTruck
             ? 'Tow sighting nearby'
             : 'Enforcer sighting nearby';
-        final body =
-            '${report.location} • ${miles.toStringAsFixed(1)} mi away';
-        await NotificationService.instance.showLocal(
-          title: title,
-          body: body,
-        );
+        final body = '${report.location} • ${miles.toStringAsFixed(1)} mi away';
+        await NotificationService.instance.showLocal(title: title, body: body);
       }
     } catch (_) {
       // Silent failure; best-effort.
@@ -398,8 +477,9 @@ class UserProvider extends ChangeNotifier {
     final planCap = planFeeWaiverCap;
     waiverPct = waiverPct.clamp(0, planCap > 0 ? planCap : 0.6);
     final waiverAmount = beforeWaiver * waiverPct;
-    final total =
-        (beforeWaiver - waiverAmount).clamp(0, double.infinity).toDouble();
+    final total = (beforeWaiver - waiverAmount)
+        .clamp(0, double.infinity)
+        .toDouble();
 
     return PermitEligibilityResult(
       permitType: type,
@@ -524,8 +604,7 @@ class UserProvider extends ChangeNotifier {
     final planCap = planFeeWaiverCap;
     waiverPct = waiverPct.clamp(0, planCap > 0 ? planCap : 0.6);
     final waiverAmount = base * waiverPct;
-    final totalDue =
-        (base - waiverAmount).clamp(0, double.infinity).toDouble();
+    final totalDue = (base - waiverAmount).clamp(0, double.infinity).toDouble();
 
     final updated = ticket.copyWith(
       status: totalDue == 0 ? TicketStatus.waived : TicketStatus.paid,
@@ -533,9 +612,7 @@ class UserProvider extends ChangeNotifier {
       waiverReason: waiverNotes.join('; '),
       paymentMethod: method,
     );
-    _tickets = _tickets
-        .map((t) => t.id == ticket.id ? updated : t)
-        .toList();
+    _tickets = _tickets.map((t) => t.id == ticket.id ? updated : t).toList();
     _persistTickets();
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final receipt = PaymentReceipt(
@@ -643,22 +720,10 @@ class UserProvider extends ChangeNotifier {
 
   String _pickupLabel(PickupType type, String lang) {
     final map = {
-      'en': {
-        PickupType.garbage: 'Garbage',
-        PickupType.recycling: 'Recycling',
-      },
-      'fr': {
-        PickupType.garbage: 'Ordures',
-        PickupType.recycling: 'Recyclage',
-      },
-      'zh': {
-        PickupType.garbage: '垃圾',
-        PickupType.recycling: '回收',
-      },
-      'hi': {
-        PickupType.garbage: 'कचरा',
-        PickupType.recycling: 'रीसाइक्लिंग',
-      },
+      'en': {PickupType.garbage: 'Garbage', PickupType.recycling: 'Recycling'},
+      'fr': {PickupType.garbage: 'Ordures', PickupType.recycling: 'Recyclage'},
+      'zh': {PickupType.garbage: '垃圾', PickupType.recycling: '回收'},
+      'hi': {PickupType.garbage: 'कचरा', PickupType.recycling: 'रीसाइक्लिंग'},
       'el': {
         PickupType.garbage: 'Σκουπίδια',
         PickupType.recycling: 'Ανακύκλωση',
@@ -728,17 +793,16 @@ class UserProvider extends ChangeNotifier {
     return updated;
   }
 
-  double _distanceMeters(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
+  double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
     const earthRadius = 6371000; // meters
     final dLat = _degToRad(lat2 - lat1);
     final dLon = _degToRad(lon2 - lon1);
-    final a = (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    final a =
+        (sin(dLat / 2) * sin(dLat / 2)) +
+        cos(_degToRad(lat1)) *
+            cos(_degToRad(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return earthRadius * c;
   }
@@ -777,11 +841,31 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> changePassword(String password) async {
-    if (_profile == null || password.isEmpty) return;
-    _profile = _profile!.copyWith(password: password);
-    await _repository.saveProfile(_profile!);
-    notifyListeners();
+  Future<String?> changePassword(String password) async {
+    if (password.isEmpty) {
+      return 'Password cannot be empty.';
+    }
+    final user = _auth.currentUser;
+    if (user == null) {
+      return 'You must be signed in to update your password.';
+    }
+    try {
+      await user.updatePassword(password);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'weak-password':
+          return 'Choose a stronger password (6+ characters).';
+        case 'requires-recent-login':
+          return 'Please sign in again before changing your password.';
+        case 'network-request-failed':
+          return 'Network error. Check your connection and try again.';
+        default:
+          return 'Unable to update password (${e.code}).';
+      }
+    } catch (_) {
+      return 'Unable to update password right now.';
+    }
   }
 
   Future<void> addVehicle(Vehicle vehicle) async {

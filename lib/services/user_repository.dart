@@ -9,23 +9,44 @@ import '../models/user_profile.dart';
 import '../models/maintenance_report.dart';
 
 class UserRepository {
-  UserRepository._(this._prefs);
+  UserRepository._(this._prefs, this._activeUserId);
 
   final SharedPreferences _prefs;
+  String? _activeUserId;
 
   static const _profileKey = 'user_profile_v1';
   static const _sightingsKey = 'sighting_reports_v1';
   static const _ticketsKey = 'tickets_v1';
   static const _receiptsKey = 'receipts_v1';
   static const _maintenanceKey = 'maintenance_reports_v1';
+  static const _activeUserStorageKey = 'active_user_id_v1';
 
   static Future<UserRepository> create() async {
     final prefs = await SharedPreferences.getInstance();
-    return UserRepository._(prefs);
+    final storedActiveUser = prefs.getString(_activeUserStorageKey);
+    return UserRepository._(prefs, storedActiveUser);
+  }
+
+  String? get activeUserId => _activeUserId;
+
+  Future<void> setActiveUser(String? userId) async {
+    _activeUserId = userId;
+    if (userId == null) {
+      await _prefs.remove(_activeUserStorageKey);
+    } else {
+      await _prefs.setString(_activeUserStorageKey, userId);
+    }
+  }
+
+  String _scopedKey(String base) {
+    final suffix = _activeUserId ?? 'guest';
+    return '${base}_$suffix';
   }
 
   Future<UserProfile?> loadProfile() async {
-    final stored = _prefs.getString(_profileKey);
+    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
+    if (key == null) return null;
+    final stored = _prefs.getString(key);
     if (stored == null) return null;
     try {
       final json = jsonDecode(stored) as Map<String, dynamic>;
@@ -36,15 +57,19 @@ class UserRepository {
   }
 
   Future<void> saveProfile(UserProfile profile) async {
-    await _prefs.setString(_profileKey, jsonEncode(profile.toJson()));
+    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
+    if (key == null) return;
+    await _prefs.setString(key, jsonEncode(profile.toJson()));
   }
 
   Future<void> clearProfile() async {
-    await _prefs.remove(_profileKey);
+    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
+    if (key == null) return;
+    await _prefs.remove(key);
   }
 
   Future<List<SightingReport>> loadSightings() async {
-    final stored = _prefs.getString(_sightingsKey);
+    final stored = _prefs.getString(_scopedKey(_sightingsKey));
     if (stored == null) return [];
     try {
       final jsonList = jsonDecode(stored) as List<dynamic>;
@@ -58,11 +83,11 @@ class UserRepository {
 
   Future<void> saveSightings(List<SightingReport> reports) async {
     final serialized = reports.map((report) => report.toJson()).toList();
-    await _prefs.setString(_sightingsKey, jsonEncode(serialized));
+    await _prefs.setString(_scopedKey(_sightingsKey), jsonEncode(serialized));
   }
 
   Future<List<Ticket>> loadTickets() async {
-    final stored = _prefs.getString(_ticketsKey);
+    final stored = _prefs.getString(_scopedKey(_ticketsKey));
     if (stored == null) return [];
     try {
       final jsonList = jsonDecode(stored) as List<dynamic>;
@@ -76,18 +101,16 @@ class UserRepository {
 
   Future<void> saveTickets(List<Ticket> tickets) async {
     final serialized = tickets.map((ticket) => ticket.toJson()).toList();
-    await _prefs.setString(_ticketsKey, jsonEncode(serialized));
+    await _prefs.setString(_scopedKey(_ticketsKey), jsonEncode(serialized));
   }
 
   Future<List<PaymentReceipt>> loadReceipts() async {
-    final stored = _prefs.getString(_receiptsKey);
+    final stored = _prefs.getString(_scopedKey(_receiptsKey));
     if (stored == null) return [];
     try {
       final jsonList = jsonDecode(stored) as List<dynamic>;
       return jsonList
-          .map(
-            (item) => PaymentReceipt.fromJson(item as Map<String, dynamic>),
-          )
+          .map((item) => PaymentReceipt.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (_) {
       return [];
@@ -96,19 +119,17 @@ class UserRepository {
 
   Future<void> saveReceipts(List<PaymentReceipt> receipts) async {
     final serialized = receipts.map((r) => r.toJson()).toList();
-    await _prefs.setString(_receiptsKey, jsonEncode(serialized));
+    await _prefs.setString(_scopedKey(_receiptsKey), jsonEncode(serialized));
   }
 
   Future<List<MaintenanceReport>> loadMaintenanceReports() async {
-    final stored = _prefs.getString(_maintenanceKey);
+    final stored = _prefs.getString(_scopedKey(_maintenanceKey));
     if (stored == null) return [];
     try {
       final jsonList = jsonDecode(stored) as List<dynamic>;
       return jsonList
           .map(
-            (item) => MaintenanceReport.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) => MaintenanceReport.fromJson(item as Map<String, dynamic>),
           )
           .toList();
     } catch (_) {
@@ -116,10 +137,8 @@ class UserRepository {
     }
   }
 
-  Future<void> saveMaintenanceReports(
-    List<MaintenanceReport> reports,
-  ) async {
+  Future<void> saveMaintenanceReports(List<MaintenanceReport> reports) async {
     final serialized = reports.map((r) => r.toJson()).toList();
-    await _prefs.setString(_maintenanceKey, jsonEncode(serialized));
+    await _prefs.setString(_scopedKey(_maintenanceKey), jsonEncode(serialized));
   }
 }

@@ -1,0 +1,81 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  android:
+    name: Android build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Prepare Firebase env and secrets
+        run: |
+          mkdir -p .secrets/firebase/android .secrets/firebase/ios .secrets/firebase/macos
+          echo "${{ secrets.FIREBASE_ENV_FILE }}" > .env.firebase
+          if [[ -n "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}" ]]; then
+            echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}" | base64 --decode > .secrets/firebase/android/google-services.json
+          fi
+          if [[ -n "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}" ]]; then
+            echo "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > .secrets/firebase/ios/GoogleService-Info.plist
+          fi
+
+      - name: Flutter pub get
+        run: ./scripts/flutter_with_secrets.sh pub get
+
+      - name: Build Android APK
+        run: ./scripts/flutter_with_secrets.sh build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  ios:
+    name: iOS build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Prepare Firebase env and secrets
+        run: |
+          mkdir -p .secrets/firebase/android .secrets/firebase/ios .secrets/firebase/macos
+          echo "${{ secrets.FIREBASE_ENV_FILE }}" > .env.firebase
+          if [[ -n "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}" ]]; then
+            echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}" | base64 --decode > .secrets/firebase/android/google-services.json
+          fi
+          if [[ -n "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}" ]]; then
+            echo "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > .secrets/firebase/ios/GoogleService-Info.plist
+          fi
+
+      - name: Flutter pub get
+        run: ./scripts/flutter_with_secrets.sh pub get
+
+      - name: Build unsigned IPA
+        run: ./scripts/flutter_with_secrets.sh build ipa --no-codesign
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runner-ipa
+          path: build/ios/ipa/Runner.ipa

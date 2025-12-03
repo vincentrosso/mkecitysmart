@@ -73,9 +73,10 @@ class _AuthScreenState extends State<AuthScreen> {
     Navigator.pushReplacementNamed(context, '/landing');
   }
 
-  void _continueAsGuest() {
+  Future<void> _continueAsGuest() async {
     final provider = context.read<UserProvider>();
-    provider.continueAsGuest();
+    await provider.continueAsGuest();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/landing');
   }
 
@@ -167,8 +168,11 @@ class _AuthScreenState extends State<AuthScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: OutlinedButton.icon(
-              onPressed:
-                  _loggingIn || _registering ? null : _continueAsGuest,
+              onPressed: _loggingIn || _registering
+                  ? null
+                  : () {
+                      _continueAsGuest();
+                    },
               icon: const Icon(Icons.visibility_outlined),
               label: const Text('Continue as guest'),
             ),

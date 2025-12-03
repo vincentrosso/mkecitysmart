@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'citysmart/branding_preview.dart';
+import 'firebase_options.dart';
 import 'providers/user_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/charging_map_screen.dart';
@@ -38,9 +40,11 @@ import 'screens/alerts_landing_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (!kIsWeb) {
-    await AdService.instance
-        .initialize(appId: 'ca-app-pub-2009498889741048~9019853313');
+    await AdService.instance.initialize(
+      appId: 'ca-app-pub-2009498889741048~9019853313',
+    );
   }
   await NotificationService.instance.initialize();
   final repository = await UserRepository.create();
@@ -83,10 +87,8 @@ class MKEParkApp extends StatelessWidget {
           '/predictions': (context) => const ChargingMapScreen(),
           '/garbage': (context) => const GarbageScheduleScreen(),
           '/city-settings': (context) => const CitySettingsScreen(),
-          '/alternate-parking': (context) =>
-              const AlternateSideParkingScreen(),
-          '/parking-heatmap': (context) =>
-              const ParkingHeatmapScreen(),
+          '/alternate-parking': (context) => const AlternateSideParkingScreen(),
+          '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
@@ -122,11 +124,7 @@ class _CitySmartShellState extends State<CitySmartShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = const [
-      DashboardScreen(),
-      MapScreen(),
-      FeedScreen(),
-    ];
+    final pages = const [DashboardScreen(), MapScreen(), FeedScreen()];
 
     return Scaffold(
       body: pages[_index],
@@ -138,10 +136,7 @@ class _CitySmartShellState extends State<CitySmartShell> {
             icon: Icon(Icons.dashboard_outlined),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            label: 'Map',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
           BottomNavigationBarItem(
             icon: Icon(Icons.view_list_outlined),
             label: 'Feed',
@@ -203,8 +198,8 @@ class _CitySmartShellState extends State<CitySmartShell> {
                     onPressed: _tutorialStep == 0
                         ? null
                         : () => setState(() {
-                              _tutorialStep--;
-                            }),
+                            _tutorialStep--;
+                          }),
                     child: const Text('Back'),
                   ),
                   FilledButton(
@@ -240,7 +235,9 @@ class _CitySmartShellState extends State<CitySmartShell> {
       barrierDismissible: false,
       builder: (ctx) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: kCitySmartCard,
           child: Padding(
             padding: const EdgeInsets.all(20),

@@ -46,6 +46,7 @@ dependencies:
   image_picker: ^1.1.2
   http: ^1.2.2
   firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^19.5.0
   google_mobile_ads: ^6.0.0
