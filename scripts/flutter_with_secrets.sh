@@ -48,11 +48,11 @@ copy_secret_file "${FIREBASE_MACOS_GOOGLE_SERVICE_INFO_PATH:-}" \
   "macos/GoogleService-Info.plist"
 
 strip_google_ads_native_templates() {
-  if ! command -v dart >/dev/null 2>&1; then
+  if ! command -v flutter >/dev/null 2>&1; then
     return
   fi
   local cache
-  cache=$(dart pub cache path 2>/dev/null || true)
+  cache=$(flutter pub cache path 2>/dev/null || true)
   if [[ -z "$cache" ]]; then
     return
   fi
