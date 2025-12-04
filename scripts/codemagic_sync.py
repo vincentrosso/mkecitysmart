@@ -39,8 +39,13 @@ def api_request(
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     with urllib.request.urlopen(req) as resp:  # nosec B310
         body = resp.read()
-        if resp.status >= 200 and resp.status < 300:
-            return json.loads(body) if body else None
+        if 200 <= resp.status < 300:
+            if not body:
+                return None
+            try:
+                return json.loads(body)
+            except json.JSONDecodeError:
+                return body.decode()
         raise RuntimeError(f"Codemagic API error {resp.status}: {body.decode()}")
 
 
