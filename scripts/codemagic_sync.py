@@ -110,34 +110,94 @@ def main(argv: list[str]) -> int:
         "--description",
         help="Optional description for the variable group",
     )
-    parser.add_argument("--env-file", required=True, type=pathlib.Path)
-    parser.add_argument("--android-json", required=True, type=pathlib.Path)
-    parser.add_argument("--ios-plist", required=True, type=pathlib.Path)
+    parser.add_argument("--env-file", type=pathlib.Path)
+    parser.add_argument("--android-json", type=pathlib.Path)
+    parser.add_argument("--ios-plist", type=pathlib.Path)
+    parser.add_argument("--distribution-p12", type=pathlib.Path)
+    parser.add_argument("--distribution-p12-password", help="Password for the .p12 certificate")
+    parser.add_argument("--provisioning-profile", type=pathlib.Path)
+    parser.add_argument("--app-store-key", type=pathlib.Path)
     args = parser.parse_args(argv)
 
-    for path in (args.env_file, args.android_json, args.ios_plist):
+    file_args = [
+        ("env_file", args.env_file),
+        ("android_json", args.android_json),
+        ("ios_plist", args.ios_plist),
+        ("distribution_p12", args.distribution_p12),
+        ("provisioning_profile", args.provisioning_profile),
+        ("app_store_key", args.app_store_key),
+    ]
+
+    for label, path in file_args:
+        if path is None:
+            continue
         if not path.exists():
-            print(f"Missing file: {path}", file=sys.stderr)
+            print(f"Missing {label}: {path}", file=sys.stderr)
             return 1
 
     group_id = ensure_group(args.app_id, args.token, args.group, args.description)
-    variables = [
-        {
-            "name": "FIREBASE_ENV_FILE",
-            "value": args.env_file.read_text(encoding="utf-8"),
-            "secure": True,
-        },
-        {
-            "name": "ANDROID_GOOGLE_SERVICES_JSON",
-            "value": encode_file(args.android_json),
-            "secure": True,
-        },
-        {
-            "name": "IOS_GOOGLE_SERVICE_INFO_PLIST",
-            "value": encode_file(args.ios_plist),
-            "secure": True,
-        },
-    ]
+    variables = []
+    if args.env_file:
+        variables.append(
+            {
+                "name": "FIREBASE_ENV_FILE",
+                "value": args.env_file.read_text(encoding="utf-8"),
+                "secure": True,
+            }
+        )
+    if args.android_json:
+        variables.append(
+            {
+                "name": "ANDROID_GOOGLE_SERVICES_JSON",
+                "value": encode_file(args.android_json),
+                "secure": True,
+            }
+        )
+    if args.ios_plist:
+        variables.append(
+            {
+                "name": "IOS_GOOGLE_SERVICE_INFO_PLIST",
+                "value": encode_file(args.ios_plist),
+                "secure": True,
+            }
+        )
+    if args.distribution_p12:
+        if not args.distribution_p12_password:
+            print("distribution-p12-password is required when --distribution-p12 is provided", file=sys.stderr)
+            return 1
+        variables.append(
+            {
+                "name": "IOS_DISTRIBUTION_CERTIFICATE",
+                "value": encode_file(args.distribution_p12),
+                "secure": True,
+            }
+        )
+        variables.append(
+            {
+                "name": "IOS_CERTIFICATE_PASSWORD",
+                "value": args.distribution_p12_password,
+                "secure": True,
+            }
+        )
+    if args.provisioning_profile:
+        variables.append(
+            {
+                "name": "IOS_PROVISIONING_PROFILE",
+                "value": encode_file(args.provisioning_profile),
+                "secure": True,
+            }
+        )
+    if args.app_store_key:
+        variables.append(
+            {
+                "name": "APP_STORE_CONNECT_PRIVATE_KEY",
+                "value": args.app_store_key.read_text(encoding="utf-8"),
+                "secure": True,
+            }
+        )
+    if not variables:
+        print("No variables to upload. Provide at least one file/secret.", file=sys.stderr)
+        return 1
     bulk_import(args.app_id, args.token, group_id, variables)
     return 0
 

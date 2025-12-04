@@ -85,6 +85,24 @@ drivers. This repository contains:
     --android-json .secrets/firebase/android/google-services.json \
     --ios-plist .secrets/firebase/ios/GoogleService-Info.plist
   ```
+- To upload signing assets use the same script with extra flags, e.g.
+  ```bash
+  python scripts/codemagic_sync.py \
+    --app-id YOUR_CODEMAGIC_APP_ID \
+    --token "$CODEMAGIC_TOKEN" \
+    --group ios-signing \
+    --distribution-p12 .secrets/apple/codemagic_code_sign.p12 \
+    --distribution-p12-password '<p12 password>' \
+    --provisioning-profile .secrets/apple/J8U8FW3PA8_20251204.mobileprovision
+  ```
+- And for App Store Connect API keys:
+  ```bash
+  python scripts/codemagic_sync.py \
+    --app-id YOUR_CODEMAGIC_APP_ID \
+    --token "$CODEMAGIC_TOKEN" \
+    --group app-store-connect \
+    --app-store-key .secrets/apple/Codemagic_AppStoreConnectApi_AuthKey_<KEYID>.p8
+  ```
 
 ## Automated Versioning
 - Every push to `main` triggers `.github/workflows/auto_version.yml`.
