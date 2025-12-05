@@ -134,6 +134,25 @@ def main(argv: list[str]) -> int:
     if not args.token:
         args.token = config.get("CODEMAGIC_TOKEN")
 
+    def config_path_value(key: str) -> pathlib.Path | None:
+        value = config.get(key)
+        return pathlib.Path(value) if value else None
+
+    if args.env_file is None:
+        args.env_file = config_path_value("FIREBASE_ENV_FILE")
+    if args.android_json is None:
+        args.android_json = config_path_value("ANDROID_GOOGLE_SERVICES_JSON")
+    if args.ios_plist is None:
+        args.ios_plist = config_path_value("IOS_GOOGLE_SERVICE_INFO_PLIST")
+    if args.distribution_p12 is None:
+        args.distribution_p12 = config_path_value("IOS_DISTRIBUTION_P12")
+    if args.distribution_p12_password is None:
+        args.distribution_p12_password = config.get("IOS_DISTRIBUTION_P12_PASSWORD")
+    if args.provisioning_profile is None:
+        args.provisioning_profile = config_path_value("IOS_PROVISIONING_PROFILE")
+    if args.app_store_key is None:
+        args.app_store_key = config_path_value("APP_STORE_CONNECT_KEY")
+
     if not args.app_id or not args.token:
         print("Error: provide --app-id and --token (or define them in codemagic.conf).", file=sys.stderr)
         return 1

@@ -73,32 +73,35 @@ drivers. This repository contains:
     `APP_STORE_CONNECT_PRIVATE_KEY`, `APP_STORE_CONNECT_APP_ID`.
   - `android-signing` (optional): `ANDROID_KEYSTORE_BASE64`,
     `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
-- Push Firebase secrets to Codemagic via API (creates/updates the
-  `firebase-secrets` variable group):
+- Copy `codemagic.conf` (git-ignored) from the repo root and populate it with
+  your Codemagic app ID, API token, and local file paths (defaults already point
+  to `.env.firebase`, `.secrets/firebase/...`, and `.secrets/apple/...`). Then
+  you can run the sync script without flags. Examples:
   ```bash
-  python scripts/codemagic_sync.py \
-    --group firebase-secrets \
+  python scripts/codemagic_sync.py --group firebase-secrets
+  python scripts/codemagic_sync.py --group ios-signing
+  python scripts/codemagic_sync.py --group app-store-connect
+  ```
+- If you prefer passing flags manually, here are equivalent commands:
+  - Firebase secrets (`firebase-secrets`):
+  ```bash
+  python scripts/codemagic_sync.py --group firebase-secrets \
     --env-file .env.firebase \
     --android-json .secrets/firebase/android/google-services.json \
     --ios-plist .secrets/firebase/ios/GoogleService-Info.plist
   ```
-- To upload signing assets use the same script with extra flags, e.g.
+  - Signing assets (`ios-signing`):
   ```bash
-  python scripts/codemagic_sync.py \
-    --group ios-signing \
+  python scripts/codemagic_sync.py --group ios-signing \
     --distribution-p12 .secrets/apple/codemagic_code_sign.p12 \
     --distribution-p12-password '<p12 password>' \
     --provisioning-profile .secrets/apple/J8U8FW3PA8_20251204.mobileprovision
   ```
-- And for App Store Connect API keys:
+  - App Store Connect API key (`app-store-connect`):
   ```bash
-  python scripts/codemagic_sync.py \
-    --group app-store-connect \
+  python scripts/codemagic_sync.py --group app-store-connect \
     --app-store-key .secrets/apple/Codemagic_AppStoreConnectApi_AuthKey_<KEYID>.p8
   ```
-- The script reads `codemagic.conf` (same directory) for default
-  `CODEMAGIC_APP_ID` and `CODEMAGIC_TOKEN`. Copy the template and fill in local
-  values; the file is git-ignored because it contains secrets.
 
 ## Automated Versioning
 - Every push to `main` triggers `.github/workflows/auto_version.yml`.
