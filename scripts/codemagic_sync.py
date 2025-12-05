@@ -79,7 +79,12 @@ def ensure_group(app_id: str, token: str, name: str, description: str | None) ->
     if description:
         payload["description"] = description
     created = api_request("POST", f"/{app_id}/variable-groups", token, payload)
-    group_id = created.get("id") or created.get("_id")
+    group_data = (
+        created.get("variableGroup")
+        or created.get("variable_group")
+        or created
+    )
+    group_id = group_data.get("id") or group_data.get("_id")
     if not group_id:
         raise RuntimeError("Failed to create variable group")
     print(f"✔ Created variable group '{name}' ({group_id})")
