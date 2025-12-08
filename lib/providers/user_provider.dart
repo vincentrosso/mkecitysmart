@@ -32,12 +32,17 @@ import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
 
 class UserProvider extends ChangeNotifier {
-  UserProvider({required UserRepository userRepository, FirebaseAuth? auth})
-    : _repository = userRepository,
-      _auth = auth ?? FirebaseAuth.instance;
+  UserProvider({
+    required UserRepository userRepository,
+    FirebaseAuth? auth,
+    required bool firebaseReady,
+  })  : _repository = userRepository,
+        _firebaseEnabled = firebaseReady,
+        _auth = firebaseReady ? (auth ?? FirebaseAuth.instance) : null;
 
   final UserRepository _repository;
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _auth;
+  final bool _firebaseEnabled;
   final ReportApiService _reportApi = ReportApiService(ApiClient());
 
   UserProfile? _profile;
@@ -128,7 +133,19 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    final user = _auth.currentUser;
+    if (_auth == null || !_firebaseEnabled) {
+      await _repository.setActiveUser(null);
+      _profile = null;
+      _initializing = false;
+      _guestMode = true;
+      _guestPermits = _seedPermits();
+      _guestReservations = _seedReservations();
+      _guestSweepingSchedules = _seedSweepingSchedules();
+      await _hydrateFromStorage();
+      notifyListeners();
+      return;
+    }
+    final user = _auth!.currentUser;
     if (user != null) {
       await _repository.setActiveUser(user.uid);
     } else {
@@ -201,7 +218,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> continueAsGuest() async {
-    await _auth.signOut();
+    await _auth?.signOut();
     await _repository.setActiveUser(null);
     _guestMode = true;
     _profile = null;
@@ -218,7 +235,10 @@ class UserProvider extends ChangeNotifier {
     required String password,
     String? phone,
   }) async {
-    if (_auth.currentUser != null && !_guestMode) {
+    if (_auth == null || !_firebaseEnabled) {
+      return 'Sign-up is unavailable (Firebase disabled on this build).';
+    }
+    if (_auth!.currentUser != null && !_guestMode) {
       return 'An account is already signed in on this device.';
     }
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
@@ -226,7 +246,7 @@ class UserProvider extends ChangeNotifier {
     }
 
     try {
-      final credential = await _auth.createUserWithEmailAndPassword(
+      final credential = await _auth!.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -274,8 +294,11 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<String?> login(String email, String password) async {
+    if (_auth == null || !_firebaseEnabled) {
+      return 'Sign-in is unavailable (Firebase disabled on this build).';
+    }
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final credential = await _auth!.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -329,7 +352,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _auth.signOut();
+    await _auth?.signOut();
     await _repository.setActiveUser(null);
     _profile = null;
     _guestMode = false;
@@ -896,7 +919,10 @@ class UserProvider extends ChangeNotifier {
     if (password.isEmpty) {
       return 'Password cannot be empty.';
     }
-    final user = _auth.currentUser;
+    if (_auth == null || !_firebaseEnabled) {
+      return 'Password updates unavailable (Firebase disabled on this build).';
+    }
+    final user = _auth?.currentUser;
     if (user == null) {
       return 'You must be signed in to update your password.';
     }

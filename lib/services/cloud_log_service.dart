@@ -19,6 +19,12 @@ class CloudLogService {
       debugPrint('[CloudLog] Firebase unavailable; logging disabled.');
       return;
     }
+    // Skip Firestore logging on web to avoid JS interop/network hangs when
+    // Firestore isn't configured for the web target.
+    if (kIsWeb) {
+      debugPrint('[CloudLog] Disabled on web build.');
+      return;
+    }
     try {
       _firestore = FirebaseFirestore.instance;
       _enabled = true;

@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'citysmart/branding_preview.dart';
 import 'firebase_bootstrap.dart';
+import 'services/bootstrap_diagnostics.dart';
 import 'services/cloud_log_service.dart';
 import 'providers/user_provider.dart';
 import 'screens/auth_screen.dart';
@@ -32,36 +34,133 @@ import 'screens/parking_heatmap_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
-import 'theme/app_theme.dart';
 import 'screens/risk_reminders_screen.dart';
 import 'screens/alerts_landing_screen.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final diagnostics = BootstrapDiagnostics();
+  diagnostics
+    ..addMetadata('Platform', describeEnum(defaultTargetPlatform))
+    ..addMetadata(
+      'BuildMode',
+      kReleaseMode
+          ? 'release'
+          : kProfileMode
+              ? 'profile'
+              : 'debug',
+    );
+
+  const skipFirebaseBootstrap =
+      bool.fromEnvironment('SKIP_FIREBASE', defaultValue: false);
+  diagnostics.addMetadata('SKIP_FIREBASE', skipFirebaseBootstrap);
   const enableRemoteNotifications =
       bool.fromEnvironment('ENABLE_PUSH_NOTIFICATIONS', defaultValue: false);
-  final firebaseReady = await initializeFirebaseIfAvailable();
-  await CloudLogService.instance.initialize(firebaseReady: firebaseReady);
-  if (!firebaseReady) {
-    runApp(const MissingFirebaseConfigApp());
-    return;
+  diagnostics.addMetadata(
+    'ENABLE_PUSH_NOTIFICATIONS',
+    enableRemoteNotifications,
+  );
+
+  bool firebaseReady = false;
+  if (skipFirebaseBootstrap) {
+    diagnostics.recordStatus(
+      'Firebase',
+      BootstrapStatus.skipped,
+      details: 'Skipped via SKIP_FIREBASE dart define.',
+    );
+  } else {
+    firebaseReady = await diagnostics.recordFuture<bool>(
+      'Firebase',
+      initializeFirebaseIfAvailable,
+      onSuccess: (ready, entry) {
+        if (ready) {
+          entry.details = 'Initialization completed.';
+        } else {
+          entry.setStatus(
+            BootstrapStatus.warning,
+            message:
+                'Config missing. Running without Firebase (no push/logging).',
+          );
+        }
+      },
+    );
   }
-  final shouldInitNotifications = enableRemoteNotifications;
-  await NotificationService.instance
-      .initialize(enableRemoteNotifications: shouldInitNotifications);
-  final repository = await UserRepository.create();
-  runApp(MKEParkApp(userRepository: repository));
+  diagnostics.addMetadata('FirebaseReady', firebaseReady);
+
+  await diagnostics.recordFuture<void>(
+    'CloudLogService',
+    () => CloudLogService.instance.initialize(firebaseReady: firebaseReady),
+    onSuccess: (_, entry) {
+      if (firebaseReady) {
+        entry.details = 'Cloud logging enabled.';
+      } else {
+        entry.setStatus(
+          BootstrapStatus.info,
+          message: 'Skipped; Firebase unavailable.',
+        );
+      }
+    },
+  );
+
+  final shouldInitNotifications =
+      firebaseReady && enableRemoteNotifications;
+  diagnostics.addMetadata(
+    'InitPushNotifications',
+    shouldInitNotifications,
+  );
+
+  await diagnostics.recordFuture<void>(
+    'NotificationService',
+    () => NotificationService.instance
+        .initialize(enableRemoteNotifications: shouldInitNotifications),
+    onSuccess: (_, entry) {
+      if (shouldInitNotifications) {
+        entry.details = 'Remote + local notifications ready.';
+      } else {
+        entry.setStatus(
+          BootstrapStatus.info,
+          message:
+              'Remote notifications disabled/unsupported. Local notifications ready on mobile.',
+        );
+      }
+    },
+  );
+
+  final repository = await diagnostics.recordFuture<UserRepository>(
+    'UserRepository',
+    UserRepository.create,
+    onSuccess: (_, entry) => entry.details = 'Repository ready.',
+  );
+
+  runApp(
+    MKEParkApp(
+      userRepository: repository,
+      diagnostics: diagnostics,
+      firebaseReady: firebaseReady,
+    ),
+  );
 }
 
 class MKEParkApp extends StatelessWidget {
-  const MKEParkApp({super.key, required this.userRepository});
+  const MKEParkApp({
+    super.key,
+    required this.userRepository,
+    required this.diagnostics,
+    required this.firebaseReady,
+  });
 
   final UserRepository userRepository;
+  final BootstrapDiagnostics diagnostics;
+  final bool firebaseReady;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => UserProvider(userRepository: userRepository)..initialize(),
+      create: (_) => UserProvider(
+        userRepository: userRepository,
+        firebaseReady: firebaseReady,
+      )..initialize(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'MKEPark',
@@ -89,7 +188,8 @@ class MKEParkApp extends StatelessWidget {
           '/predictions': (context) => const ChargingMapScreen(),
           '/garbage': (context) => const GarbageScheduleScreen(),
           '/city-settings': (context) => const CitySettingsScreen(),
-          '/alternate-parking': (context) => const AlternateSideParkingScreen(),
+          '/alternate-parking': (context) =>
+              const AlternateSideParkingScreen(),
           '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
@@ -300,30 +400,6 @@ class _CitySmartShellState extends State<CitySmartShell> {
       default:
         return 'unknown';
     }
-  }
-}
-
-class MissingFirebaseConfigApp extends StatelessWidget {
-  const MissingFirebaseConfigApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'Firebase configuration is missing.\n\n'
-              'Copy your GoogleService-Info.plist / google-services.json files into '
-              '.secrets/firebase/... and rerun the app.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
