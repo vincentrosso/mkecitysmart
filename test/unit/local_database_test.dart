@@ -16,7 +16,7 @@ void main() {
       await db.close();
     });
 
-    UserProfile _sampleProfile({String id = 'u1'}) {
+    UserProfile sampleProfile({String id = 'u1'}) {
       return UserProfile(
         id: id,
         name: 'Test User',
@@ -41,7 +41,7 @@ void main() {
     }
 
     test('upsert and fetch profile with vehicles', () async {
-      final profile = _sampleProfile();
+      final profile = sampleProfile();
       await db.upsertProfile(profile);
 
       final fetched = await db.fetchProfile('u1');
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('clearProfile removes profile and vehicles', () async {
-      await db.upsertProfile(_sampleProfile());
+      await db.upsertProfile(sampleProfile());
       await db.clearProfile('u1');
 
       final fetched = await db.fetchProfile('u1');
@@ -60,7 +60,7 @@ void main() {
     });
 
     test('enqueueProfileSync stores pending mutation', () async {
-      await db.enqueueProfileSync(_sampleProfile());
+      await db.enqueueProfileSync(sampleProfile());
       final pending = await db.pendingMutations();
       expect(pending.length, 1);
       await db.removePending(pending.first.id);

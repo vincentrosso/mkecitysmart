@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:mkecitysmart/models/parking_prediction.dart';
 import 'package:mkecitysmart/services/api_client.dart';
 import 'package:mkecitysmart/services/prediction_api_service.dart';
 import 'package:http/http.dart' as http;

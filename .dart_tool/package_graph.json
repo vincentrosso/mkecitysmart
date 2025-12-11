@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "mkecitysmart",
-      "version": "1.0.21+23",
+      "version": "1.0.22+24",
       "dependencies": [
         "cloud_firestore",
         "cupertino_icons",

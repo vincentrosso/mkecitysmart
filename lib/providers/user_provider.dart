@@ -77,6 +77,7 @@ class UserProvider extends ChangeNotifier {
   String _cityId = 'default';
   String _tenantId = 'default';
   String _languageCode = 'en';
+  Future<void>? _googleSignInInit;
 
   bool get isInitializing => _initializing;
   bool get isLoggedIn => _profile != null;
@@ -389,15 +390,31 @@ class UserProvider extends ChangeNotifier {
       return 'Google sign-in is unavailable (Firebase disabled).';
     }
     try {
+      _googleSignInInit ??= GoogleSignIn.instance.initialize();
+      try {
+        await _googleSignInInit;
+      } catch (_) {
+        _googleSignInInit = null;
+        rethrow;
+      }
+      if (!GoogleSignIn.instance.supportsAuthenticate()) {
+        return 'Google sign-in is unavailable on this platform.';
+      }
       UserCredential credential;
       if (kIsWeb) {
         credential = await auth.signInWithPopup(GoogleAuthProvider());
       } else {
-        final googleUser = await GoogleSignIn().signIn();
-        if (googleUser == null) return 'Sign-in was canceled.';
-        final googleAuth = await googleUser.authentication;
+        final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleAuth = googleUser.authentication;
+        if (googleAuth.idToken == null) {
+          return 'Missing Google ID token.';
+        }
+        final clientAuth =
+            await googleUser.authorizationClient.authorizationForScopes(
+          const ['email', 'profile', 'openid'],
+        );
         final oauth = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
+          accessToken: clientAuth?.accessToken,
           idToken: googleAuth.idToken,
         );
         credential = await auth.signInWithCredential(oauth);
@@ -415,6 +432,11 @@ class UserProvider extends ChangeNotifier {
         ),
       );
       return null;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return 'Sign-in was canceled.';
+      }
+      return 'Google sign-in failed: ${e.description ?? e.code.name}.';
     } on FirebaseAuthException catch (e) {
       return _mapAuthError(e);
     } catch (_) {
