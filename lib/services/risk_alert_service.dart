@@ -14,17 +14,45 @@ import 'ticket_risk_prediction_service.dart';
 /// Lightweight in-app risk watcher. In background, this should be replaced by
 /// a push-based solution (FCM/APNs) driven by the backend.
 class RiskAlertService {
-  RiskAlertService._();
+  RiskAlertService._({
+    NotificationService? notificationService,
+    LocationService? locationService,
+    TicketRiskPredictionService? ticketRiskPredictionService,
+    CityTicketStatsService? cityStatsService,
+    DateTime Function()? now,
+  })  : _notification = notificationService ?? NotificationService.instance,
+        _location = locationService ?? LocationService(),
+        _ticketRisk = ticketRiskPredictionService ?? TicketRiskPredictionService(),
+        _cityStats = cityStatsService ?? CityTicketStatsService(),
+        _now = now ?? DateTime.now;
 
   static final RiskAlertService instance = RiskAlertService._();
+  factory RiskAlertService.test({
+    NotificationService? notificationService,
+    LocationService? locationService,
+    TicketRiskPredictionService? ticketRiskPredictionService,
+    CityTicketStatsService? cityStatsService,
+    DateTime Function()? now,
+  }) {
+    return RiskAlertService._(
+      notificationService: notificationService,
+      locationService: locationService,
+      ticketRiskPredictionService: ticketRiskPredictionService,
+      cityStatsService: cityStatsService,
+      now: now,
+    );
+  }
 
   Timer? _timer;
   bool _running = false;
   DateTime? _lastHighAlert;
   DateTime? _lastTicketAlert;
-  final _ticketRisk = TicketRiskPredictionService();
   Position? _lastPosition;
-  final _cityStats = CityTicketStatsService();
+  final TicketRiskPredictionService _ticketRisk;
+  final LocationService _location;
+  final NotificationService _notification;
+  final CityTicketStatsService _cityStats;
+  final DateTime Function() _now;
 
   void start(UserProvider provider) {
     if (_running) return;
@@ -37,14 +65,14 @@ class RiskAlertService {
   }
 
   Future<void> _check(UserProvider provider) async {
+    final now = _now();
     final score = provider.towRiskIndex;
     if (score >= 70) {
-      final now = DateTime.now();
       if (_lastHighAlert == null ||
           now.difference(_lastHighAlert!).inMinutes >= 60) {
         _lastHighAlert = now;
         dev.log('High tow risk detected ($score). Triggering local alert.');
-        NotificationService.instance.showLocal(
+        _notification.showLocal(
           title: 'High tow/ticket risk',
           body: 'Recent enforcers or sweeps nearby. Check parking status.',
         );
@@ -57,7 +85,7 @@ class RiskAlertService {
     if (!allow) return;
 
     try {
-      final position = await LocationService().getCurrentPosition();
+      final position = await _location.getCurrentPosition();
       if (position == null) return;
       final ticketDensity =
           provider.tickets.where((t) => t.status == TicketStatus.open).length /
@@ -67,12 +95,12 @@ class RiskAlertService {
       _lastPosition = position;
       final stats = _cityStats.lookup(
         cityId: provider.cityId,
-        when: DateTime.now(),
+        when: now,
         latitude: position.latitude,
         longitude: position.longitude,
       );
       final riskScore = _ticketRisk.predictRiskWithCityStats(
-        when: DateTime.now(),
+        when: now,
         latitude: position.latitude,
         longitude: position.longitude,
         eventLoad: eventLoad,
@@ -81,13 +109,12 @@ class RiskAlertService {
         cityHotspotDensity: stats.hotspotDensity,
       );
       if (riskScore >= 0.7) {
-        final now = DateTime.now();
         final coolDown = isNewArea ? 30 : 90;
         if (_lastTicketAlert == null ||
             now.difference(_lastTicketAlert!).inMinutes >= coolDown) {
           _lastTicketAlert = now;
           final msg = _ticketRisk.riskMessage(riskScore);
-          NotificationService.instance.showLocal(
+          _notification.showLocal(
             title: 'Ticket risk nearby',
             body: msg,
           );

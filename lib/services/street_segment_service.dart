@@ -21,11 +21,14 @@ class StreetSegment {
 }
 
 class StreetSegmentService {
-  StreetSegmentService(
-      {this.baseUrl =
-          'https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/reference/reference_map/MapServer/20'});
+  StreetSegmentService({
+    this.baseUrl =
+        'https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/reference/reference_map/MapServer/20',
+    http.Client? client,
+  }) : _client = client ?? http.Client();
 
   final String baseUrl;
+  final http.Client _client;
 
   Future<StreetSegment?> fetchByPoint({
     required double lat,
@@ -42,8 +45,7 @@ class StreetSegmentService {
       'outSR': '4326',
       'resultRecordCount': '1',
     });
-    final resp =
-        await http.get(uri).timeout(const Duration(seconds: 10));
+    final resp = await _client.get(uri).timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200) return null;
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     final features = data['features'] as List<dynamic>? ?? const [];

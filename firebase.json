@@ -1,1 +1,50 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"mkeparkapp-6edc3","appId":"1:802081773281:android:55de0e46223bddcf0009a0","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"mkeparkapp-1ad15","appId":"1:418926446148:ios:1077e2e334de8b7e631e11","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"mkeparkapp-1ad15","configurations":{"android":"1:802081773281:android:55de0e46223bddcf0009a0","ios":"1:418926446148:ios:1077e2e334de8b7e631e11","web":"1:418926446148:web:0e080d9bf8a7ea04631e11"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "mkeparkapp-6edc3",
+          "appId": "1:802081773281:android:55de0e46223bddcf0009a0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "mkeparkapp-1ad15",
+          "appId": "1:418926446148:ios:1077e2e334de8b7e631e11",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "mkeparkapp-1ad15",
+          "configurations": {
+            "android": "1:802081773281:android:55de0e46223bddcf0009a0",
+            "ios": "1:418926446148:ios:1077e2e334de8b7e631e11",
+            "web": "1:418926446148:web:0e080d9bf8a7ea04631e11"
+          }
+        }
+      }
+    }
+  }
+}

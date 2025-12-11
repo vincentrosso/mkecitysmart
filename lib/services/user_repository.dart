@@ -1,7 +1,9 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../data/local/local_database.dart';
 import '../models/sighting_report.dart';
 import '../models/payment_receipt.dart';
 import '../models/ticket.dart';
@@ -9,136 +11,172 @@ import '../models/user_profile.dart';
 import '../models/maintenance_report.dart';
 
 class UserRepository {
-  UserRepository._(this._prefs, this._activeUserId);
+  UserRepository({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    LocalDatabase? localDatabase,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _localDb = localDatabase ?? LocalDatabase();
 
-  final SharedPreferences _prefs;
-  String? _activeUserId;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+  final LocalDatabase _localDb;
 
-  static const _profileKey = 'user_profile_v1';
-  static const _sightingsKey = 'sighting_reports_v1';
-  static const _ticketsKey = 'tickets_v1';
-  static const _receiptsKey = 'receipts_v1';
-  static const _maintenanceKey = 'maintenance_reports_v1';
-  static const _activeUserStorageKey = 'active_user_id_v1';
+  String? get _activeUserId => _auth.currentUser?.uid;
 
-  static Future<UserRepository> create() async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedActiveUser = prefs.getString(_activeUserStorageKey);
-    return UserRepository._(prefs, storedActiveUser);
+  CollectionReference<Map<String, dynamic>> _userCollection() {
+    return _firestore.collection('users');
   }
 
-  String? get activeUserId => _activeUserId;
-
-  Future<void> setActiveUser(String? userId) async {
-    _activeUserId = userId;
+  DocumentReference<Map<String, dynamic>> _userDocument() {
+    final userId = _activeUserId;
     if (userId == null) {
-      await _prefs.remove(_activeUserStorageKey);
-    } else {
-      await _prefs.setString(_activeUserStorageKey, userId);
+      throw StateError('No active user is signed in.');
     }
-  }
-
-  String _scopedKey(String base) {
-    final suffix = _activeUserId ?? 'guest';
-    return '${base}_$suffix';
+    return _userCollection().doc(userId);
   }
 
   Future<UserProfile?> loadProfile() async {
-    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
-    if (key == null) return null;
-    final stored = _prefs.getString(key);
-    if (stored == null) return null;
+    final userId = _activeUserId;
+    if (userId == null) return null;
+
+    // 1) Local first for offline experience.
+    UserProfile? localProfile = await _localDb.fetchProfile(userId);
+
+    // 2) Try to refresh from Firestore; update local cache if it succeeds.
     try {
-      final json = jsonDecode(stored) as Map<String, dynamic>;
-      return UserProfile.fromJson(json);
+      final doc = await _userDocument().get();
+      if (doc.exists) {
+        final remote = UserProfile.fromJson(doc.data()!);
+        await _localDb.upsertProfile(remote);
+        localProfile = remote;
+      }
     } catch (_) {
-      return null;
+      // Ignore remote failures; fall back to local data.
     }
+
+    return localProfile;
   }
 
   Future<void> saveProfile(UserProfile profile) async {
-    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
-    if (key == null) return;
-    await _prefs.setString(key, jsonEncode(profile.toJson()));
+    // Persist locally first (offline-first).
+    await _localDb.upsertProfile(profile);
+
+    try {
+      await _userDocument().set(profile.toJson());
+      await _localDb.removePending('profile_upsert_${profile.id}');
+    } catch (_) {
+      // If offline or Firestore write fails, queue for later.
+      await _localDb.enqueueProfileSync(profile);
+    }
   }
 
   Future<void> clearProfile() async {
-    final key = _activeUserId == null ? null : '${_profileKey}_$_activeUserId';
-    if (key == null) return;
-    await _prefs.remove(key);
+    if (_activeUserId != null) {
+      await _localDb.clearProfile(_activeUserId!);
+    }
+    await _userDocument().delete();
   }
 
-  Future<List<SightingReport>> loadSightings() async {
-    final stored = _prefs.getString(_scopedKey(_sightingsKey));
-    if (stored == null) return [];
+  Future<List<T>> _loadSubCollection<T>({
+    required String collectionName,
+    required T Function(Map<String, dynamic>) fromJson,
+  }) async {
+    if (_activeUserId == null) return [];
     try {
-      final jsonList = jsonDecode(stored) as List<dynamic>;
-      return jsonList
-          .map((item) => SightingReport.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
+      final snapshot = await _userDocument().collection(collectionName).get();
+      return snapshot.docs.map((doc) => fromJson(doc.data())).toList();
+    } catch (e) {
       return [];
     }
   }
 
-  Future<void> saveSightings(List<SightingReport> reports) async {
-    final serialized = reports.map((report) => report.toJson()).toList();
-    await _prefs.setString(_scopedKey(_sightingsKey), jsonEncode(serialized));
-  }
+  Future<void> _saveSubCollection<T>({
+    required String collectionName,
+    required List<T> items,
+    required Map<String, dynamic> Function(T) toJson,
+  }) async {
+    if (_activeUserId == null) return;
+    final batch = _firestore.batch();
+    final collectionRef = _userDocument().collection(collectionName);
 
-  Future<List<Ticket>> loadTickets() async {
-    final stored = _prefs.getString(_scopedKey(_ticketsKey));
-    if (stored == null) return [];
-    try {
-      final jsonList = jsonDecode(stored) as List<dynamic>;
-      return jsonList
-          .map((item) => Ticket.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
+    // Clear existing documents in the subcollection
+    final snapshot = await collectionRef.get();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
     }
-  }
 
-  Future<void> saveTickets(List<Ticket> tickets) async {
-    final serialized = tickets.map((ticket) => ticket.toJson()).toList();
-    await _prefs.setString(_scopedKey(_ticketsKey), jsonEncode(serialized));
-  }
-
-  Future<List<PaymentReceipt>> loadReceipts() async {
-    final stored = _prefs.getString(_scopedKey(_receiptsKey));
-    if (stored == null) return [];
-    try {
-      final jsonList = jsonDecode(stored) as List<dynamic>;
-      return jsonList
-          .map((item) => PaymentReceipt.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
+    // Add new documents
+    for (final item in items) {
+      batch.set(collectionRef.doc(), toJson(item));
     }
+
+    await batch.commit();
   }
 
-  Future<void> saveReceipts(List<PaymentReceipt> receipts) async {
-    final serialized = receipts.map((r) => r.toJson()).toList();
-    await _prefs.setString(_scopedKey(_receiptsKey), jsonEncode(serialized));
-  }
+  Future<List<SightingReport>> loadSightings() => _loadSubCollection(
+        collectionName: 'sightings',
+        fromJson: SightingReport.fromJson,
+      );
 
-  Future<List<MaintenanceReport>> loadMaintenanceReports() async {
-    final stored = _prefs.getString(_scopedKey(_maintenanceKey));
-    if (stored == null) return [];
-    try {
-      final jsonList = jsonDecode(stored) as List<dynamic>;
-      return jsonList
-          .map(
-            (item) => MaintenanceReport.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
-    } catch (_) {
-      return [];
+  Future<void> saveSightings(List<SightingReport> reports) =>
+      _saveSubCollection(
+        collectionName: 'sightings',
+        items: reports,
+        toJson: (r) => r.toJson(),
+      );
+
+  Future<List<Ticket>> loadTickets() => _loadSubCollection(
+        collectionName: 'tickets',
+        fromJson: Ticket.fromJson,
+      );
+
+  Future<void> saveTickets(List<Ticket> tickets) => _saveSubCollection(
+        collectionName: 'tickets',
+        items: tickets,
+        toJson: (t) => t.toJson(),
+      );
+
+  Future<List<PaymentReceipt>> loadReceipts() => _loadSubCollection(
+        collectionName: 'receipts',
+        fromJson: PaymentReceipt.fromJson,
+      );
+
+  Future<void> saveReceipts(List<PaymentReceipt> receipts) =>
+      _saveSubCollection(
+        collectionName: 'receipts',
+        items: receipts,
+        toJson: (r) => r.toJson(),
+      );
+
+  Future<List<MaintenanceReport>> loadMaintenanceReports() =>
+      _loadSubCollection(
+        collectionName: 'maintenance_reports',
+        fromJson: MaintenanceReport.fromJson,
+      );
+
+  Future<void> saveMaintenanceReports(List<MaintenanceReport> reports) =>
+      _saveSubCollection(
+        collectionName: 'maintenance_reports',
+        items: reports,
+        toJson: (r) => r.toJson(),
+      );
+
+  Future<void> syncPending() async {
+    final mutations = await _localDb.pendingMutations();
+    for (final mutation in mutations) {
+      try {
+        final data = jsonDecode(mutation.payload) as Map<String, dynamic>;
+        if (data['type'] == 'profile_upsert') {
+          final profile =
+              UserProfile.fromJson(data['profile'] as Map<String, dynamic>);
+          await _userDocument().set(profile.toJson());
+        }
+        await _localDb.removePending(mutation.id);
+      } catch (_) {
+        // Leave mutation for the next sync attempt.
+      }
     }
-  }
-
-  Future<void> saveMaintenanceReports(List<MaintenanceReport> reports) async {
-    final serialized = reports.map((r) => r.toJson()).toList();
-    await _prefs.setString(_scopedKey(_maintenanceKey), jsonEncode(serialized));
   }
 }

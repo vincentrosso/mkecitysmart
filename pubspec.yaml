@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.14+15
+version: 1.0.21+23
 
 environment:
   sdk: ^3.9.2
@@ -35,26 +35,33 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   provider: ^6.1.2
-  shared_preferences: ^2.3.2
+
+  drift: ^2.17.0
+  drift_sqflite: ^2.0.1
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  sqlite3_flutter_libs: ^0.5.24
+
   qr_flutter: ^4.1.0
   intl: ^0.20.2
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   url_launcher: ^6.3.0
   geolocator: ^14.0.2
-  geocoding: ^4.0.0
+  geocoding: ^3.0.0
   image_picker: ^1.1.2
   http: ^1.2.2
-  firebase_core: ^4.2.1
-  firebase_auth: ^6.1.2
-  firebase_messaging: ^16.0.4
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  firebase_messaging: ^15.0.0
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   webview_flutter: ^4.9.0
-  cloud_firestore: ^6.1.0
-  google_sign_in: ^6.2.1
-  sign_in_with_apple: ^6.1.0
+  cloud_firestore: ^5.0.0
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^7.0.1
   web: ^1.1.0
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +73,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  fake_cloud_firestore: ^3.1.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.11
+  drift_dev: ^2.17.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

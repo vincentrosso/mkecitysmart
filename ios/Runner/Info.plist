@@ -22,8 +22,19 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.418926446148-joumtf8uat7pfdpsusc4j6cndioirll9</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
-	<string>13</string>
+	<string>20</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-2009498889741048~5799735559</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

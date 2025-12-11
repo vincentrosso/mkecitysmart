@@ -14,6 +14,8 @@ Development notes for mkecitysmart
 - Linting:
   * `flutter analyze` currently clean. Deprecated `withOpacity`, `describeEnum`, and `desiredAccuracy` already replaced.
   * Welcome dialog and quick-start tutorial are disabled via flags in `lib/main.dart`. Promo banner on dashboard is commented out.
+- CI sanity check:
+  * Run `flutter analyze` after changes (fast lint/error pass; no device/emulator required).
 - Web embeds:
   * `openchargemap_embed_web.dart` and `publicstuff_embed_web.dart` use `package:web` instead of `dart:html`. Dependency `web` is added to pubspec.
 - Scripts:
@@ -42,3 +44,34 @@ Open items / reminders:
 - If re-enabling welcome or quick-start, restore content in `main.dart`.
 - If you rotate Firebase keys, update both `lib/firebase_options.dart` and `web/firebase-config.json`.
 - For web iframe embeds, ensure `web` dependency stays in sync and authorized domains are set.
+- After any code changes, run `flutter analyze` to ensure code quality.
+- The project should maintain at least 80% unit test coverage.
+
+App layout (current)
+- Shell: `CitySmartScaffold` (drawer + title + bottom nav) wraps dashboard/feed/map/profile/auth/vehicles/charging map.
+- Routes: `/dashboard` (default home), `/citysmart-feed`, `/citysmart-map`, `/profile`, `/auth/login`, `/auth/register`, `/vehicles`, `/charging-map`.
+- Drawer: dashboard, map, feed, profile; auth/profile icon in top-right of scaffold.
+- Dashboard tiles include alerts, permits, tickets, street sweeping, vehicles, EV chargers (last), alt side parking (third).
+- Quick start, welcome banner, and promo banner are disabled via flags in `lib/main.dart` / `dashboard_screen.dart`.
+
+Coverage and size snapshot (after latest tests)
+- Overall: 26.44% (1703/6440 lines) from `coverage/lcov.info`.
+- Coverage by segment: screens 4.6% (128/2813), services 75.2% (574/763), widgets 16.7% (26/156), models 84.1% (391/465), providers 25.6% (188/733), data 26.7% (356/1331), citysmart 15.3% (13/85).
+- LOC by segment (Dart): screens 7,739; services 2,000; widgets 525; models 1,142; providers 1,836; data 3,079; citysmart 611.
+
+Architecture flow (text diagram)
+- UI (screens/widgets) ⇄ Providers (ChangeNotifier, e.g., UserProvider)
+    Providers depend on UserRepository + services for async work and local hydration.
+- UserRepository
+    ⇄ Firebase Auth (session)
+    ⇄ Firestore (users + subcollections)
+    ⇄ Drift Local DB (profiles, vehicles, pending mutations)
+    → Outbox sync: enqueue on Firestore failure → syncPending retries when online.
+- Services
+    - ApiClient (POST with env base URL/API key) → Prediction/Notification/token registration.
+    - RiskAlertService (timer, tow/ticket scoring) → LocationService + CityTicketStatsService + TicketRiskPredictionService → NotificationService (local/FCM).
+    - NotificationService (FCM/local) guarded for web/disabled flag.
+    - StreetSegmentService (ArcGIS), TicketApiService (mock), PredictionApiService (HTTP).
+    - LocationService (Geolocator, sample zones, distance/directions).
+- Firebase bootstrap
+    - firebase_bootstrap + firebase_options (platform configs), web also uses web/firebase-config.json.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
@@ -20,6 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _addressController;
 
   bool _saving = false;
+  String _version = '';
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailController = TextEditingController(text: profile?.email ?? '');
     _phoneController = TextEditingController(text: profile?.phone ?? '');
     _addressController = TextEditingController(text: profile?.address ?? '');
+    _loadVersion();
   }
 
   @override
@@ -38,6 +41,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = 'Version ${info.version}+${info.buildNumber}';
+    });
   }
 
   Future<void> _save() async {
@@ -155,18 +165,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFF003E29),
-                      foregroundColor: Colors.white,
-                      radius: 32,
-                      child: Text(
-                        profile.name.isNotEmpty
-                            ? profile.name[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(fontSize: 24),
+                    Card(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U'),
+                        ),
+                        title: Text(profile.name),
+                        subtitle: Text(profile.email),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(labelText: 'Name'),
@@ -210,6 +218,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               )
                             : const Text('Save profile'),
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      _version,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                     ),
                   ],
                 ),

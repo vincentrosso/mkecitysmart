@@ -149,7 +149,6 @@ class UserProvider extends ChangeNotifier {
   Future<void> initialize() async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      await _repository.setActiveUser(null);
       _profile = null;
       _initializing = false;
       _guestMode = true;
@@ -160,19 +159,28 @@ class UserProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    final user = auth.currentUser;
-    if (user != null) {
-      await _repository.setActiveUser(user.uid);
+
+    if (auth.currentUser != null) {
+      _profile = await _repository.loadProfile();
     } else {
-      await _repository.setActiveUser(null);
+      _profile = null;
     }
-    _profile = await _repository.loadProfile();
+
     await _hydrateFromStorage();
     _initializing = false;
-    _guestMode = false;
-    _guestPermits = const [];
-    _guestReservations = const [];
-    _guestSweepingSchedules = const [];
+    _guestMode = _profile == null;
+    if (_firebaseEnabled && !_guestMode) {
+      unawaited(_repository.syncPending());
+    }
+    if (_guestMode) {
+      _guestPermits = _seedPermits();
+      _guestReservations = _seedReservations();
+      _guestSweepingSchedules = _seedSweepingSchedules();
+    } else {
+      _guestPermits = const [];
+      _guestReservations = const [];
+      _guestSweepingSchedules = const [];
+    }
     notifyListeners();
   }
 
@@ -239,7 +247,6 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> continueAsGuest() async {
     await _auth?.signOut();
-    await _repository.setActiveUser(null);
     _guestMode = true;
     _profile = null;
     _guestPermits = _seedPermits();
@@ -271,9 +278,25 @@ class UserProvider extends ChangeNotifier {
         email: email,
         password: password,
       );
-      final user = credential.user;
+      final user = credential.user ?? auth.currentUser;
       if (user == null) {
-        return 'Account creation failed. Please try again.';
+        final offlineProfile = UserProfile(
+          id: email,
+          name: name,
+          email: email,
+          phone: phone,
+          preferences: UserPreferences.defaults(),
+          vehicles: const [],
+          permits: _seedPermits(ownerHint: name),
+          reservations: _seedReservations(ownerHint: name),
+          sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+        );
+        await _repository.saveProfile(offlineProfile);
+        _profile = offlineProfile;
+        _guestMode = false;
+        await _hydrateFromStorage();
+        notifyListeners();
+        return null;
       }
       await _ensureProfileForUser(
         user,
@@ -312,9 +335,25 @@ class UserProvider extends ChangeNotifier {
         email: email,
         password: password,
       );
-      final user = credential.user;
+      final user = credential.user ?? auth.currentUser;
       if (user == null) {
-        return 'Unable to sign in right now.';
+        // If Firebase does not hand back a user, try to hydrate from local cache.
+        _profile = await _repository.loadProfile();
+        _profile ??= UserProfile(
+          id: email,
+          name: _nameFromEmail(email),
+          email: email,
+          preferences: UserPreferences.defaults(),
+          vehicles: const [],
+          permits: _seedPermits(),
+          reservations: _seedReservations(),
+          sweepingSchedules: _seedSweepingSchedules(),
+        );
+        await _repository.saveProfile(_profile!);
+        _guestMode = false;
+        await _hydrateFromStorage();
+        notifyListeners();
+        return null;
       }
       await _ensureProfileForUser(
         user,
@@ -542,9 +581,8 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     await _auth?.signOut();
-    await _repository.setActiveUser(null);
     _profile = null;
-    _guestMode = false;
+    _guestMode = true;
     _guestPermits = const [];
     _guestReservations = const [];
     _guestSweepingSchedules = const [];
@@ -1147,18 +1185,15 @@ class UserProvider extends ChangeNotifier {
     String? fallbackName,
     String? phone,
   }) async {
-    final emailKey = (user.email ?? '').trim().toLowerCase();
-    final storageKey = emailKey.isNotEmpty ? emailKey : user.uid;
-    await _repository.setActiveUser(storageKey);
     var stored = await _repository.loadProfile();
     if (stored == null) {
       final name = fallbackName ??
           user.displayName?.trim() ??
           _nameFromEmail(user.email ?? '');
       stored = UserProfile(
-        id: storageKey,
+        id: user.uid,
         name: name,
-        email: emailKey.isNotEmpty ? emailKey : (user.email ?? ''),
+        email: user.email ?? '',
         phone: phone ?? user.phoneNumber,
         preferences: UserPreferences.defaults(),
         vehicles: const [],

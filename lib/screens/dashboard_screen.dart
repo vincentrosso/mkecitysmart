@@ -37,23 +37,19 @@ class DashboardScreen extends StatelessWidget {
                   HomeTile(
                     icon: Icons.local_parking,
                     title: 'Overview',
-                    subtitle: 'Parking, pay, history',
                     onTap: () => Navigator.pushNamed(context, '/parking'),
                   ),
                   HomeTile(
                     icon: Icons.delete_outline,
                     title: 'Garbage Day',
-                    subtitle: 'Pickup schedules',
                     onTap: () => Navigator.pushNamed(context, '/garbage'),
                   ),
                   FutureBuilder<String>(
                     future: _resolveAltSubtitle(provider),
                     builder: (context, snapshot) {
-                      final subtitle = snapshot.data ?? 'Detecting...';
                       return HomeTile(
                         icon: Icons.compare_arrows,
                         title: 'Alt-side parking',
-                        subtitle: subtitle,
                         onTap: () => Navigator.pushNamed(
                           context,
                           '/alternate-parking',
@@ -64,7 +60,6 @@ class DashboardScreen extends StatelessWidget {
                   HomeTile(
                     icon: Icons.notifications_active_outlined,
                     title: 'Risk & reminders',
-                    subtitle: 'Alerts, radius, preferences',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -75,34 +70,29 @@ class DashboardScreen extends StatelessWidget {
                   HomeTile(
                     icon: Icons.map,
                     title: 'Parking heatmap',
-                    subtitle: 'Where to find a spot',
                     onTap: () =>
                         Navigator.pushNamed(context, '/parking-heatmap'),
                   ),
                   HomeTile(
                     icon: Icons.warning_amber_rounded,
                     title: 'Report sighting',
-                    subtitle: 'Tow/Enforcer',
                     onTap: () =>
                         Navigator.pushNamed(context, '/report-sighting'),
                   ),
                   HomeTile(
                     icon: Icons.receipt_long,
                     title: 'Tickets',
-                    subtitle: 'Lookup & pay',
                     onTap: () => Navigator.pushNamed(context, '/tickets'),
                   ),
                   HomeTile(
                     icon: Icons.workspace_premium,
                     title: 'Subscriptions',
-                    subtitle: 'Plans & waivers',
                     onTap: () =>
                         Navigator.pushNamed(context, '/subscriptions'),
                   ),
                   HomeTile(
                     icon: Icons.build_circle_outlined,
                     title: 'Report maintenance',
-                    subtitle: 'Potholes, lights, graffiti',
                     onTap: () => Navigator.pushNamed(
                       context,
                       '/maintenance',
@@ -111,20 +101,17 @@ class DashboardScreen extends StatelessWidget {
                   HomeTile(
                     icon: Icons.history,
                     title: 'History',
-                    subtitle: 'Alerts & receipts',
                     onTap: () => Navigator.pushNamed(context, '/history'),
                   ),
                   HomeTile(
                     icon: Icons.settings,
                     title: 'City settings',
-                    subtitle: 'City & language',
                     onTap: () =>
                         Navigator.pushNamed(context, '/city-settings'),
                   ),
                   HomeTile(
                     icon: Icons.ev_station_outlined,
                     title: 'EV Chargers',
-                    subtitle: 'Nearby stations',
                     onTap: () => Navigator.pushNamed(context, '/charging'),
                   ),
                 ],
@@ -148,13 +135,13 @@ class HomeTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     this.onTap,
   });
 
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final VoidCallback? onTap;
 
   @override
@@ -190,15 +177,17 @@ class HomeTile extends StatelessWidget {
                   letterSpacing: 0.2,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

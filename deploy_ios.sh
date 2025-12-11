@@ -10,24 +10,49 @@
 #
 # Requirements: Xcode, Fastlane, Flutter, Apple Developer account
 
-set -e
+set -euo pipefail
 
 # --------- CONFIG: EDIT THESE ---------
-APP_NAME="mkecitysmart"
+APP_NAME="mkecitysmart.app"
 BUNDLE_ID="com.mkecitysmart.app"
 APPLE_ID="mkeparkapp@gmail.com"     # your Apple ID (or App Store Connect email)
 TEAM_ID="J8U8FW3PA8"           # Apple Developer Team ID
 ITC_TEAM_ID="J8U8FW3PA8"         # App Store Connect Team ID (iTunes Team ID)
+APP_STORE_ID="6756332812"        # App Store Connect app ID (numeric)
 IPA_PATH="build/ios/ipa/Runner.ipa"
 INFO_PLIST="ios/Runner/Info.plist"
 # --------------------------------------
+
+VERBOSE=0
+for arg in "$@"; do
+  if [ "$arg" = "-v" ] || [ "$arg" = "--verbose" ]; then
+    VERBOSE=1
+  fi
+done
+
+log() {
+  if [ $VERBOSE -eq 1 ]; then
+    echo "$@"
+  fi
+}
+
+LOG_FILE=$(mktemp -t deploy_ios_XXXX.log)
+trap 'status=$?; if [ $status -ne 0 ] && [ -f "$LOG_FILE" ]; then echo "ℹ️ See build log: $LOG_FILE"; tail -n 60 "$LOG_FILE"; fi; exit $status' EXIT
+
+run_cmd() {
+  if [ $VERBOSE -eq 1 ]; then
+    "$@"
+  else
+    "$@" >>"$LOG_FILE" 2>&1
+  fi
+}
 
 echo "📱 Deploying $APP_NAME ($BUNDLE_ID) to the App Store"
 
 # ----------------------------
 # Step 0: Increment build number
 # ----------------------------
-echo "🔢 Incrementing iOS build number (CFBundleVersion)..."
+log "🔢 Incrementing iOS build number (CFBundleVersion)..."
 
 if [ ! -f "$INFO_PLIST" ]; then
   echo "❌ Info.plist not found at $INFO_PLIST"
@@ -39,24 +64,23 @@ CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$INFO_PLIST"
 
 # If it's not an integer, reset to 0
 if ! [[ "$CURRENT_BUILD" =~ ^[0-9]+$ ]]; then
-  echo "⚠️ Current CFBundleVersion ('$CURRENT_BUILD') is not an integer. Resetting to 0."
+  log "⚠️ Current CFBundleVersion ('$CURRENT_BUILD') is not an integer. Resetting to 0."
   CURRENT_BUILD=0
 fi
 
 NEXT_BUILD=$((CURRENT_BUILD + 1))
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEXT_BUILD" "$INFO_PLIST"
-
-echo "✅ Build number updated: $CURRENT_BUILD → $NEXT_BUILD"
+log "✅ Build number updated: $CURRENT_BUILD → $NEXT_BUILD"
 
 # ----------------------------
 # Step 1: Ensure Dependencies
 # ----------------------------
-echo "🔧 Checking for required tools..."
+log "🔧 Checking for required tools..."
 
 if ! command -v fastlane &> /dev/null; then
-  echo "⚠️ Fastlane not found. Installing..."
-  sudo gem install fastlane -NV
+  log "⚠️ Fastlane not found. Installing..."
+  run_cmd sudo gem install fastlane -NV
 fi
 
 if ! command -v flutter &> /dev/null; then
@@ -67,11 +91,11 @@ fi
 # ----------------------------
 # Step 2: Clean & Build IPA
 # ----------------------------
-echo "🧹 Cleaning Flutter build..."
-flutter clean
+log "🧹 Cleaning Flutter build..."
+run_cmd flutter clean
 
-echo "📦 Building iOS IPA (release)..."
-flutter build ipa --release
+log "📦 Building iOS IPA (release)..."
+run_cmd flutter build ipa --release ${VERBOSE:+-v}
 
 if [ ! -f "$IPA_PATH" ]; then
   echo "❌ Build failed: IPA not found at $IPA_PATH"
@@ -127,7 +151,7 @@ EOF_FAST
 # Step 4: Upload via Fastlane
 # ----------------------------
 echo "🚀 Uploading build to App Store Connect..."
-fastlane release
+run_cmd fastlane release
 
 cd ..
 
@@ -137,3 +161,6 @@ cd ..
 echo "✅ Deployment complete!"
 echo "   Build number: $NEXT_BUILD"
 echo "   Check App Store Connect → https://appstoreconnect.apple.com/apps"
+if [ $VERBOSE -eq 0 ]; then
+  echo "   Full log: $LOG_FILE"
+fi

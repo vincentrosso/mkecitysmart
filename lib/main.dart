@@ -16,6 +16,7 @@ import 'screens/permit_workflow_screen.dart';
 import 'screens/preferences_screen.dart';
 import 'screens/permit_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/report_sighting_screen.dart';
 import 'screens/subscription_screen.dart';
 import 'screens/ticket_workflow_screen.dart';
@@ -126,7 +127,7 @@ Future<void> main() async {
 
   final repository = await diagnostics.recordFuture<UserRepository>(
     'UserRepository',
-    UserRepository.create,
+    () async => UserRepository(),
     onSuccess: (_, entry) => entry.details = 'Repository ready.',
   );
 
@@ -165,15 +166,10 @@ class MKEParkApp extends StatelessWidget {
         initialRoute: '/dashboard',
         routes: {
           '/': (context) => const DashboardScreen(),
-          // Pass `arguments: {'tab': 1}` to pre-select Create Account.
           '/dashboard': (context) => const DashboardScreen(),
           '/landing': (context) => const LandingScreen(),
-          '/auth': (context) {
-            final args =
-                ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-            final tab = (args?['tab'] as int?) ?? 0;
-            return AuthScreen(initialTabIndex: tab);
-          },
+          '/auth': (context) => const AuthScreen(),
+          '/register': (context) => const RegisterScreen(),
           '/parking': (context) => const ParkingScreen(),
           '/permit': (context) => const PermitScreen(),
           '/permit-workflow': (context) => const PermitWorkflowScreen(),
