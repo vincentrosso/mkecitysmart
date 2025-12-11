@@ -23,8 +23,7 @@ from typing import Any, Dict
 import requests
 
 
-# Fallbacks lifted from lib/firebase_options.dart (web config).
-DEFAULT_API_KEY = "AIzaSyDDvudPRiOxuj2blbTlhz9TH27JOJl6pnY"
+# Values must be provided via environment variables.
 DEFAULT_PROJECT_ID = "mkeparkapp-6edc3"
 
 
@@ -35,8 +34,12 @@ class FirebaseConfig:
 
     @classmethod
     def load(cls) -> "FirebaseConfig":
-        api_key = os.environ.get("FIREBASE_WEB_API_KEY", DEFAULT_API_KEY)
+        api_key = os.environ.get("FIREBASE_WEB_API_KEY", "")
         project_id = os.environ.get("FIREBASE_PROJECT_ID", DEFAULT_PROJECT_ID)
+        if not api_key:
+            raise RuntimeError(
+                "FIREBASE_WEB_API_KEY is required. Export it before running this script."
+            )
         return cls(api_key=api_key, project_id=project_id)
 
 
