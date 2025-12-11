@@ -21,6 +21,7 @@ ITC_TEAM_ID="J8U8FW3PA8"         # App Store Connect Team ID (iTunes Team ID)
 APP_STORE_ID="6756332812"        # App Store Connect app ID (numeric)
 IPA_PATH="build/ios/ipa/Runner.ipa"
 INFO_PLIST="ios/Runner/Info.plist"
+SERVICE_ACCOUNT_KEY="${SERVICE_ACCOUNT_KEY:-$PWD/.secrets/firebase/mkeparkapp-6edc3-553d351820d9.json}"
 # --------------------------------------
 
 VERBOSE=0
@@ -50,7 +51,17 @@ run_cmd() {
 echo "📱 Deploying $APP_NAME ($BUNDLE_ID) to the App Store"
 
 # ----------------------------
-# Step 0: Increment build number
+# Step 0: Point to Firebase service account (if present)
+# ----------------------------
+if [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] && [ -f "$SERVICE_ACCOUNT_KEY" ]; then
+  export GOOGLE_APPLICATION_CREDENTIALS="$SERVICE_ACCOUNT_KEY"
+  log "🔑 GOOGLE_APPLICATION_CREDENTIALS set to $GOOGLE_APPLICATION_CREDENTIALS"
+elif [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
+  log "⚠️ SERVICE_ACCOUNT_KEY not found; GOOGLE_APPLICATION_CREDENTIALS not set."
+fi
+
+# ----------------------------
+# Step 1: Increment build number
 # ----------------------------
 log "🔢 Incrementing iOS build number (CFBundleVersion)..."
 
@@ -74,7 +85,7 @@ NEXT_BUILD=$((CURRENT_BUILD + 1))
 log "✅ Build number updated: $CURRENT_BUILD → $NEXT_BUILD"
 
 # ----------------------------
-# Step 1: Ensure Dependencies
+# Step 2: Ensure Dependencies
 # ----------------------------
 log "🔧 Checking for required tools..."
 
@@ -89,7 +100,7 @@ if ! command -v flutter &> /dev/null; then
 fi
 
 # ----------------------------
-# Step 2: Clean & Build IPA
+# Step 3: Clean & Build IPA
 # ----------------------------
 log "🧹 Cleaning Flutter build..."
 run_cmd flutter clean
@@ -103,7 +114,7 @@ if [ ! -f "$IPA_PATH" ]; then
 fi
 
 # ----------------------------
-# Step 3: Prepare Fastlane Config
+# Step 4: Prepare Fastlane Config
 # ----------------------------
 cd ios
 
@@ -148,7 +159,7 @@ end
 EOF_FAST
 
 # ----------------------------
-# Step 4: Upload via Fastlane
+# Step 5: Upload via Fastlane
 # ----------------------------
 echo "🚀 Uploading build to App Store Connect..."
 run_cmd fastlane release
@@ -156,7 +167,7 @@ run_cmd fastlane release
 cd ..
 
 # ----------------------------
-# Step 5: Done!
+# Step 6: Done!
 # ----------------------------
 echo "✅ Deployment complete!"
 echo "   Build number: $NEXT_BUILD"
