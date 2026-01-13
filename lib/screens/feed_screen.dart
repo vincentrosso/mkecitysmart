@@ -25,9 +25,9 @@ class _FeedBody extends StatelessWidget {
 
     final query = FirebaseFirestore.instance
         .collection('alerts')
-        .where('active', isEqualTo: true)
+        .where('status', isEqualTo: 'active')
         .orderBy('createdAt', descending: true)
-        .limit(25);
+        .limit(50);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: query.snapshots(),
@@ -64,34 +64,41 @@ class _FeedBody extends StatelessWidget {
                 final createdAt = d['createdAt'] as Timestamp?;
 
                 return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title.isNotEmpty
-                              ? title
-                              : type == 'tow' || type == 'towTruck'
-                                  ? 'Tow Sighting'
-                                  : 'Enforcement Sighting',
-                          style: textTheme.titleMedium,
-                        ),
-                        if (message.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(message, style: textTheme.bodyMedium),
-                        ],
-                        const SizedBox(height: 6),
-                        if (location.isNotEmpty)
-                          Text(location, style: textTheme.bodyMedium),
-                        if (createdAt != null) ...[
-                          const SizedBox(height: 6),
+                  child: InkWell(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/alert-detail',
+                      arguments: doc.id,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Posted ${createdAt.toDate()}',
-                            style: textTheme.bodySmall,
+                            title.isNotEmpty
+                                ? title
+                                : type == 'tow' || type == 'towTruck'
+                                    ? 'Tow Sighting'
+                                    : 'Enforcement Sighting',
+                            style: textTheme.titleMedium,
                           ),
+                          if (message.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(message, style: textTheme.bodyMedium),
+                          ],
+                          const SizedBox(height: 6),
+                          if (location.isNotEmpty)
+                            Text(location, style: textTheme.bodyMedium),
+                          if (createdAt != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Posted ${createdAt.toDate()}',
+                              style: textTheme.bodySmall,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );

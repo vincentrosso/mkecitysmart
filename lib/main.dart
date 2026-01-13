@@ -34,6 +34,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
 import 'screens/alerts_landing_screen.dart';
+import 'screens/alert_detail_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -145,6 +146,15 @@ class MKEParkApp extends StatelessWidget {
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
           '/feed': (context) => const FeedScreen(),
+          '/alert-detail': (context) {
+            final alertId = ModalRoute.of(context)?.settings.arguments as String?;
+            if (alertId == null) {
+              return const Scaffold(
+                body: Center(child: Text('Alert ID missing')),
+              );
+            }
+            return AlertDetailScreen(alertId: alertId);
+          },
         },
       ),
     );

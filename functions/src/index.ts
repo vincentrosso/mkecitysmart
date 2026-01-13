@@ -74,7 +74,7 @@ export const cleanupExpiredSightings = onSchedule("every 5 minutes", async () =>
   await batch.commit();
 });
 
-export const mirrorSightingToAlerts = onDocumentWritten(
+export const mirrorSightingsToAlerts = onDocumentWritten(
   "sightings/{sightingId}",
   async (event) => {
     const db = admin.firestore();
@@ -96,22 +96,21 @@ export const mirrorSightingToAlerts = onDocumentWritten(
     const isTow = type === "tow" || type === "towtruck";
     const loc = (data.location ?? "Nearby").toString();
 
-    const title = data.title ?? (isTow ? "Tow Sighting" : "Parking Enforcer Sighting");
+    const title = data.title ?? (isTow ? "Tow sighting" : "Enforcer sighting");
     const message = data.message ??
         (isTow
             ? `Tow trucks spotted near ${loc}.`
-            : `Parking enforcement spotted near ${loc}.`);
+            : `Enforcer spotted near ${loc}.`);
 
     const now = admin.firestore.Timestamp.now();
     const createdAt = data.createdAt ?? now;
-    const expiresAt = data.expiresAt ??
-        admin.firestore.Timestamp.fromDate(
-          new Date(Date.now() + 60 * 60 * 1000),
-        );
+    const expiresAt = data.expiresAt ?? null;
 
     const status = (data.status ?? "active").toString().toLowerCase();
+    const isActive = status == "active";
     const alertDoc = {
       sourceType: "sighting",
+      sourceId: sightingId,
       sightingId,
       type: isTow ? "tow" : "enforcer",
       title,
@@ -121,7 +120,8 @@ export const mirrorSightingToAlerts = onDocumentWritten(
       longitude: data.longitude ?? null,
       createdAt,
       expiresAt,
-      active: status !== "expired",
+      status: isActive ? "active" : "inactive",
+      active: isActive,
       sourcePath: after.ref.path,
       mirroredAt: admin.firestore.FieldValue.serverTimestamp(),
     };
