@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/citysmart_scaffold.dart';
@@ -19,19 +20,35 @@ class FeedScreen extends StatelessWidget {
 class _FeedBody extends StatelessWidget {
   const _FeedBody();
 
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    final query = FirebaseFirestore.instance
+  // Centralize the alerts query so we don't accidentally read different paths/filters.
+  // Order by createdAt DESC ensures the newest alert shows first and edits are obvious.
+  Query<Map<String, dynamic>> _alertsQuery() {
+    // NOTE: If this requires an index, Firestore will show a link to create it.
+    return FirebaseFirestore.instance
         .collection('alerts')
         .where('status', isEqualTo: 'active')
         .orderBy('createdAt', descending: true)
         .limit(50);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: query.snapshots(),
+      stream: _alertsQuery().snapshots(includeMetadataChanges: true),
       builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+        final fromCache = snapshot.data?.metadata.isFromCache ?? false;
+
+        if (kDebugMode) {
+          debugPrint('[Feed] alerts docs=${docs.length} fromCache=$fromCache');
+          if (docs.isNotEmpty) {
+            final d0 = docs.first;
+            debugPrint('[Feed] top docId=${d0.id} data=${d0.data()}');
+          }
+        }
+
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           children: [
@@ -55,13 +72,14 @@ class _FeedBody extends StatelessWidget {
               ),
             if (snapshot.hasData) ...[
               const SizedBox(height: 16),
-              ...snapshot.data!.docs.map((doc) {
+              ...docs.map((doc) {
                 final d = doc.data();
                 final type = (d['type'] ?? 'unknown').toString();
                 final title = (d['title'] ?? '').toString();
                 final message = (d['message'] ?? '').toString();
                 final location = (d['location'] ?? '').toString();
                 final createdAt = d['createdAt'] as Timestamp?;
+                final createdAtRaw = d['createdAt'];
 
                 return Card(
                   child: InkWell(
@@ -97,6 +115,16 @@ class _FeedBody extends StatelessWidget {
                               style: textTheme.bodySmall,
                             ),
                           ],
+                          const SizedBox(height: 6),
+                          Text(
+                            [
+                              'id=${doc.id}',
+                              if (createdAtRaw != null)
+                                'createdAt=$createdAtRaw',
+                              if (fromCache) '(cache)',
+                            ].where((s) => s.trim().isNotEmpty).join(' • '),
+                            style: textTheme.bodySmall,
+                          ),
                         ],
                       ),
                     ),

@@ -3,475 +3,463 @@
   "packages": [
     {
       "name": "_fe_analyzer_shared",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-92.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-92.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "_flutterfire_internals",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.64",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.59",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.59",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
+      "name": "adaptive_number",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/adaptive_number-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "analyzer",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/analyzer-9.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/analyzer-9.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "antlr4",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/antlr4-4.13.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/antlr4-4.13.2",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "args",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/args-2.7.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/args-2.7.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "async",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/async-2.13.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "boolean_selector",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "build",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/build-4.0.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/build-4.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "build_config",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/build_config-1.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/build_config-1.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "build_daemon",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/build_daemon-4.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/build_daemon-4.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "build_runner",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/build_runner-2.10.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/build_runner-2.10.4",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "built_collection",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/built_collection-5.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/built_collection-5.1.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "built_value",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/built_value-8.12.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/built_value-8.12.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "cel",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cel-0.5.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cel-0.5.3",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
     {
       "name": "characters",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/characters-1.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/characters-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "charcode",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/charcode-1.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/charcode-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "checked_yaml",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/checked_yaml-2.0.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/checked_yaml-2.0.4",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "cli_util",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cli_util-0.4.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cli_util-0.4.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "clock",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/clock-1.1.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/clock-1.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "cloud_firestore",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cloud_firestore-5.6.12",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cloud_firestore-5.6.12",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "cloud_firestore_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cloud_firestore_platform_interface-6.6.12",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cloud_firestore_platform_interface-6.6.12",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "cloud_firestore_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.4.12",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.4.12",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "code_builder",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/code_builder-4.11.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/code_builder-4.11.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "collection",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/collection-1.19.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/collection-1.19.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "convert",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/convert-3.1.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/convert-3.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "cross_file",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cross_file-0.3.5+1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cross_file-0.3.5+1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "crypto",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/crypto-3.0.7",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/crypto-3.0.7",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "cupertino_icons",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.8",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.8",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "dart_earcut",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/dart_earcut-1.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/dart_earcut-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "dart_jsonwebtoken",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/dart_jsonwebtoken-3.3.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "dart_polylabel2",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/dart_polylabel2-1.0.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/dart_polylabel2-1.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "dart_style",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/dart_style-3.1.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/dart_style-3.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "dbus",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/dbus-0.7.11",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/dbus-0.7.11",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "drift",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/drift-2.30.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/drift-2.30.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "drift_dev",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/drift_dev-2.30.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/drift_dev-2.30.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "drift_sqflite",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/drift_sqflite-2.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/drift_sqflite-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "ed25519_edwards",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/ed25519_edwards-0.3.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "equatable",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/equatable-2.0.7",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/equatable-2.0.7",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "fake_async",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "fake_cloud_firestore",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/fake_cloud_firestore-3.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/fake_cloud_firestore-3.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "fake_firebase_security_rules",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/fake_firebase_security_rules-0.5.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/fake_firebase_security_rules-0.5.3",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
     {
       "name": "ffi",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/ffi-2.1.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/ffi-2.1.4",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "file",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/file-7.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/file-7.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "file_selector_linux",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "file_selector_macos",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.5",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "file_selector_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/file_selector_platform_interface-2.7.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/file_selector_platform_interface-2.7.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "file_selector_windows",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+5",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "firebase_auth",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_auth-5.7.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_auth-5.7.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
+      "name": "firebase_auth_mocks",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_auth_mocks-0.14.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "firebase_auth_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_auth_platform_interface-7.7.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_auth_platform_interface-7.7.3",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_auth_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_auth_web-5.15.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_auth_web-5.15.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "firebase_core",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_core-4.2.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_core-3.15.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_core-3.15.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_core_platform_interface",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_core_platform_interface-6.0.2",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_core_platform_interface-6.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_core_web",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_core_web-3.3.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "firebase_messaging",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging-16.0.4",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_messaging-15.2.10",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging-15.2.10",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_messaging_platform_interface",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging_platform_interface-4.7.4",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_messaging_platform_interface-4.6.10",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging_platform_interface-4.6.10",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_messaging_web",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging_web-4.1.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/firebase_messaging_web-3.10.10",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/firebase_messaging_web-3.10.10",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "fixnum",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/fixnum-1.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/fixnum-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "flutter",
-      "rootUri": "file:///usr/local/Caskroom/flutter/3.29.3/flutter/packages/flutter",
+      "rootUri": "file:///usr/local/share/flutter/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "flutter_lints",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_lints-6.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_lints-6.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "flutter_local_notifications",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_local_notifications-19.5.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_local_notifications-19.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "flutter_local_notifications_linux",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-6.0.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-6.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "flutter_local_notifications_platform_interface",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_local_notifications_platform_interface-9.1.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_local_notifications_platform_interface-9.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "flutter_local_notifications_windows",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_local_notifications_windows-1.0.3",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_local_notifications_windows-1.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "flutter_map",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_map-8.2.2",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_map-8.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "flutter_plugin_android_lifecycle",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.33",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.33",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///usr/local/Caskroom/flutter/3.29.3/flutter/packages/flutter_test",
+      "rootUri": "file:///usr/local/share/flutter/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///usr/local/Caskroom/flutter/3.29.3/flutter/packages/flutter_web_plugins",
+      "rootUri": "file:///usr/local/share/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "geoclue",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geoclue-0.1.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geoclue-0.1.1",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
     {
       "name": "geocoding",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding-4.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding-3.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "2.17"
     },
     {
       "name": "geocoding_android",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding_android-4.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding_android-3.3.1",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "2.17"
     },
     {
       "name": "geocoding_ios",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding_ios-3.1.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geocoding-3.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.17"
-    },
-    {
-      "name": "geocoding_android",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geocoding_android-3.3.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.17"
-    },
-    {
-      "name": "geocoding_ios",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geocoding_ios-3.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "geocoding_platform_interface",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geocoding_platform_interface-3.2.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geocoding_platform_interface-3.2.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "geolocator",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator-14.0.2",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator-14.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "geolocator_android",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator_android-5.0.2",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_android-5.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "geolocator_apple",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "geolocator_linux",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_linux-0.2.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator_apple-2.3.13",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -483,729 +471,715 @@
     },
     {
       "name": "geolocator_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_platform_interface-4.2.6",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator_platform_interface-4.2.6",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "geolocator_web",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator_web-4.1.3",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_web-4.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "geolocator_windows",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/geolocator_windows-0.2.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/geolocator_windows-0.2.5",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
-      "name": "google_mobile_ads",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_mobile_ads-6.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
-    },
-    {
-      "name": "gsettings",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/gsettings-0.2.8",
       "name": "glob",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/glob-2.1.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/glob-2.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "google_identity_services_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_identity_services_web-0.3.3+1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_identity_services_web-0.3.3+1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "google_sign_in",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_sign_in-7.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_sign_in-7.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "google_sign_in_android",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_sign_in_android-7.2.7",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_sign_in_android-7.2.7",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "google_sign_in_ios",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_sign_in_ios-6.2.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_sign_in_ios-6.2.4",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "google_sign_in_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_sign_in_platform_interface-3.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_sign_in_platform_interface-3.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "google_sign_in_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/google_sign_in_web-1.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/google_sign_in_web-1.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "graphs",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/graphs-2.3.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/graphs-2.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "gsettings",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/gsettings-0.2.8",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/gsettings-0.2.8",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "http",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/http-1.6.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/http-1.6.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "http_multi_server",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/http_multi_server-3.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/http_multi_server-3.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "http_parser",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "image_picker",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker-1.2.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker-1.2.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "image_picker_android",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+10",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+10",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "image_picker_for_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "image_picker_ios",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+3",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "image_picker_linux",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "image_picker_macos",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "image_picker_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.11.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.11.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "image_picker_windows",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "intl",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/intl-0.20.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/intl-0.20.2",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "io",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/io-1.0.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/io-1.0.5",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "json_annotation",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/json_annotation-4.9.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/json_annotation-4.9.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "latlong2",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/latlong2-0.9.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/latlong2-0.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "leak_tracker",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "leak_tracker_flutter_testing",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "leak_tracker_testing",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "lints",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/lints-6.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/lints-6.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "lists",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/lists-1.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/lists-1.0.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "logger",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/logger-2.6.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/logger-2.6.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "logging",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/logging-1.3.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/logging-1.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "matcher",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/matcher-0.12.17",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/matcher-0.12.17",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "material_color_utilities",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "meta",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/meta-1.17.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/meta-1.17.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "mgrs_dart",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/mgrs_dart-2.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/mgrs_dart-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "mime",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/mime-2.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/mime-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "mock_exceptions",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/mock_exceptions-0.8.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/mock_exceptions-0.8.2",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
     {
       "name": "mockito",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/mockito-5.6.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/mockito-5.6.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "more",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/more-4.6.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/more-4.6.1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "nested",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/nested-1.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/nested-1.0.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
-      "name": "package_info_plus",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1",
       "name": "package_config",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/package_config-2.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/package_config-2.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "package_info_plus",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/package_info_plus-8.3.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "package_info_plus_platform_interface",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
     {
       "name": "path",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path-1.9.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "path_provider",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "path_provider_android",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider_android-2.2.22",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider_android-2.2.22",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "path_provider_foundation",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider_foundation-2.5.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider_foundation-2.5.1",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "path_provider_linux",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.19"
     },
     {
       "name": "path_provider_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "path_provider_windows",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "petitparser",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/petitparser-7.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/petitparser-7.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "platform",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/platform-3.1.6",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/platform-3.1.6",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "plugin_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
+      "name": "pointycastle",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/pointycastle-4.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
       "name": "pool",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/pool-1.5.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/pool-1.5.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "proj4dart",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/proj4dart-2.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/proj4dart-2.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "provider",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/provider-6.1.5+1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/provider-6.1.5+1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "pub_semver",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/pub_semver-2.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/pub_semver-2.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "pubspec_parse",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/pubspec_parse-1.5.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/pubspec_parse-1.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "qr",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/qr-3.0.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/qr-3.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "qr_flutter",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/qr_flutter-4.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/qr_flutter-4.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.19"
     },
     {
       "name": "quiver",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/quiver-3.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/quiver-3.2.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "recase",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/recase-4.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/recase-4.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "rx",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/rx-0.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/rx-0.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "rxdart",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/rxdart-0.28.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/rxdart-0.28.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "shelf",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/shelf-1.4.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/shelf-1.4.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "shelf_web_socket",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/shelf_web_socket-3.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/shelf_web_socket-3.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "sign_in_with_apple",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "sign_in_with_apple_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sign_in_with_apple_platform_interface-2.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sign_in_with_apple_platform_interface-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "sign_in_with_apple_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sign_in_with_apple_web-3.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sign_in_with_apple_web-3.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///usr/local/Caskroom/flutter/3.29.3/flutter/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///usr/local/share/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "source_gen",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/source_gen-4.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/source_gen-4.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "source_span",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/source_span-1.10.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/source_span-1.10.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "sqflite",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqflite-2.4.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqflite-2.4.2",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "sqflite_android",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "sqflite_common",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqflite_common-2.5.6",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqflite_common-2.5.6",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "sqflite_darwin",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "sqflite_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "sqlite3",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqlite3-2.9.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqlite3-2.9.4",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "sqlite3_flutter_libs",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqlite3_flutter_libs-0.5.41",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqlite3_flutter_libs-0.5.41",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "sqlparser",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/sqlparser-0.42.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/sqlparser-0.42.1",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "stack_trace",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "stream_channel",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "stream_transform",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/stream_transform-2.1.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/stream_transform-2.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "string_scanner",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "synchronized",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/synchronized-3.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/synchronized-3.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "term_glyph",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "test_api",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/test_api-0.7.7",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/test_api-0.7.7",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "timezone",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/timezone-0.10.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/timezone-0.10.1",
       "packageUri": "lib/",
       "languageVersion": "2.19"
     },
     {
       "name": "tuple",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/tuple-2.0.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/tuple-2.0.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "typed_data",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "unicode",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/unicode-0.3.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/unicode-0.3.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "url_launcher",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher-6.3.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher-6.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "url_launcher_android",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.28",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.28",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "url_launcher_ios",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.6",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.6",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "url_launcher_linux",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "url_launcher_macos",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "url_launcher_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_platform_interface-2.3.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_platform_interface-2.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "url_launcher_web",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "url_launcher_windows",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.5",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "uuid",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/uuid-4.5.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/uuid-4.5.2",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "vector_math",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/vector_math-2.2.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/vector_math-2.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/vm_service-15.0.2",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/vm_service-15.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "watcher",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/watcher-1.1.4",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/watcher-1.1.4",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "web",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/web-1.1.1",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/web-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "web_socket",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/web_socket-1.0.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/web_socket-1.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "web_socket_channel",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.3"
     },
     {
       "name": "webview_flutter",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "webview_flutter_android",
-      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.9",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "webview_flutter_platform_interface",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/webview_flutter_platform_interface-2.14.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/webview_flutter_platform_interface-2.14.0",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
     {
       "name": "webview_flutter_wkwebview",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "win32",
       "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/win32-5.15.0",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/win32-5.15.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "wkt_parser",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/wkt_parser-2.0.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/wkt_parser-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "xdg_directories",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "xml",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/xml-6.6.1",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/xml-6.6.1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
     },
     {
       "name": "yaml",
-      "rootUri": "file:///Users/vincentrosso/.pub-cache/hosted/pub.dev/yaml-3.1.3",
+      "rootUri": "file:///Users/d.sampson/.pub-cache/hosted/pub.dev/yaml-3.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -1217,8 +1191,8 @@
     }
   ],
   "generator": "pub",
-  "generatorVersion": "3.10.3",
-  "flutterRoot": "file:///usr/local/Caskroom/flutter/3.29.3/flutter",
-  "flutterVersion": "3.38.4",
-  "pubCache": "file:///Users/vincentrosso/.pub-cache"
+  "generatorVersion": "3.10.1",
+  "flutterRoot": "file:///usr/local/share/flutter",
+  "flutterVersion": "3.38.3",
+  "pubCache": "file:///Users/d.sampson/.pub-cache"
 }
