@@ -86,8 +86,12 @@ class _PermitScreenState extends State<PermitScreen> {
                     permit: permit,
                     dateFormat: _dateFormat,
                     onRenew: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       await provider.renewPermit(permit.id);
-                      _showSnackBar(context, 'Permit renewed');
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Permit renewed')),
+                      );
                     },
                     onToggleOffline: () =>
                         provider.toggleOfflineAccess(permit.id),
@@ -159,7 +163,7 @@ class _PermitScreenState extends State<PermitScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<PermitType>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   decoration: const InputDecoration(labelText: 'Permit type'),
                   items: PermitType.values
                       .map(
@@ -562,7 +566,7 @@ class _PermitLegend extends StatelessWidget {
     PermitType.temporary: 'Events, construction, pop-ups',
   };
 
-  _PermitLegend({super.key});
+  const _PermitLegend();
 
   @override
   Widget build(BuildContext context) {
@@ -615,7 +619,7 @@ class _PermitFunctions extends StatelessWidget {
     },
   ];
 
-  _PermitFunctions({super.key});
+  const _PermitFunctions();
 
   @override
   Widget build(BuildContext context) {

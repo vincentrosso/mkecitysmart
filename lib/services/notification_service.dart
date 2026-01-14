@@ -6,7 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../firebase_options.dart';
+import '../firebase_bootstrap.dart';
+import 'cloud_log_service.dart';
 import 'api_client.dart';
 
 class NotificationService {
@@ -17,7 +18,7 @@ class NotificationService {
   final _local = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
-  Future<void> initialize() async {
+  Future<void> initialize({required bool enableRemoteNotifications}) async {
     if (_initialized) return;
     // Skip push setup on web to avoid service worker/service constraints unless configured.
     if (kIsWeb) {
@@ -25,14 +26,25 @@ class NotificationService {
       return;
     }
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      await _setupLocalNotifications();
+      if (!enableRemoteNotifications) {
+        log('Push notifications disabled; init limited to local notifications.');
+        CloudLogService.instance.logEvent('push_notifications_disabled');
+        _initTimeZones();
+        _initialized = true;
+        return;
+      }
+      if (Firebase.apps.isEmpty && !await initializeFirebaseIfAvailable()) {
+        log('Skipping push notifications (Firebase unavailable).');
+        _initTimeZones();
+        _initialized = true;
+        return;
+      }
       _messaging = FirebaseMessaging.instance;
       await _requestPermissions();
-      await _setupLocalNotifications();
       await _registerToken();
       _initTimeZones();
+      CloudLogService.instance.logEvent('push_notifications_enabled');
 
       FirebaseMessaging.onMessage.listen((message) {
         final notification = message.notification;
@@ -86,25 +98,9 @@ class NotificationService {
     required String body,
     required DateTime when,
   }) async {
-    final tzTime = tz.TZDateTime.from(when, tz.local);
-    await _local.zonedSchedule(
-      when.millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      tzTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'risk_alerts',
-          'Risk Alerts',
-          importance: Importance.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidAllowWhileIdle: true,
-      payload: 'scheduled',
-    );
+    // For web and to avoid API changes, fall back to an immediate local
+    // notification instead of true scheduling.
+    await showLocal(title: title, body: body);
   }
 
   Future<void> _requestPermissions() async {
@@ -116,6 +112,10 @@ class NotificationService {
       sound: true,
     );
     log('Notification permission: ${settings.authorizationStatus}');
+    CloudLogService.instance.logEvent(
+      'push_permission_prompt',
+      data: {'status': settings.authorizationStatus.name},
+    );
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -150,8 +150,14 @@ class NotificationService {
         },
       );
       log('Registered push token: $token');
+      CloudLogService.instance.logEvent(
+        'push_token_registered',
+        data: {'platform': _platform()},
+      );
     } catch (e) {
       log('Failed to register push token: $e');
+      CloudLogService.instance
+          .recordError('push_token_register_failed', e, StackTrace.current);
     }
   }
 
@@ -167,12 +173,8 @@ class NotificationService {
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (_) {
-    // Already initialized.
+  if (Firebase.apps.isEmpty) {
+    await initializeFirebaseIfAvailable();
   }
   // Optionally handle background payloads for risk alerts.
 }

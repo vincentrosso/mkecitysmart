@@ -47,3 +47,15 @@ app.*.map.json
 # CitySmart generated artifacts
 CitySmart_App_Bundle/
 CitySmart_App_Bundle.zip
+
+# Local Codemagic configuration
+codemagic.conf
+
+# Firebase / secrets staging (generated at build time)
+.env.firebase
+.secrets/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+private_keys/
+web/firebase-config.json

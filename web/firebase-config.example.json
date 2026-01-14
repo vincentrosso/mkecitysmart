@@ -1,0 +1,10 @@
+{
+  "apiKey": "YOUR_WEB_API_KEY",
+  "appId": "YOUR_WEB_APP_ID",
+  "authDomain": "YOUR_WEB_AUTH_DOMAIN",
+  "databaseURL": "",
+  "measurementId": "YOUR_MEASUREMENT_ID",
+  "messagingSenderId": "YOUR_SENDER_ID",
+  "projectId": "YOUR_PROJECT_ID",
+  "storageBucket": "YOUR_STORAGE_BUCKET"
+}

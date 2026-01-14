@@ -5,12 +5,10 @@ class BrandingPreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'CitySmart Branding Preview',
+          'MKE CitySmart Branding Preview',
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700),
         ),
         backgroundColor: const Color(0xFF7CA726),
@@ -66,7 +64,7 @@ class _Header extends StatelessWidget {
       ),
       child: const Center(
         child: Text(
-          'CitySmart',
+          'MKE CitySmart',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w700,
@@ -120,8 +118,8 @@ class _Typography extends StatelessWidget {
       ),
       SizedBox(height: 6),
       Text(
-        'Body — Inter Regular 16. Clean, modern, legible.',
-        style: TextStyle(fontFamily: 'Inter', fontSize: 16),
+        'Body — Poppins Regular 16. Clean, modern, legible.',
+      style: TextStyle(fontFamily: 'Poppins', fontSize: 16),
       ),
     ],
   );
@@ -155,7 +153,7 @@ class _Buttons extends StatelessWidget {
           side: const BorderSide(color: Color(0xFFE0B000), width: 1.5),
           foregroundColor: const Color(0xFFE0B000),
           textStyle: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -167,7 +165,7 @@ class _Buttons extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFF5E8A45),
           textStyle: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -214,13 +212,13 @@ class _InputCard extends StatelessWidget {
         children: [
           Text(
             'Address',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 6),
           TextField(
             decoration: InputDecoration(
               hintText: '123 W Main St',
-              hintStyle: TextStyle(fontFamily: 'Inter'),
+              hintStyle: TextStyle(fontFamily: 'Poppins'),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Color(0xFF7CA726)),
                 borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -235,7 +233,7 @@ class _InputCard extends StatelessWidget {
           SizedBox(height: 10),
           Text(
             'Tip: set garbage reminders in Settings → Notifications.',
-            style: TextStyle(fontFamily: 'Inter', color: Colors.black54),
+            style: TextStyle(fontFamily: 'Poppins', color: Colors.black54),
           ),
         ],
       ),
@@ -292,7 +290,7 @@ class _AdPlaceholder extends StatelessWidget {
     child: const Center(
       child: Text(
         'AdMob Banner (ca-app-pub-xxxx/yyyy)',
-        style: TextStyle(fontFamily: 'Inter', color: Colors.black54),
+        style: TextStyle(fontFamily: 'Poppins', color: Colors.black54),
       ),
     ),
   );
@@ -318,7 +316,7 @@ class _Footer extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String text;
-  const _SectionHeader(this.text, {super.key});
+  const _SectionHeader(this.text);
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -338,7 +336,7 @@ class _ColorTile extends StatelessWidget {
   final String label;
   final Color color;
   final bool outlined;
-  const _ColorTile(this.label, this.color, {this.outlined = false, super.key});
+  const _ColorTile(this.label, this.color, {this.outlined = false});
   @override
   Widget build(BuildContext context) => Container(
     width: 170,
@@ -356,7 +354,7 @@ class _ColorTile extends StatelessWidget {
     child: Text(
       label,
       style: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: 'Poppins',
         fontWeight: FontWeight.w600,
         color: outlined ? color : _on(color),
       ),
@@ -364,7 +362,7 @@ class _ColorTile extends StatelessWidget {
   );
 
   Color _on(Color c) {
-    final y = (299 * c.red + 587 * c.green + 114 * c.blue) / 1000;
+    final y = (299 * c.r * 255 + 587 * c.g * 255 + 114 * c.b * 255) / 1000;
     return y > 128 ? Colors.black87 : Colors.white;
   }
 }
@@ -377,7 +375,6 @@ class _Tile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
-    super.key,
   });
   @override
   Widget build(BuildContext context) => Container(
@@ -395,7 +392,7 @@ class _Tile extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
           ),
         ),

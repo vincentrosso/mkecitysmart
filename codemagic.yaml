@@ -1,63 +1,70 @@
 workflows:
-  android-google-play:
-    name: Publish Android to Google Play
+  ios_release:
+    name: iOS Release
+    instance_type: mac_mini_m2
+    max_build_duration: 60
     environment:
       flutter: stable
-      java: 17
-    scripts:
-      - name: Clean build directories
-        script: |
-          flutter clean
-          rm -rf ~/.gradle/caches/*/fileHashes
-      - name: Get dependencies
-        script: flutter pub get
-      - name: Build app bundle
-        script: flutter build appbundle --release
-    artifacts:
-      - build/app/outputs/bundle/release/app-release.aab
-    publishing:
-      google_play:
-        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT
-        track: internal
-      email:
-        recipients:
-          - mkeparkapp@gmail.com
-  ios-testflight:
-    name: Publish iOS to TestFlight
-    environment:
-      flutter: stable
-      xcode: latest
+      xcode: 16.1
+      cocoapods: default
+      groups:
+        - firebase-secrets
+        - ios-signing
+        - app-store-connect
       vars:
-        PACKAGE_NAME: "com.mkeparkapp.app"
-    cache:
-      cache_paths:
-        - ~/.pub-cache
-        - ~/Library/Caches/CocoaPods
+        APP_BUNDLE_ID: com.mkecitysmart.app
     scripts:
-      - name: Clean build directories
-        script: flutter clean
-      - name: Get dependencies
-        script: flutter pub get
-      - name: Set up automatic signing
+      - name: Restore Firebase secrets
         script: |
-          keychain initialize
-          app-store-connect fetch-signing-files \
-            --type IOS_APP_DEVELOPMENT \
-            --bundle-ids com.mkeparkapp.app \
-            --create
-          keychain add-certificates
-          xcode-project use-profiles
-      - name: Build IPA
-        script: flutter build ipa --release
+          mkdir -p .secrets/firebase/android .secrets/firebase/ios
+          echo "$FIREBASE_ENV_FILE" > .env.firebase
+          echo "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > .secrets/firebase/android/google-services.json
+          echo "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > .secrets/firebase/ios/GoogleService-Info.plist
+          ./scripts/flutter_with_secrets.sh pub get
+      - name: Build iOS release IPA
+        script: ./scripts/flutter_with_secrets.sh build ipa --release
     artifacts:
+      - build/ios/archive/*.xcarchive
       - build/ios/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_API_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_app_store: false
-        submit_to_testflight: true
-      email:
-        recipients:
-          - mkeparkapp@gmail.com
+    code_signing:
+      certificates:
+        - certificate: $IOS_DISTRIBUTION_CERTIFICATE
+          password: $IOS_CERTIFICATE_PASSWORD
+      provisioning_profiles:
+        - $IOS_PROVISIONING_PROFILE
+
+  android_release:
+    name: Android Release
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      groups:
+        - firebase-secrets
+        - android-signing
+    scripts:
+      - name: Restore Firebase secrets and keystore
+        script: |
+          mkdir -p .secrets/firebase/android .secrets/firebase/ios
+          echo "$FIREBASE_ENV_FILE" > .env.firebase
+          echo "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > .secrets/firebase/android/google-services.json
+          echo "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > .secrets/firebase/ios/GoogleService-Info.plist
+          if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            {
+              echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}"
+              echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+              echo "keyAlias=${ANDROID_KEY_ALIAS}"
+              echo "storeFile=../app/upload-keystore.jks"
+            } > android/key.properties
+          else
+            echo "ANDROID_KEYSTORE_BASE64 not set. Building with debug keystore." >&2
+          fi
+          ./scripts/flutter_with_secrets.sh pub get
+      - name: Build Android artifacts
+        script: |
+          ./scripts/flutter_with_secrets.sh build appbundle --release
+          ./scripts/flutter_with_secrets.sh build apk --release
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/flutter-apk/*.apk

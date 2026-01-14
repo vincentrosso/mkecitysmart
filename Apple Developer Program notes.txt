@@ -1,0 +1,42 @@
+- Apple Developer Program account under team J8U8FW3PA8 with access to App Store Connect for the app. Make sure the App ID is already created (bundle id matches the Flutter app).
+
+- iOS Distribution certificate (.p12) exported from Keychain (or a codemagic_code_sign.p12 as
+mentioned in README.md:93-100). Keep the certificate password handy; Fastlane uses it when importing the key. Install the certificate locally (double-click or security import) so Xcode/Fastlane can use it.
+
+- “App Store” provisioning profile (.mobileprovision) generated from the developer portal for that bundle ID, using the above distribution cert, and downloaded locally. Place it somewhere like .secrets/apple/J8U8FW3PA8_20251204.mobileprovision and either double-click to install or
+let Fastlane match handle it. The profile must include the exact bundle id and any required entitlements.
+
+- App Store Connect authentication: choose either
+  1. App Store Connect API key (AuthKey_XXXXXX.p8 + key ID + issuer ID). Fastlane
+     uses this when APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_ID, and
+     APP_STORE_CONNECT_API_ISSUER_ID are set, or
+  2. Apple ID/password with an app-specific password
+     (FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD). You’d also set APPLE_ID, TEAM_ID, and
+     optionally ITC_TEAM_ID.
+
+
+
+
+transporter worked --
+
+flutter build ipa -v 
+
+xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey W7MF924C39 --apiIssuer 89dbf878-5b33-447c-a23c-3bac56284750
+
+
+flutter build ipa -v
+
+xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey W7MF924C39 --apiIssuer 89dbf878-5b33-447c-a23c-3bac56284750
+Running altool at path '/Applications/Xcode-16.1.0.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Frameworks/AppStoreService.framework/Support/altool'...
+2025-12-06 22:01:06.704 [ContentDelivery.Uploader.6000027EC200]
+================
+UPLOAD SUCCEEDED
+Delivery UUID: 3f574920-63db-479f-9a05-54993107a1fb
+Transferred 26686701 bytes in 7.416 seconds (3.6MB/s)
+================
+No errors uploading 'build/ios/ipa/mkecitysmart.ipa'
+
+
+ APP_STORE_CONNECT_API_KEY_ID=W7MF924C39 \
+  APP_STORE_CONNECT_API_ISSUER=89dbf878-5b33-447c-a23c-3bac56284750 \
+  ./scripts/ios_build_and_upload.sh

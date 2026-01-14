@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CitySmart Demo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root{
+      --bg:#081D19;
+      --card:#0C241F;
+      --accent:#E0C164;
+      --text:#FDF7EC;
+      --muted:#b8c7c2;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg);}
+    header{padding:14px 18px;background:#0d2a26;display:flex;align-items:center;justify-content:space-between}
+    h1{margin:0;font-size:18px}
+    .tag{background:#12342f;padding:6px 10px;border-radius:12px;font-size:12px;color:var(--accent)}
+
+    main{display:grid;grid-template-columns:2fr 1fr;gap:14px;padding:14px;height:calc(100vh - 56px)}
+    @media (max-width:900px){main{grid-template-columns:1fr;grid-auto-rows:min-content;height:calc(100vh - 110px)}}
+
+    .card{background:var(--card);border:1px solid #1f3a34;border-radius:12px;padding:12px;display:flex;flex-direction:column}
+    #map{flex:1;min-height:260px;border-radius:10px;overflow:hidden}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+    .btn{background:#12342f;border:1px solid rgba(255,255,255,0.03);color:var(--accent);padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--muted);border:1px dashed rgba(255,255,255,0.03)}
+    .heat-legend{display:flex;gap:12px;margin-top:8px;font-size:12px;align-items:center;color:var(--muted)}
+    .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+    .panel{display:flex;flex-direction:column;gap:12px}
+    .alert{background:#132b27;border:1px solid #1f3a34;padding:10px;border-radius:10px}
+    .alerts{display:flex;flex-direction:column;gap:8px}
+    .pill{background:#12342f;color:var(--accent);padding:4px 8px;border-radius:10px;font-size:11px}
+    .alt-side{font-size:18px;font-weight:700;color:var(--accent)}
+    a{color:var(--accent)}
+
+    /* small footer note */
+    .muted{color:var(--muted);font-size:13px}
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CitySmart Live Demo</h1>
+    <div class="tag" aria-hidden>Scripted preview</div>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="mapHeading">
+      <h2 id="mapHeading" style="font-size:14px;margin:0 0 8px 0">Live enforcement view</h2>
+      <div id="map" role="region" aria-label="Map showing live enforcement and heat" tabindex="0"></div>
+
+      <div class="controls" aria-hidden>
+        <button id="toggleHeat" class="btn">Toggle Heat</button>
+        <button id="toggleAlerts" class="btn secondary">Toggle Alerts</button>
+        <button id="pauseUpdates" class="btn">Pause</button>
+        <div style="margin-left:auto" class="muted">© OSM tiles</div>
+      </div>
+
+      <div class="heat-legend" aria-hidden>
+        <span class="dot" style="background:#2ecc71"></span><span class="muted">High</span>
+        <span class="dot" style="background:#f1c40f"></span><span class="muted">Med</span>
+        <span class="dot" style="background:#e74c3c"></span><span class="muted">Low</span>
+      </div>
+    </section>
+
+    <aside class="card panel" aria-labelledby="sideHeading">
+      <h2 id="sideHeading" style="font-size:14px;margin:0 0 6px 0">Status & Alerts</h2>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:4px;">Alt-side parking</div>
+        <div class="alt-side" id="altSide">Detecting…</div>
+        <div class="muted">Auto-rotates by day/odd-even.</div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;">Alerts</div>
+        <div class="alerts" id="alerts" aria-live="polite"></div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;">Sponsor</div>
+        <div class="alert">Powered by CitySmart • Contact: <a href="mailto:sponsors@citysmart.com">sponsors@citysmart.com</a></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Small contract:
+    // - Inputs: none (demo). Outputs: interactive map, alerts, heat points.
+    // - Error modes: tile loading failure (tile provider), map init issues logged to console.
+
+    const center = [43.0389, -87.9065];
+    const map = L.map('map', { zoomControl: true }).setView(center, 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // --- Demo data ---
+    const sightings = [
+      {lat:43.04,lng:-87.91,type:'tow',loc:'Water & State'},
+      {lat:43.035,lng:-87.899,type:'enforcer',loc:'Brady & Humboldt'},
+      {lat:43.046,lng:-87.92,type:'tow',loc:'3rd & Michigan'},
+      {lat:43.028,lng:-87.905,type:'enforcer',loc:'Bay St & KK'},
+    ];
+
+    // Layers tracking
+    const sightingLayer = L.layerGroup().addTo(map);
+    const heatLayer = L.layerGroup().addTo(map);
+
+    function renderSightings(){
+      sightingLayer.clearLayers();
+      sightings.forEach(s=>{
+        const color = s.type === 'tow' ? '#e74c3c' : '#3498db';
+        L.circleMarker([s.lat,s.lng],{
+          radius:10,
+          color, fillColor: color, fillOpacity:0.9, weight:0
+        }).addTo(sightingLayer).bindTooltip(`${s.type==='tow'?'Tow':'Enforcer'} • ${s.loc}`);
+      });
+    }
+    renderSightings();
+
+    // Heatpoints (mock) renderer
+    function scoreColor(s){ if (s>0.7) return '#2ecc71'; if (s>0.45) return '#f1c40f'; return '#e74c3c'; }
+    function addHeat(){
+      heatLayer.clearLayers();
+      for (let i=0;i<25;i++){
+        const lat = center[0]+(Math.random()-0.5)*0.02;
+        const lng = center[1]+(Math.random()-0.5)*0.02;
+        const score = Math.random();
+        L.circleMarker([lat,lng],{
+          radius:8,
+          color: scoreColor(score),
+          fillColor: scoreColor(score),
+          fillOpacity:0.4,
+          weight:0
+        }).addTo(heatLayer);
+      }
+    }
+    addHeat();
+
+    // Alerts panel
+    const alertsEl = document.getElementById('alerts');
+    function refreshAlerts(){
+      const samples = [
+        {title:'Tow sighting near Water St.', time:'Just now'},
+        {title:'Enforcer sweep near Brady St.', time:'5 min ago'},
+        {title:'High ticket risk (snow emergency)', time:'30 min ago'},
+      ];
+      alertsEl.innerHTML = samples.map(a=>
+        `<div class="alert"><div class="pill">Live</div><div style="font-weight:700;margin-top:6px;">${a.title}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">${a.time}</div></div>`
+      ).join('');
+    }
+    refreshAlerts();
+
+    // Alt-side status (odd/even by date)
+    function refreshAltSide(){
+      const day = new Date().getDate();
+      const isOdd = day % 2 === 1;
+      document.getElementById('altSide').textContent = isOdd ? 'Odd side today' : 'Even side today';
+    }
+    refreshAltSide();
+
+    // Periodic live update simulation
+    let updateTimer = null;
+    let paused = false;
+    function startUpdates(){
+      if (updateTimer) return;
+      updateTimer = setInterval(()=>{
+        if (paused) return;
+        // rotate sightings: remove oldest beyond 6, add a new one
+        sightings.push({
+          lat: center[0] + (Math.random()-0.5)*0.01,
+          lng: center[1] + (Math.random()-0.5)*0.01,
+          type: Math.random()>0.5 ? 'tow' : 'enforcer',
+          loc: 'Live ping'
+        });
+        while (sightings.length > 6) sightings.shift();
+        renderSightings();
+
+        // occasionally refresh heat and alerts
+        if (Math.random() > 0.5) addHeat();
+        if (Math.random() > 0.6) refreshAlerts();
+      }, 8000);
+    }
+    function stopUpdates(){ if (updateTimer){ clearInterval(updateTimer); updateTimer = null; } }
+    startUpdates();
+
+    // UI controls
+    const toggleHeatBtn = document.getElementById('toggleHeat');
+    const toggleAlertsBtn = document.getElementById('toggleAlerts');
+    const pauseBtn = document.getElementById('pauseUpdates');
+
+    let heatVisible = true;
+    toggleHeatBtn.addEventListener('click', ()=>{
+      heatVisible = !heatVisible;
+      if (heatVisible) map.addLayer(heatLayer); else map.removeLayer(heatLayer);
+      toggleHeatBtn.textContent = heatVisible ? 'Hide Heat' : 'Show Heat';
+    });
+
+    let alertsVisible = true;
+    toggleAlertsBtn.addEventListener('click', ()=>{
+      alertsVisible = !alertsVisible;
+      document.getElementById('alerts').style.display = alertsVisible ? 'flex' : 'none';
+      toggleAlertsBtn.textContent = alertsVisible ? 'Hide Alerts' : 'Show Alerts';
+    });
+
+    pauseBtn.addEventListener('click', ()=>{
+      paused = !paused;
+      pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+    });
+
+    // Small accessibility: focus map on keyboard users
+    document.getElementById('map').addEventListener('keydown', (e)=>{
+      if (e.key === '+' || e.key === '=') map.zoomIn();
+      if (e.key === '-') map.zoomOut();
+    });
+
+    // Basic error logging
+    window.addEventListener('error', (ev)=>{ console.warn('Demo error:', ev.message); });
+
+  </script>
+</body>
+</html>

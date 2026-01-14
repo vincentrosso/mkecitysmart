@@ -4,9 +4,12 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <application
-        android:label="MKEPark_flutter_web"
+        android:label="MKE CitySmart"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2009498889741048~9019853313" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -32,7 +32,7 @@ class MapLegend extends StatelessWidget {
 class _LegendRow extends StatelessWidget {
   final Color color;
   final String label;
-  const _LegendRow({required this.color, required this.label, super.key});
+  const _LegendRow({required this.color, required this.label});
   @override
   Widget build(BuildContext context) => Row(
     children: [

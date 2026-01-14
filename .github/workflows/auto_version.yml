@@ -1,0 +1,32 @@
+name: Auto Version
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bump:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump pubspec version
+        id: bump
+        run: |
+          python3 scripts/bump_version.py
+          NEW_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected; skipping commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push

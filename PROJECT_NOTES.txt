@@ -1,0 +1,97 @@
+Development notes for mkecitysmart
+---------------------------------------
+
+Change log (most recent first)
+- 2026-01-14 [F-002] Inventory Cloud Functions (prod) - clean deploy confirmed with logs.
+  Status: DONE
+  Goal: Full visibility into deployed functions in production (project: mkeparkapp-1ad15), with confirmation of clean deploys, consistent configs (region: us-central1, runtime: nodejs20, memory: 256MiB), and no errors in audit/runtime logs. This answers "What backend actually exists right now?" and verifies stability for the P0 chain.
+  Inventory Summary: 6 deployed 2nd gen Cloud Functions (via gcloud functions describe --gen2):
+    - cleanupExpiredSightings (Scheduled trigger; expiration system)
+    - helloWorld (HTTPS trigger; test endpoint)
+    - mirrorSightingsToAlerts (Firestore write on sightings/{sightingId})
+    - mirrorUserSightingsToGlobal (Firestore create on users/{uid}/sightings/{sightingId})
+    - notifyOnApproval (Firestore update on alerts/{alertId})
+    - submitSighting (Callable HTTPS trigger; core submission endpoint)
+  Config Checks: All functions consistent (us-central1, nodejs20, 256MiB); triggers align with app needs (submission, mirroring for feeds/alerts, scheduled cleanup).
+  Log Verification: Deployment audits successful (e.g., 2026-01-14T18:52:19Z for submitSighting); runtime errors none (severity>=ERROR empty); cleanupExpiredSightings runs ~every 5 min (HTTP 200 OK, ~0.1–1.0s latency); submitSighting has no invocations yet.
+  Commands Used: gcloud functions describe --gen2; gcloud logging read (resource.type=cloud_run_revision, service_name, severity>=ERROR).
+  Recommendations: Add targeted console.log statements (e.g., "Expired X sightings") for faster debugging; backend appears stable.
+- 2026-01-11 [F-005] Verified sightings can be created and persist in Firestore; manual docs showed feed invisibility comes from path/schema mismatch; data layer is sound when written to correct collections.
+- 2026-01-10 [F-001] Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
+- 2026-01-11 [F-004] Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
+- 2026-01-14 [F-401] Updated alerts rules for public reads + admin deletes; added firestore.indexes.json reference; deployed rules + indexes.
+
+- Flutter version: uses Flutter 3.29.x locally; run `flutter --version` if needed.
+- Platforms: iOS, Android, Web; web uses `web/firebase-config.json` and Dart config in `lib/firebase_options.dart`.
+- Firebase: Config in `lib/firebase_options.dart` (web/android/ios). Web also has `web/firebase-config.json`. Register authorized domains for web in Firebase Auth.
+- Auth flows:
+  * Email/password: handled in `lib/screens/auth_screen.dart` via `UserProvider.register/login`.
+  * Phone, Google, Apple: see `UserProvider` methods and `_handlePhoneSignUp`, `_handleGoogle`, `_handleApple` in auth screen.
+  * Guest mode supported.
+- Profile:
+  * Profile page (`lib/screens/profile_screen.dart`) now geocodes addresses via `geocoding` and saves raw + formatted address + lat/lng in `UserProfile`.
+  * `UserProfile` JSON fields: `formattedAddress`, `addressLatitude`, `addressLongitude` added.
+- Linting:
+  * `flutter analyze` currently clean. Deprecated `withOpacity`, `describeEnum`, and `desiredAccuracy` already replaced.
+  * Welcome dialog and quick-start tutorial are disabled via flags in `lib/main.dart`. Promo banner on dashboard is commented out.
+- CI sanity check:
+  * Run `flutter analyze` after changes (fast lint/error pass; no device/emulator required).
+- Web embeds:
+  * `openchargemap_embed_web.dart` and `publicstuff_embed_web.dart` use `package:web` instead of `dart:html`. Dependency `web` is added to pubspec.
+- Scripts:
+  * `scripts/test_firebase_auth.py` to hit Firebase Identity Toolkit REST (sign-up/sign-in). Reads web API key from env `FIREBASE_WEB_API_KEY` or falls back to `lib/firebase_options.dart` web key.
+- Pods / iOS:
+  * CocoaPods repo updated and pods installed with Firebase iOS SDK 12.4.0. Warning about base configuration is benign with custom xcconfigs.
+- Feature toggles:
+  * Welcome dialog: `CitySmartShell._welcomeDialogEnabled` (currently false).
+  * Quick start tutorial: `_quickStartEnabled` false; helper widgets removed.
+  * Promo banner disabled in `lib/screens/dashboard_screen.dart`.
+- Addressing:
+  * When updating profile address, failures in geocoding block the save with a snackbar.
+- Debugging:
+  * VS Code launch config in `.vscode/launch.json` includes Flutter web (Chrome).
+- Navigation chrome:
+  * Shared `CitySmartScaffold` (drawer + CitySmart title + bottom nav) in `lib/widgets/citysmart_scaffold.dart`.
+  * Applied to landing, dashboard, feed, profile, auth, vehicles, and charging map screens; bottom nav routes to `/dashboard`, `/citysmart-map`, `/citysmart-feed`.
+- Branding:
+  * User-facing brand text updated to “MKE CitySmart” across app bars, welcome, splash, and auth copy.
+  * iOS/macOS app icons updated from `assets/MKE_AppIcon.appiconset.zip` into:
+    - `ios/Runner/Assets.xcassets/AppIcon.appiconset/`
+    - `macos/Runner/Assets.xcassets/AppIcon.appiconset/` (currently uses the same set; replace with macOS-specific sizes if provided).
+  * Web manifest renamed to “MKE CitySmart” with updated icons (`web/icons/Icon-192.png`, `Icon-512.png`, maskable variants) and favicon regenerated from the 1024px master.
+
+Open items / reminders:
+- If re-enabling welcome or quick-start, restore content in `main.dart`.
+- If you rotate Firebase keys, update both `lib/firebase_options.dart` and `web/firebase-config.json`.
+- For web iframe embeds, ensure `web` dependency stays in sync and authorized domains are set.
+- After any code changes, run `flutter analyze` to ensure code quality.
+- The project should maintain at least 80% unit test coverage.
+
+App layout (current)
+- Shell: `CitySmartScaffold` (drawer + title + bottom nav) wraps dashboard/feed/map/profile/auth/vehicles/charging map.
+- Routes: `/dashboard` (default home), `/citysmart-feed`, `/citysmart-map`, `/profile`, `/auth/login`, `/auth/register`, `/vehicles`, `/charging-map`.
+- Drawer: dashboard, map, feed, profile; auth/profile icon in top-right of scaffold.
+- Dashboard tiles include alerts, permits, tickets, street sweeping, vehicles, EV chargers (last), alt side parking (third).
+- Quick start, welcome banner, and promo banner are disabled via flags in `lib/main.dart` / `dashboard_screen.dart`.
+
+Coverage and size snapshot (after latest tests)
+- Overall: 26.44% (1703/6440 lines) from `coverage/lcov.info`.
+- Coverage by segment: screens 4.6% (128/2813), services 75.2% (574/763), widgets 16.7% (26/156), models 84.1% (391/465), providers 25.6% (188/733), data 26.7% (356/1331), citysmart 15.3% (13/85).
+- LOC by segment (Dart): screens 7,739; services 2,000; widgets 525; models 1,142; providers 1,836; data 3,079; citysmart 611.
+
+Architecture flow (text diagram)
+- UI (screens/widgets) ⇄ Providers (ChangeNotifier, e.g., UserProvider)
+    Providers depend on UserRepository + services for async work and local hydration.
+- UserRepository
+    ⇄ Firebase Auth (session)
+    ⇄ Firestore (users + subcollections)
+    ⇄ Drift Local DB (profiles, vehicles, pending mutations)
+    → Outbox sync: enqueue on Firestore failure → syncPending retries when online.
+- Services
+    - ApiClient (POST with env base URL/API key) → Prediction/Notification/token registration.
+    - RiskAlertService (timer, tow/ticket scoring) → LocationService + CityTicketStatsService + TicketRiskPredictionService → NotificationService (local/FCM).
+    - NotificationService (FCM/local) guarded for web/disabled flag.
+    - StreetSegmentService (ArcGIS), TicketApiService (mock), PredictionApiService (HTTP).
+    - LocationService (Geolocator, sample zones, distance/directions).
+- Firebase bootstrap
+    - firebase_bootstrap + firebase_options (platform configs), web also uses web/firebase-config.json.

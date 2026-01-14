@@ -1,0 +1,195 @@
+MKE City Smart — TODO Tracking
+Last Updated: 2026-01-08
+Owner: Wayne26
+
+LEGEND
+- Status: [TODO] [NEXT] [IN-PROGRESS] [BLOCKED] [DONE]
+- Priority: P0 (must) / P1 (should) / P2 (nice)
+- When we complete a task:
+  1) flip status to [DONE]
+  2) add a short completion note under NOTES (with date)
+  3) add a matching entry in PROJECT NOTES change log (same task ID)
+
+========================================================
+CURRENT STATE SNAPSHOT (as of 2026-01-08)
+--------------------------------------------------------
+KNOWN (from recent work)
+- App: Flutter + Firebase
+- Plan: Firebase Blaze (pay-as-you-go)
+- Backend: Cloud Functions setup/deploy has been in progress; need to ensure correct project/region/runtime and that the app is calling the correct endpoints.
+- Goal: finish backend so sightings + live feed + expiration work reliably, including iOS TestFlight release readiness.
+
+UNKNOWN / NEEDS CONFIRMATION (we will fill these in as we verify)
+- Which Cloud Functions exist in prod (names + triggers + region)
+- Which environment the app is currently pointing to (dev vs prod)
+- Firestore collections actually used by the app (exact paths)
+- Whether sightings are currently saving correctly end-to-end
+
+========================================================
+P0 — STABILIZE BACKEND + MAKE CORE LOOP WORK
+--------------------------------------------------------
+
+[F-001] [DONE] (P0) Verify Firebase project + environment configuration
+- Confirm projectId used by app matches deployed backend
+- Confirm iOS/Android configs match (GoogleService-Info.plist / google-services.json)
+NOTES:
+- 2026-01-08: Created tracking. Need to verify configs.
+- 2026-01-11: Verified app Firebase config points to mkeparkapp-1ad15 (iOS + Android). Verified firebase CLI using prod alias.
+- 2026-01-10: Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
+
+[F-002] [DONE] (P0) Inventory Cloud Functions (prod) and confirm deploy is clean
+- List existing functions and regions
+- Confirm runtime versions and required env vars
+- Confirm logs show no auth/permission errors
+NOTES:
+- 2026-01-11: Confirmed helloWorld deployed and reachable. Located cleanupExpiredSightings code in repo; still need full prod inventory list (names/regions/triggers).
+- 2026-01-14: Full inventory via gcloud functions describe --gen2. Six functions deployed (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB. No errors in audit/runtime logs; cleanupExpiredSightings shows regular 200s via scheduler. submitSighting has no invocations yet.
+
+[F-003] [NEXT] (P0) Confirm app-to-backend connectivity
+- Identify exactly which endpoints/call sites the app uses
+- Ensure app hits correct function/URL and handles errors
+NOTES:
+
+[F-004] [DONE] (P0) Finalize Firestore schema used by the app (source of truth)
+- Collections + document fields
+- Indexes needed (geo/time queries)
+- Security rules aligned with schema
+NOTES:
+- 2026-01-11: Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
+
+[F-005] [DONE] (P0) Sightings: create + store reliably (end-to-end)
+- Submit tow/enforcer sighting
+- Fields: type, geo, createdAt, optional photo, notes, uid
+- Ensure write succeeds + read shows in feed
+NOTES:
+- 2026-01-11: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
+
+[F-006] [NEXT] (P0) Sightings feed: query + filters work
+- Filter: radius + time window (ex: last 2 hours)
+- Sort newest first
+- Pagination (basic)
+NOTES:
+
+[F-007] [IN-PROGRESS] (P0) Expiration system for “live sightings”
+- Auto-expire after X minutes/hours
+- Remove from “live” feed without deleting history (optional)
+NOTES:
+- 2026-01-11: Cleanup scheduler function code located (marks expired). Need to confirm deploy + verify it runs against prod data.
+
+[F-008] [TODO] (P0) Moderation basics
+- Report button
+- Simple spam controls (rate limiting per uid/device)
+NOTES:
+
+========================================================
+P1 — HIGH-IMPACT FEATURES (AFTER CORE LOOP)
+--------------------------------------------------------
+
+[F-101] [TODO] (P1) Heatmap + pattern analytics (time-of-day/day-of-week)
+- Density by area/time
+- Identify hot zones
+NOTES:
+
+[F-102] [TODO] (P1) Smart notifications
+- Alerts near saved places / high-risk zones
+- Quiet hours + frequency rules
+NOTES:
+
+[F-103] [TODO] (P1) Saved places (home/work/favorites)
+- Custom radius per place
+NOTES:
+
+[F-104] [TODO] (P1) Tow / impound helper flow
+- Steps/checklist + quick links
+NOTES:
+
+========================================================
+P1 — INTEGRATIONS (CITY SERVICES IN-APP)
+--------------------------------------------------------
+
+[F-201] [TODO] (P1) Pay parking tickets inside app (embedded secure flow)
+- Use in-app web view
+- Confirm official portal processing remains correct
+NOTES:
+
+[F-202] [TODO] (P1) City reporting tools (DPW/potholes/etc)
+- Guided UI to official links/endpoints
+NOTES:
+
+[F-203] [TODO] (P1) EV charging map integration
+- Nearby search, filters, saved stations
+NOTES:
+
+========================================================
+P1 — MONETIZATION + GROWTH
+--------------------------------------------------------
+
+[F-301] [TODO] (P1) Subscription tiers definition + gating
+- Free vs premium
+- Premium: smart alerts, heatmaps, expanded radius/time, ad-free
+NOTES:
+
+[F-302] [TODO] (P1) Ads (optional)
+- Placement + frequency caps
+NOTES:
+
+[F-303] [TODO] (P1) Referral / invite system
+- Premium trial reward for referrals
+NOTES:
+
+========================================================
+P0/P1 — QUALITY / SECURITY / RELEASE READINESS
+--------------------------------------------------------
+
+[F-401] [DONE] (P0) Security rules audit
+- Only authenticated writes
+- Prevent editing others’ sightings
+NOTES:
+- 2026-01-11: Added firestore target to firebase.json, created firestore.rules, fixed compilation error, deployed Firestore rules successfully to prod.
+- 2026-01-14: Updated alerts rules for public reads + admin deletes, added firestore.indexes.json reference, deployed rules + indexes.
+
+[F-402] [TODO] (P1) Performance (geo queries, feed pagination, caching)
+NOTES:
+
+[F-403] [TODO] (P1) Crash + analytics instrumentation
+- Track post success/fail, feed latency, subscription funnel
+NOTES:
+
+[F-404] [NEXT] (P0) iOS TestFlight readiness checklist (backend + config)
+- Ensure release build points to correct env
+- Verify notifications (if enabled)
+NOTES:
+
+========================================================
+RUNNING NOTES (quick scratchpad)
+--------------------------------------------------------
+- Use this section for short notes during implementation.
+- For anything important, also add to PROJECT NOTES.
+
+========================================================
+DONE LOG (most recent first)
+---------------------------------------------------------
+2026-01-14 — [F-002] Inventory Cloud Functions (prod) and confirm deploy is clean
+  Result: Full visibility into prod functions (mkeparkapp-1ad15). Six v2 functions (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingsToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB; audit/runtime logs clean; cleanupExpiredSightings runs ~every 5 min with 200s; submitSighting has no invocations yet.
+  Evidence: gcloud functions describe --gen2; gcloud logging read (cloud_run_revision, severity>=ERROR)
+2026-01-11 — [F-005] Sightings: create + store reliably (end-to-end)
+  Result: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
+  Evidence: Manual Firestore validation
+2026-01-10 — [F-001] Verify Firebase project + environment configuration
+  Result: Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
+  Evidence: Firebase Console verification
+2026-01-11 — [F-004] Finalize Firestore schema used by the app (source of truth)
+  Result: Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
+  Evidence: Manual Firestore validation
+2026-01-14 — [F-401] Security rules audit (update)
+  Result: Updated alerts rules for public reads + admin deletes; added firestore.indexes.json reference; deployed rules + indexes.
+  Evidence: firebase deploy --only firestore (prod)
+2026-01-11 — [F-401] Security rules audit
+  Result: Added firestore target to firebase.json, created firestore.rules, fixed compilation error, deployed Firestore rules to prod.
+  Evidence: firebase deploy --only firestore:rules (prod)
+2026-01-11 — [F-001] Verify Firebase project + environment configuration
+  Result: Confirmed app Firebase config points to mkeparkapp-1ad15 (iOS + Android). Firebase CLI using prod alias.
+  Evidence: Config review; firebase alias prod -> mkeparkapp-1ad15
+-- YYYY-MM-DD — [F-XXX] Title
+  Result: (1–2 lines describing what changed / verified)
+  Evidence: (link to commit/PR, screenshot ref, command output, TestFlight build #, etc.)

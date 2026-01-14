@@ -5,7 +5,7 @@ class SubscriptionPlan {
     required this.tier,
     required this.maxAlertRadiusMiles,
     required this.alertVolumePerDay,
-    required this.feeWaiverPct,
+    required this.zeroProcessingFee,
     required this.prioritySupport,
     required this.monthlyPrice,
   });
@@ -13,7 +13,7 @@ class SubscriptionPlan {
   final SubscriptionTier tier;
   final double maxAlertRadiusMiles;
   final int alertVolumePerDay;
-  final double feeWaiverPct;
+  final bool zeroProcessingFee;
   final bool prioritySupport;
   final double monthlyPrice;
 

@@ -19,9 +19,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 # --------- CONFIG: EDIT THESE ---------
-APP_NAME="mkeparkapp"
-PACKAGE_NAME="com.mkeparkapp.app"   # Update to the final app id if different
-SERVICE_ACCOUNT_JSON="/Users/vincentrosso/Dropbox/development/codex/mkeparkapp-6edc3-3befbcafc8aa.json"
+APP_NAME="mkecitysmart"
+PACKAGE_NAME="com.mkecitysmart.app"   # Update to the final app id if different
+SERVICE_ACCOUNT_JSON="/Users/vincentrosso/Dropbox/development/codex/mkecitysmart-6edc3-3befbcafc8aa.json"
 FASTLANE_DIR="android/fastlane"
 AAB_PATH="build/app/outputs/bundle/release/app-release.aab"
 PUBSPEC="pubspec.yaml"

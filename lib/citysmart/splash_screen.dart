@@ -15,7 +15,10 @@ class _SplashState extends State<SplashScreen> {
     showSpinner = Random().nextBool();
     Future.delayed(
       const Duration(seconds: 2),
-      () => Navigator.pushReplacementNamed(context, '/home'),
+      () {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/home');
+      },
     );
   }
 
@@ -33,12 +36,12 @@ class _SplashState extends State<SplashScreen> {
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'CitySmart',
-                style: TextStyle(
-                  fontSize: 32,
-                  color: Color(0xFFE0B000),
+              children: [
+                const Text(
+                  'MKE CitySmart',
+                  style: TextStyle(
+                    fontSize: 32,
+                    color: Color(0xFFE0B000),
                   fontWeight: FontWeight.w700,
                 ),
               ),

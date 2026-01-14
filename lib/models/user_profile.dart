@@ -12,9 +12,11 @@ class UserProfile {
     required this.id,
     required this.name,
     required this.email,
-    required this.password,
     this.phone,
     this.address,
+    this.formattedAddress,
+    this.addressLatitude,
+    this.addressLongitude,
     this.vehicles = const [],
     this.preferences = const UserPreferences(
       parkingNotifications: true,
@@ -38,9 +40,11 @@ class UserProfile {
   final String id;
   final String name;
   final String email;
-  final String password;
   final String? phone;
   final String? address;
+  final String? formattedAddress;
+  final double? addressLatitude;
+  final double? addressLongitude;
   final List<Vehicle> vehicles;
   final UserPreferences preferences;
   final AdPreferences adPreferences;
@@ -56,9 +60,11 @@ class UserProfile {
   UserProfile copyWith({
     String? name,
     String? email,
-    String? password,
     String? phone,
     String? address,
+    String? formattedAddress,
+    double? addressLatitude,
+    double? addressLongitude,
     List<Vehicle>? vehicles,
     UserPreferences? preferences,
     List<Permit>? permits,
@@ -75,9 +81,11 @@ class UserProfile {
       id: id,
       name: name ?? this.name,
       email: email ?? this.email,
-      password: password ?? this.password,
       phone: phone ?? this.phone,
       address: address ?? this.address,
+      formattedAddress: formattedAddress ?? this.formattedAddress,
+      addressLatitude: addressLatitude ?? this.addressLatitude,
+      addressLongitude: addressLongitude ?? this.addressLongitude,
       vehicles: vehicles ?? this.vehicles,
       preferences: preferences ?? this.preferences,
       adPreferences: adPreferences ?? this.adPreferences,
@@ -101,9 +109,11 @@ class UserProfile {
       id: json['id'] as String,
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      password: json['password'] as String? ?? '',
       phone: json['phone'] as String?,
       address: json['address'] as String?,
+      formattedAddress: json['formattedAddress'] as String?,
+      addressLatitude: (json['addressLatitude'] as num?)?.toDouble(),
+      addressLongitude: (json['addressLongitude'] as num?)?.toDouble(),
       vehicles: vehiclesJson
           .map((vehicle) => Vehicle.fromJson(vehicle as Map<String, dynamic>))
           .toList(),
@@ -124,26 +134,29 @@ class UserProfile {
       cityId: json['cityId'] as String? ?? 'default',
       tenantId: json['tenantId'] as String? ?? 'default',
       rulePack: CityRulePack(
-        cityId: (json['rulePack'] as Map<String, dynamic>?)?['cityId'] as String? ??
+        cityId:
+            (json['rulePack'] as Map<String, dynamic>?)?['cityId'] as String? ??
             'default',
-        displayName: (json['rulePack'] as Map<String, dynamic>?)?['displayName']
+        displayName:
+            (json['rulePack'] as Map<String, dynamic>?)?['displayName']
                 as String? ??
             'Default City',
-        maxVehicles: (json['rulePack'] as Map<String, dynamic>?)?['maxVehicles']
+        maxVehicles:
+            (json['rulePack'] as Map<String, dynamic>?)?['maxVehicles']
                 as int? ??
             5,
         defaultAlertRadius:
             (json['rulePack'] as Map<String, dynamic>?)?['defaultAlertRadius']
-                    as int? ??
-                5,
+                as int? ??
+            5,
         quotaRequestsPerHour:
             (json['rulePack'] as Map<String, dynamic>?)?['quotaRequestsPerHour']
-                    as int? ??
-                100,
+                as int? ??
+            100,
         rateLimitPerMinute:
             (json['rulePack'] as Map<String, dynamic>?)?['rateLimitPerMinute']
-                    as int? ??
-                30,
+                as int? ??
+            30,
       ),
       languageCode: json['languageCode'] as String? ?? 'en',
       permits: permitsJson
@@ -169,9 +182,11 @@ class UserProfile {
     'id': id,
     'name': name,
     'email': email,
-    'password': password,
     'phone': phone,
     'address': address,
+    'formattedAddress': formattedAddress,
+    'addressLatitude': addressLatitude,
+    'addressLongitude': addressLongitude,
     'vehicles': vehicles.map((vehicle) => vehicle.toJson()).toList(),
     'preferences': preferences.toJson(),
     'adPreferences': adPreferences.toJson(),

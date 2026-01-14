@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:provider/provider.dart';
 
 import '../models/sighting_report.dart';
 import '../providers/user_provider.dart';
 import '../services/location_service.dart';
+import '../services/street_segment_service.dart';
 
 class ReportSightingScreen extends StatefulWidget {
   const ReportSightingScreen({super.key});
@@ -22,6 +24,8 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
   bool _locating = false;
   Position? _lastPosition;
   final _locationService = LocationService();
+  final _streetService = StreetSegmentService();
+  String? _resolvedAddress;
 
   @override
   void dispose() {
@@ -125,7 +129,18 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
                                       : const Icon(Icons.my_location),
                                   label: const Text('Use my location'),
                                 ),
-                                if (_lastPosition != null) ...[
+                                if (_resolvedAddress != null) ...[
+                                  const SizedBox(width: 12),
+                                  Flexible(
+                                    child: Text(
+                                      _resolvedAddress!,
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ] else if (_lastPosition != null) ...[
                                   const SizedBox(width: 12),
                                   Text(
                                     _formatCoords(_lastPosition!),
@@ -243,12 +258,47 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
       );
       return;
     }
-    setState(() => _lastPosition = position);
-    _locationController.text =
-        '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Location added to report.')),
+    final segment = await _streetService.fetchByPoint(
+      lat: position.latitude,
+      lng: position.longitude,
     );
+    final address = segment?.display() ?? await _reverseGeocode(position);
+    if (!mounted) return;
+    setState(() {
+      _lastPosition = position;
+      _resolvedAddress = address;
+      _locationController.text = address ??
+          '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          address == null
+              ? 'Location added (coords).'
+              : 'Location added: $address',
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _reverseGeocode(Position pos) async {
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(
+        pos.latitude,
+        pos.longitude,
+      );
+      if (placemarks.isEmpty) return null;
+      final p = placemarks.first;
+      final parts = [
+        p.street,
+        p.subLocality,
+        p.locality,
+      ].whereType<String>().where((s) => s.trim().isNotEmpty).toList();
+      if (parts.isEmpty) return null;
+      return parts.join(', ');
+    } catch (_) {
+      return null;
+    }
   }
 
   void _showNotes(String notes) {

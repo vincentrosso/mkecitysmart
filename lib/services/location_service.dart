@@ -9,7 +9,9 @@ class LocationService {
     final permission = await _ensurePermission();
     if (!permission) return null;
     return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.best,
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+      ),
     );
   }
 

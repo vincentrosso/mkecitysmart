@@ -246,7 +246,7 @@ class _TicketDetailCard extends StatelessWidget {
                 const Spacer(),
                 Chip(
                   label: Text(ticket.status.name.toUpperCase()),
-                  backgroundColor: statusColor.withOpacity(0.15),
+                  backgroundColor: statusColor.withValues(alpha: 0.15),
                   labelStyle: TextStyle(color: statusColor),
                 ),
               ],

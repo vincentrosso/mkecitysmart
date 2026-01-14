@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/vehicle.dart';
 import '../providers/user_provider.dart';
+import '../widgets/citysmart_scaffold.dart';
 
 class VehicleManagementScreen extends StatelessWidget {
   const VehicleManagementScreen({super.key});
@@ -18,38 +19,30 @@ class VehicleManagementScreen extends StatelessWidget {
         }
         final profile = provider.profile;
         if (profile == null) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Vehicles')),
+          return const CitySmartScaffold(
+            title: 'Vehicles',
+            currentIndex: 0,
             body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Sign in to manage vehicles.'),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/auth'),
-                    child: const Text('Sign In'),
-                  ),
-                ],
-              ),
+              child: Text('Sign in to manage vehicles.'),
             ),
           );
         }
 
         final vehicles = profile.vehicles;
-        return Scaffold(
-          appBar: AppBar(title: const Text('My Vehicles')),
+        return CitySmartScaffold(
+          title: 'My Vehicles',
+          currentIndex: 0,
           body: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: vehicles.isEmpty ? 1 : vehicles.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               if (vehicles.isEmpty) {
                 return const Card(
                   child: Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      'Add your first vehicle to receive targeted alerts.',
+                      'Sign in to manage vehicles.',
                     ),
                   ),
                 );
@@ -101,8 +94,10 @@ class VehicleManagementScreen extends StatelessWidget {
                       '${vehicle.color} ${vehicle.make} ${vehicle.model}\nPlate: ${vehicle.licensePlate}',
                     ),
                     isThreeLine: true,
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    trailing: Wrap(
+                      direction: Axis.vertical,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit),

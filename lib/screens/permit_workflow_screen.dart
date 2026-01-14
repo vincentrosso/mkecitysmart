@@ -83,7 +83,7 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<PermitType>(
-                        value: _type,
+                        initialValue: _type,
                         decoration: const InputDecoration(labelText: 'Permit type'),
                         items: PermitType.values
                             .map(

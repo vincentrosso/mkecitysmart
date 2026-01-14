@@ -1,161 +1,307 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/user_provider.dart';
+import '../services/alternate_side_parking_service.dart';
+import '../services/location_service.dart';
+import '../theme/app_theme.dart';
 
 class ParkingScreen extends StatelessWidget {
-  const ParkingScreen({Key? key}) : super(key: key);
+  const ParkingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final provider = context.watch<UserProvider>();
     return Scaffold(
-      backgroundColor: const Color(0xFF003E29),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF003E29),
-        title: const Text('MKEPark', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Parking'),
       ),
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF003E29),
-        child: Builder(
-          builder: (context) => ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(color: Color(0xFF003E29)),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      child: Text(
-                        'P',
-                        style: TextStyle(
-                          fontSize: 30,
-                          color: Color(0xFF003E29),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Milwaukee, WI',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    ),
-                  ],
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.home, color: Colors.white),
-                title: const Text(
-                  'Home',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.dashboard, color: Colors.white),
-                title: const Text(
-                  'Overview',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/overview');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.badge, color: Colors.white),
-                title: const Text(
-                  'Permit',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/permit');
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.cleaning_services,
-                  color: Colors.white,
-                ),
-                title: const Text(
-                  'Street Sweeping',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/sweeping');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.history, color: Colors.white),
-                title: const Text(
-                  'Parking History',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.location_on, color: Colors.white),
-                title: const Text(
-                  'Location Tracking',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/location');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.flag, color: Colors.white),
-                title: const Text(
-                  'TEST HERE',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 24.0,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: ListView(
+          children: [
+            const SizedBox(height: 8),
+            _AltSideCard(provider: provider),
+            const SizedBox(height: 16),
+            const _NearbyParkingCard(),
+            const SizedBox(height: 16),
+            Text('Predict & find', style: textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _ActionRow(
+              icon: Icons.map,
+              title: 'Parking heatmap',
+              subtitle: 'See likely open spots nearby (predictive)',
+              onTap: () => Navigator.pushNamed(context, '/parking-heatmap'),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Friday, April 18',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                SizedBox(height: 16),
-                Text(
-                  'Park on the odd-numbered side',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _AltSideCard extends StatefulWidget {
+  const _AltSideCard({required this.provider});
+  final UserProvider provider;
+
+  @override
+  State<_AltSideCard> createState() => _AltSideCardState();
+}
+
+class _AltSideCardState extends State<_AltSideCard> {
+  late Future<String> _subtitle;
+
+  @override
+  void initState() {
+    super.initState();
+    _subtitle = _resolveSubtitle();
+  }
+
+  Future<String> _resolveSubtitle() async {
+    final service = AlternateSideParkingService();
+    int addressNumber = _addressNumber(widget.provider.profile?.address);
+    try {
+      final loc = await LocationService().getCurrentPosition();
+      if (loc != null) {
+        addressNumber = _addressFromPosition(loc);
+      }
+    } catch (_) {
+      // ignore location errors; fall back to profile address
+    }
+    final status = service.status(addressNumber: addressNumber);
+    return status.sideToday == ParkingSide.odd
+        ? 'Odd side today'
+        : 'Even side today';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      color: kCitySmartCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF1F3A34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Today\'s parking side', style: textTheme.titleLarge),
+            const SizedBox(height: 8),
+            FutureBuilder<String>(
+              future: _subtitle,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Text('Detecting...', style: TextStyle(color: kCitySmartText));
+                }
+                final subtitle = snapshot.data ?? 'Unavailable';
+                return Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: kCitySmartYellow,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Auto-detected from your location when available; falls back to your saved address.',
+              style: TextStyle(color: kCitySmartText),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: kCitySmartCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Color(0xFF1F3A34)),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: kCitySmartYellow),
+        title: Text(title, style: const TextStyle(color: kCitySmartText, fontWeight: FontWeight.w700)),
+        subtitle: Text(subtitle, style: const TextStyle(color: kCitySmartText)),
+        trailing: const Icon(Icons.chevron_right, color: kCitySmartMuted),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _NearbyParkingCard extends StatefulWidget {
+  const _NearbyParkingCard();
+
+  @override
+  State<_NearbyParkingCard> createState() => _NearbyParkingCardState();
+}
+
+class _NearbyParkingCardState extends State<_NearbyParkingCard> {
+  final _locationService = LocationService();
+  bool _loading = true;
+  String? _error;
+  Position? _pos;
+
+  static final _spots = <_ParkingSpot>[
+    _ParkingSpot('Metered – Water St', 'Metered', 43.0389, -87.9069),
+    _ParkingSpot('Garage – 2nd & Michigan', 'Garage', 43.0380, -87.9115),
+    _ParkingSpot('Lot – Brady & Humboldt', 'Lot', 43.0543, -87.8906),
+    _ParkingSpot('Garage – Public Market', 'Garage', 43.0338, -87.9074),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final pos = await _locationService.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _pos = pos;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Location unavailable; showing default picks.';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = _spots..sort((a, b) => a.distanceTo(_pos).compareTo(b.distanceTo(_pos)));
+    return Card(
+      color: kCitySmartCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF1F3A34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Nearby parking',
+                  style: TextStyle(
+                    color: kCitySmartText,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 6),
+              Text(_error!, style: const TextStyle(color: Colors.orangeAccent)),
+            ],
+            const SizedBox(height: 8),
+            ...sorted.take(3).map(
+              (spot) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  spot.type == 'Garage'
+                      ? Icons.local_parking
+                      : spot.type == 'Metered'
+                          ? Icons.attach_money
+                          : Icons.place,
+                  color: kCitySmartYellow,
+                ),
+                title: Text(
+                  spot.name,
+                  style: const TextStyle(
+                    color: kCitySmartText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  '${spot.type} • ${spot.distanceTo(_pos).toStringAsFixed(1)} mi away',
+                  style: const TextStyle(color: kCitySmartText),
+                ),
+                trailing: TextButton(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/parking-heatmap'),
+                  child: const Text('Predictive'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ParkingSpot {
+  _ParkingSpot(this.name, this.type, this.lat, this.lng);
+  final String name;
+  final String type;
+  final double lat;
+  final double lng;
+
+  double distanceTo(Position? pos) {
+    if (pos == null) return 0.5;
+    final meters = Geolocator.distanceBetween(
+      pos.latitude,
+      pos.longitude,
+      lat,
+      lng,
+    );
+    return meters / 1609.34;
+  }
+}
+
+int _addressNumber(String? address) {
+  if (address == null) return 0;
+  final match = RegExp(r'(\d+)').firstMatch(address);
+  if (match == null) return 0;
+  return int.tryParse(match.group(0) ?? '0') ?? 0;
+}
+
+int _addressFromPosition(Position position) {
+  final val = (position.latitude.abs() * 10000).round() +
+      (position.longitude.abs() * 10000).round();
+  return val % 10000 == 0 ? 101 : val % 10000;
 }

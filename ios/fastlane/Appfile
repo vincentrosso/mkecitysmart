@@ -1,6 +1,6 @@
 # Fill values via environment variables to avoid checking secrets into git.
 # Examples:
-#   APP_IDENTIFIER=com.mkeparkapp.app
+#   APP_IDENTIFIER=com.mkecitysmart.app
 #   APPLE_ID=you@example.com
 #   ITC_TEAM_ID=123456789
 #   TEAM_ID=ABCDE12345

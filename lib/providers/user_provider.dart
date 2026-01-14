@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'dart:math';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../models/permit.dart';
 import '../models/payment_receipt.dart';
@@ -17,20 +22,41 @@ import '../models/vehicle.dart';
 import '../models/maintenance_report.dart';
 import '../models/garbage_schedule.dart';
 import '../models/city_rule_pack.dart';
+import '../data/city_rule_packs.dart';
+import '../data/sample_schedules.dart';
+import '../data/sample_tickets.dart';
+import '../services/api_client.dart';
+import '../services/cloud_log_service.dart';
+import '../services/location_service.dart';
+import '../services/notification_service.dart';
+import '../services/report_api_service.dart';
 import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
-import '../data/sample_tickets.dart';
-import '../services/report_api_service.dart';
-import '../services/api_client.dart';
-import '../data/sample_schedules.dart';
-import '../services/notification_service.dart';
-import '../data/city_rule_packs.dart';
+
+class PhoneAuthStartResult {
+  const PhoneAuthStartResult({
+    this.requiresSmsCode = false,
+    this.verificationId,
+    this.error,
+  });
+
+  final bool requiresSmsCode;
+  final String? verificationId;
+  final String? error;
+}
 
 class UserProvider extends ChangeNotifier {
-  UserProvider({required UserRepository userRepository})
-    : _repository = userRepository;
+  UserProvider({
+    required UserRepository userRepository,
+    FirebaseAuth? auth,
+    required bool firebaseReady,
+  })  : _repository = userRepository,
+        _firebaseEnabled = firebaseReady,
+        _auth = firebaseReady ? (auth ?? FirebaseAuth.instance) : null;
 
   final UserRepository _repository;
+  final FirebaseAuth? _auth;
+  final bool _firebaseEnabled;
   final ReportApiService _reportApi = ReportApiService(ApiClient());
 
   UserProfile? _profile;
@@ -43,6 +69,7 @@ class UserProvider extends ChangeNotifier {
   List<SightingReport> _sightings = const [];
   List<PaymentReceipt> _receipts = const [];
   AdPreferences _adPreferences = const AdPreferences();
+  DateTime? _alertsMutedUntil;
   SubscriptionTier _tier = SubscriptionTier.free;
   List<MaintenanceReport> _maintenanceReports = const [];
   List<GarbageSchedule> _garbageSchedules = const [];
@@ -50,6 +77,7 @@ class UserProvider extends ChangeNotifier {
   String _cityId = 'default';
   String _tenantId = 'default';
   String _languageCode = 'en';
+  Future<void>? _googleSignInInit;
 
   bool get isInitializing => _initializing;
   bool get isLoggedIn => _profile != null;
@@ -62,14 +90,13 @@ class UserProvider extends ChangeNotifier {
       _profile?.sweepingSchedules ?? _guestSweepingSchedules;
   List<Ticket> get tickets => _tickets;
   List<SightingReport> get sightings => _sightings;
+  DateTime? get alertsMutedUntil => _alertsMutedUntil;
   List<PaymentReceipt> get receipts => _receipts;
-  AdPreferences get adPreferences =>
-      _profile?.adPreferences ?? _adPreferences;
+  AdPreferences get adPreferences => _profile?.adPreferences ?? _adPreferences;
   SubscriptionTier get tier => _profile?.tier ?? _tier;
   SubscriptionPlan get subscriptionPlan => _planForTier(tier);
   double get maxAlertRadiusMiles => subscriptionPlan.maxAlertRadiusMiles;
   int get maxAlertsPerDay => subscriptionPlan.alertVolumePerDay;
-  double get planFeeWaiverCap => subscriptionPlan.feeWaiverPct;
   bool get prioritySupport => subscriptionPlan.prioritySupport;
   List<MaintenanceReport> get maintenanceReports => _maintenanceReports;
   List<GarbageSchedule> get garbageSchedules => _garbageSchedules;
@@ -94,12 +121,14 @@ class UserProvider extends ChangeNotifier {
       }
     }
     // Overdue tickets increase risk.
-    final overdueTickets =
-        _tickets.where((t) => t.isOverdue && t.status == TicketStatus.open);
+    final overdueTickets = _tickets.where(
+      (t) => t.isOverdue && t.status == TicketStatus.open,
+    );
     score += overdueTickets.length * 8;
     // Expiring permits (<7 days) increase risk.
-    final expiringPermits =
-        permits.where((p) => p.endDate.difference(now).inDays <= 7);
+    final expiringPermits = permits.where(
+      (p) => p.endDate.difference(now).inDays <= 7,
+    );
     score += expiringPermits.length * 6;
     // Upcoming street sweeping within 48h increases risk.
     final sweepingSoon = sweepingSchedules.where(
@@ -108,6 +137,7 @@ class UserProvider extends ChangeNotifier {
     score += sweepingSoon.length * 12;
     return score.clamp(0, 100).toInt();
   }
+
   List<String> get cityParkingSuggestions {
     final set = <String>{};
     for (final schedule in sweepingSchedules) {
@@ -117,7 +147,44 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    _profile = await _repository.loadProfile();
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      _profile = null;
+      _initializing = false;
+      _guestMode = true;
+      _guestPermits = _seedPermits();
+      _guestReservations = _seedReservations();
+      _guestSweepingSchedules = _seedSweepingSchedules();
+      await _hydrateFromStorage();
+      notifyListeners();
+      return;
+    }
+
+    if (auth.currentUser != null) {
+      _profile = await _repository.loadProfile();
+    } else {
+      _profile = null;
+    }
+
+    await _hydrateFromStorage();
+    _initializing = false;
+    _guestMode = _profile == null;
+    if (_firebaseEnabled && !_guestMode) {
+      unawaited(_repository.syncPending());
+    }
+    if (_guestMode) {
+      _guestPermits = _seedPermits();
+      _guestReservations = _seedReservations();
+      _guestSweepingSchedules = _seedSweepingSchedules();
+    } else {
+      _guestPermits = const [];
+      _guestReservations = const [];
+      _guestSweepingSchedules = const [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> _hydrateFromStorage() async {
     final storedTickets = await _repository.loadTickets();
     _receipts = await _repository.loadReceipts();
     _adPreferences = _profile?.adPreferences ?? _adPreferences;
@@ -134,21 +201,59 @@ class UserProvider extends ChangeNotifier {
         ? storedTickets
         : List<Ticket>.from(sampleTickets);
     _sightings = await _repository.loadSightings();
-    _initializing = false;
-    _guestMode = false;
-    _guestPermits = const [];
-    _guestReservations = const [];
-    _guestSweepingSchedules = const [];
+  }
+
+  String _mapAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'This email already has an account.';
+      case 'invalid-email':
+        return 'The email address looks invalid.';
+      case 'weak-password':
+        return 'Choose a stronger password (6+ characters).';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'network-request-failed':
+        return 'Network error. Check your connection and try again.';
+      default:
+        return 'Authentication failed (${e.code}). Try again.';
+    }
+  }
+
+  String _nameFromEmail(String email) {
+    final parts = email.split('@');
+    if (parts.isNotEmpty && parts.first.trim().isNotEmpty) {
+      return parts.first.trim();
+    }
+    return 'MKE CitySmart Driver';
+  }
+
+  String _nameFromPhone(String phone) {
+    if (phone.trim().isNotEmpty) return phone.trim();
+    return 'Phone user';
+  }
+
+  void muteAlerts(Duration duration) {
+    _alertsMutedUntil = DateTime.now().add(duration);
     notifyListeners();
   }
 
-  void continueAsGuest() {
+  void unmuteAlerts() {
+    _alertsMutedUntil = null;
+    notifyListeners();
+  }
+
+  Future<void> continueAsGuest() async {
+    await _auth?.signOut();
     _guestMode = true;
     _profile = null;
     _guestPermits = _seedPermits();
     _guestReservations = _seedReservations();
     _guestSweepingSchedules = _seedSweepingSchedules();
     notifyListeners();
+    unawaited(CloudLogService.instance.logEvent('guest_session_started'));
   }
 
   Future<String?> register({
@@ -157,50 +262,348 @@ class UserProvider extends ChangeNotifier {
     required String password,
     String? phone,
   }) async {
-    if (_profile != null) {
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Sign-up is unavailable (Firebase disabled on this build).';
+    }
+    if (auth.currentUser != null && !_guestMode) {
       return 'An account is already signed in on this device.';
     }
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       return 'All fields are required.';
     }
 
-    final newProfile = UserProfile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      email: email,
-      password: password,
-      phone: phone,
-      preferences: UserPreferences.defaults(),
-      vehicles: const [],
-      permits: _seedPermits(ownerHint: name),
-      reservations: _seedReservations(ownerHint: name),
-      sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
-    );
-    await _repository.saveProfile(newProfile);
-    _profile = newProfile;
-    _guestMode = false;
-    notifyListeners();
-    return null;
+    try {
+      final credential = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user ?? auth.currentUser;
+      if (user == null) {
+        final offlineProfile = UserProfile(
+          id: email,
+          name: name,
+          email: email,
+          phone: phone,
+          preferences: UserPreferences.defaults(),
+          vehicles: const [],
+          permits: _seedPermits(ownerHint: name),
+          reservations: _seedReservations(ownerHint: name),
+          sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+        );
+        await _repository.saveProfile(offlineProfile);
+        _profile = offlineProfile;
+        _guestMode = false;
+        await _hydrateFromStorage();
+        notifyListeners();
+        return null;
+      }
+      await _ensureProfileForUser(
+        user,
+        fallbackName: name,
+        phone: phone,
+      );
+      unawaited(
+        CloudLogService.instance.logEvent(
+          'user_register',
+          data: {'method': 'email', 'userId': user.uid},
+        ),
+      );
+      return null;
+    } on FirebaseAuthException catch (e) {
+      unawaited(
+        CloudLogService.instance
+            .recordError('register_auth_error', e, StackTrace.current),
+      );
+      return _mapAuthError(e);
+    } catch (err, stack) {
+      unawaited(
+        CloudLogService.instance
+            .recordError('register_generic_error', err, stack),
+      );
+      return 'Unable to create account right now.';
+    }
   }
 
   Future<String?> login(String email, String password) async {
-    final stored = await _repository.loadProfile();
-    if (stored == null) {
-      return 'No account found on this device.';
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Sign-in is unavailable (Firebase disabled on this build).';
     }
-    if (stored.email.trim().toLowerCase() != email.trim().toLowerCase() ||
-        stored.password != password) {
-      return 'Invalid email or password.';
+    try {
+      final credential = await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user ?? auth.currentUser;
+      if (user == null) {
+        // If Firebase does not hand back a user, try to hydrate from local cache.
+        _profile = await _repository.loadProfile();
+        _profile ??= UserProfile(
+          id: email,
+          name: _nameFromEmail(email),
+          email: email,
+          preferences: UserPreferences.defaults(),
+          vehicles: const [],
+          permits: _seedPermits(),
+          reservations: _seedReservations(),
+          sweepingSchedules: _seedSweepingSchedules(),
+        );
+        await _repository.saveProfile(_profile!);
+        _guestMode = false;
+        await _hydrateFromStorage();
+        notifyListeners();
+        return null;
+      }
+      await _ensureProfileForUser(
+        user,
+        fallbackName: user.displayName?.trim().isNotEmpty == true
+            ? user.displayName!.trim()
+            : _nameFromEmail(email),
+      );
+      unawaited(
+        CloudLogService.instance.logEvent(
+          'user_login',
+          data: {'method': 'email', 'userId': user.uid},
+        ),
+      );
+      return null;
+    } on FirebaseAuthException catch (e) {
+      unawaited(
+        CloudLogService.instance
+            .recordError('login_auth_error', e, StackTrace.current),
+      );
+      return _mapAuthError(e);
+    } catch (err, stack) {
+      unawaited(
+        CloudLogService.instance
+            .recordError('login_generic_error', err, stack),
+      );
+      return 'Unable to sign in right now.';
     }
-    _profile = stored;
-    _guestMode = false;
-    notifyListeners();
-    return null;
+  }
+
+  Future<String?> signInWithGoogle() async {
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Google sign-in is unavailable (Firebase disabled).';
+    }
+    try {
+      _googleSignInInit ??= GoogleSignIn.instance.initialize();
+      try {
+        await _googleSignInInit;
+      } catch (_) {
+        _googleSignInInit = null;
+        rethrow;
+      }
+      if (!GoogleSignIn.instance.supportsAuthenticate()) {
+        return 'Google sign-in is unavailable on this platform.';
+      }
+      UserCredential credential;
+      if (kIsWeb) {
+        credential = await auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleAuth = googleUser.authentication;
+        if (googleAuth.idToken == null) {
+          return 'Missing Google ID token.';
+        }
+        final clientAuth =
+            await googleUser.authorizationClient.authorizationForScopes(
+          const ['email', 'profile', 'openid'],
+        );
+        final oauth = GoogleAuthProvider.credential(
+          accessToken: clientAuth?.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        credential = await auth.signInWithCredential(oauth);
+      }
+      final user = credential.user;
+      if (user == null) return 'Unable to sign in right now.';
+      await _ensureProfileForUser(
+        user,
+        fallbackName: user.displayName ?? 'Google user',
+      );
+      unawaited(
+        CloudLogService.instance.logEvent(
+          'user_login',
+          data: {'method': 'google', 'userId': user.uid},
+        ),
+      );
+      return null;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return 'Sign-in was canceled.';
+      }
+      return 'Google sign-in failed: ${e.description ?? e.code.name}.';
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e);
+    } catch (_) {
+      return 'Google sign-in failed. Try again.';
+    }
+  }
+
+  Future<PhoneAuthStartResult> startPhoneSignIn(
+    String phoneNumber,
+  ) async {
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return const PhoneAuthStartResult(
+        error: 'Phone sign-in is unavailable (Firebase disabled).',
+      );
+    }
+    if (kIsWeb) {
+      return const PhoneAuthStartResult(
+        error: 'Phone sign-in is not available on web.',
+      );
+    }
+    final completer = Completer<PhoneAuthStartResult>();
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (credential) async {
+        try {
+          final result = await auth.signInWithCredential(credential);
+          final user = result.user;
+          if (user != null) {
+            await _ensureProfileForUser(
+              user,
+              fallbackName: _nameFromPhone(user.phoneNumber ?? phoneNumber),
+            );
+          }
+          if (!completer.isCompleted) {
+            completer.complete(const PhoneAuthStartResult());
+          }
+        } catch (e) {
+          if (!completer.isCompleted) {
+            completer.complete(
+              PhoneAuthStartResult(error: 'Phone sign-in failed.'),
+            );
+          }
+        }
+      },
+      verificationFailed: (e) {
+        final message = _mapPhoneError(e);
+        if (!completer.isCompleted) {
+          completer.complete(PhoneAuthStartResult(error: message));
+        }
+      },
+      codeSent: (verificationId, _) {
+        if (!completer.isCompleted) {
+          completer.complete(
+            PhoneAuthStartResult(
+              requiresSmsCode: true,
+              verificationId: verificationId,
+            ),
+          );
+        }
+      },
+      codeAutoRetrievalTimeout: (_) {
+        if (!completer.isCompleted) {
+          completer.complete(
+            const PhoneAuthStartResult(
+              error: 'Verification timed out. Try again.',
+            ),
+          );
+        }
+      },
+      timeout: const Duration(seconds: 60),
+    );
+    return completer.future;
+  }
+
+  Future<String?> confirmPhoneCode({
+    required String verificationId,
+    required String smsCode,
+    String? phoneNumber,
+  }) async {
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Phone sign-in is unavailable (Firebase disabled).';
+    }
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      final result = await auth.signInWithCredential(credential);
+      final user = result.user;
+      if (user == null) return 'Unable to sign in right now.';
+      await _ensureProfileForUser(
+        user,
+        fallbackName: _nameFromPhone(phoneNumber ?? user.phoneNumber ?? ''),
+      );
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapPhoneError(e);
+    } catch (_) {
+      return 'Unable to verify the code. Try again.';
+    }
+  }
+
+  String _mapPhoneError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return 'The phone number looks invalid.';
+      case 'too-many-requests':
+        return 'Too many attempts. Try again later.';
+      case 'session-expired':
+        return 'Verification expired. Request a new code.';
+      default:
+        return 'Phone verification failed (${e.code}).';
+    }
+  }
+
+  Future<String?> signInWithApple() async {
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Apple sign-in is unavailable (Firebase disabled).';
+    }
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.iOS &&
+            defaultTargetPlatform != TargetPlatform.macOS)) {
+      return 'Apple sign-in is only available on Apple platforms.';
+    }
+    try {
+      final appleId = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      final oauth = OAuthProvider('apple.com').credential(
+        idToken: appleId.identityToken,
+        accessToken: appleId.authorizationCode,
+      );
+      final credential = await auth.signInWithCredential(oauth);
+      final user = credential.user;
+      if (user == null) return 'Unable to sign in right now.';
+      final name = appleId.givenName?.isNotEmpty == true
+          ? '${appleId.givenName} ${appleId.familyName ?? ''}'.trim()
+          : user.displayName ?? 'Apple user';
+      await _ensureProfileForUser(user, fallbackName: name);
+      unawaited(
+        CloudLogService.instance.logEvent(
+          'user_login',
+          data: {'method': 'apple', 'userId': user.uid},
+        ),
+      );
+      return null;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        return 'Sign-in was canceled.';
+      }
+      return 'Apple sign-in failed (${e.code.name}).';
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e);
+    } catch (_) {
+      return 'Apple sign-in failed. Try again.';
+    }
   }
 
   Future<void> logout() async {
+    await _auth?.signOut();
     _profile = null;
-    _guestMode = false;
+    _guestMode = true;
     _guestPermits = const [];
     _guestReservations = const [];
     _guestSweepingSchedules = const [];
@@ -215,12 +618,8 @@ class UserProvider extends ChangeNotifier {
     _cityId = 'default';
     _tenantId = 'default';
     _languageCode = 'en';
-    await _repository.clearProfile();
-    await _repository.saveSightings(const []);
-    await _repository.saveTickets(const []);
-    await _repository.saveReceipts(const []);
-    await _repository.saveMaintenanceReports(const []);
     notifyListeners();
+    unawaited(CloudLogService.instance.logEvent('user_logout'));
   }
 
   Future<void> updateProfile({
@@ -228,6 +627,9 @@ class UserProvider extends ChangeNotifier {
     String? email,
     String? phone,
     String? address,
+    String? formattedAddress,
+    double? addressLatitude,
+    double? addressLongitude,
     AdPreferences? adPreferences,
     SubscriptionTier? tier,
     String? cityId,
@@ -241,6 +643,9 @@ class UserProvider extends ChangeNotifier {
       email: email ?? _profile!.email,
       phone: phone ?? _profile!.phone,
       address: address ?? _profile!.address,
+      formattedAddress: formattedAddress ?? _profile!.formattedAddress,
+      addressLatitude: addressLatitude ?? _profile!.addressLatitude,
+      addressLongitude: addressLongitude ?? _profile!.addressLongitude,
       adPreferences: adPreferences ?? _profile!.adPreferences,
       tier: tier ?? _profile!.tier,
       cityId: cityId ?? _profile!.cityId,
@@ -250,6 +655,21 @@ class UserProvider extends ChangeNotifier {
     );
     _profile = updated;
     await _repository.saveProfile(updated);
+    notifyListeners();
+    unawaited(
+      CloudLogService.instance.logEvent(
+        'profile_updated',
+        data: {
+          'cityId': updated.cityId,
+          'language': updated.languageCode,
+          'tier': updated.tier.name,
+        },
+      ),
+    );
+  }
+
+  Future<void> setGarbageSchedules(List<GarbageSchedule> schedules) async {
+    _garbageSchedules = schedules;
     notifyListeners();
   }
 
@@ -273,7 +693,54 @@ class UserProvider extends ChangeNotifier {
     _sightings = deduped;
     await _repository.saveSightings(_sightings);
     _reportApi.sendSighting(report);
+    _maybeNotifyNearbySighting(report);
     notifyListeners();
+    unawaited(
+      CloudLogService.instance.logEvent(
+        'report_sighting',
+        data: {
+          'type': report.type.name,
+          'hasLocation': report.latitude != null && report.longitude != null,
+        },
+      ),
+    );
+  }
+
+  Future<void> _maybeNotifyNearbySighting(SightingReport report) async {
+    if (report.latitude == null || report.longitude == null) return;
+    final prefs = _profile?.preferences ?? UserPreferences.defaults();
+    if (_alertsMutedUntil != null &&
+        DateTime.now().isBefore(_alertsMutedUntil!)) {
+      return;
+    }
+    final radiusMiles = prefs.geoRadiusMiles.toDouble();
+    // Respect toggles: tow alerts for tow, parkingNotifications for enforcer.
+    if (report.type == SightingType.towTruck && !prefs.towAlerts) return;
+    if (report.type == SightingType.parkingEnforcer &&
+        !prefs.parkingNotifications) {
+      return;
+    }
+
+    try {
+      final pos = await LocationService().getCurrentPosition();
+      if (pos == null) return;
+      final meters = Geolocator.distanceBetween(
+        pos.latitude,
+        pos.longitude,
+        report.latitude!,
+        report.longitude!,
+      );
+      final miles = meters / 1609.34;
+      if (miles <= radiusMiles) {
+        final title = report.type == SightingType.towTruck
+            ? 'Tow sighting nearby'
+            : 'Enforcer sighting nearby';
+        final body = '${report.location} • ${miles.toStringAsFixed(1)} mi away';
+        await NotificationService.instance.showLocal(title: title, body: body);
+      }
+    } catch (_) {
+      // Silent failure; best-effort.
+    }
   }
 
   PermitEligibilityResult evaluatePermitEligibility({
@@ -336,11 +803,11 @@ class UserProvider extends ChangeNotifier {
       waiverPct += 0.1;
       notes.add('Senior discount applied (-10%).');
     }
-    final planCap = planFeeWaiverCap;
-    waiverPct = waiverPct.clamp(0, planCap > 0 ? planCap : 0.6);
+    waiverPct = waiverPct.clamp(0, 0.6);
     final waiverAmount = beforeWaiver * waiverPct;
-    final total =
-        (beforeWaiver - waiverAmount).clamp(0, double.infinity).toDouble();
+    final total = (beforeWaiver - waiverAmount)
+        .clamp(0, double.infinity)
+        .toDouble();
 
     return PermitEligibilityResult(
       permitType: type,
@@ -462,11 +929,9 @@ class UserProvider extends ChangeNotifier {
       waiverPct += 0.1;
       waiverNotes.add('Resident discount (-10%)');
     }
-    final planCap = planFeeWaiverCap;
-    waiverPct = waiverPct.clamp(0, planCap > 0 ? planCap : 0.6);
+    waiverPct = waiverPct.clamp(0, 0.6);
     final waiverAmount = base * waiverPct;
-    final totalDue =
-        (base - waiverAmount).clamp(0, double.infinity).toDouble();
+    final totalDue = (base - waiverAmount).clamp(0, double.infinity).toDouble();
 
     final updated = ticket.copyWith(
       status: totalDue == 0 ? TicketStatus.waived : TicketStatus.paid,
@@ -474,9 +939,7 @@ class UserProvider extends ChangeNotifier {
       waiverReason: waiverNotes.join('; '),
       paymentMethod: method,
     );
-    _tickets = _tickets
-        .map((t) => t.id == ticket.id ? updated : t)
-        .toList();
+    _tickets = _tickets.map((t) => t.id == ticket.id ? updated : t).toList();
     _persistTickets();
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final receipt = PaymentReceipt(
@@ -584,22 +1047,10 @@ class UserProvider extends ChangeNotifier {
 
   String _pickupLabel(PickupType type, String lang) {
     final map = {
-      'en': {
-        PickupType.garbage: 'Garbage',
-        PickupType.recycling: 'Recycling',
-      },
-      'fr': {
-        PickupType.garbage: 'Ordures',
-        PickupType.recycling: 'Recyclage',
-      },
-      'zh': {
-        PickupType.garbage: '垃圾',
-        PickupType.recycling: '回收',
-      },
-      'hi': {
-        PickupType.garbage: 'कचरा',
-        PickupType.recycling: 'रीसाइक्लिंग',
-      },
+      'en': {PickupType.garbage: 'Garbage', PickupType.recycling: 'Recycling'},
+      'fr': {PickupType.garbage: 'Ordures', PickupType.recycling: 'Recyclage'},
+      'zh': {PickupType.garbage: '垃圾', PickupType.recycling: '回收'},
+      'hi': {PickupType.garbage: 'कचरा', PickupType.recycling: 'रीसाइक्लिंग'},
       'el': {
         PickupType.garbage: 'Σκουπίδια',
         PickupType.recycling: 'Ανακύκλωση',
@@ -669,17 +1120,16 @@ class UserProvider extends ChangeNotifier {
     return updated;
   }
 
-  double _distanceMeters(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
+  double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
     const earthRadius = 6371000; // meters
     final dLat = _degToRad(lat2 - lat1);
     final dLon = _degToRad(lon2 - lon1);
-    final a = (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    final a =
+        (sin(dLat / 2) * sin(dLat / 2)) +
+        cos(_degToRad(lat1)) *
+            cos(_degToRad(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return earthRadius * c;
   }
@@ -693,7 +1143,7 @@ class UserProvider extends ChangeNotifier {
           tier: SubscriptionTier.free,
           maxAlertRadiusMiles: 3,
           alertVolumePerDay: 3,
-          feeWaiverPct: 0,
+          zeroProcessingFee: false,
           prioritySupport: false,
           monthlyPrice: 0,
         );
@@ -702,7 +1152,7 @@ class UserProvider extends ChangeNotifier {
           tier: SubscriptionTier.plus,
           maxAlertRadiusMiles: 8,
           alertVolumePerDay: 10,
-          feeWaiverPct: 0.15,
+          zeroProcessingFee: true,
           prioritySupport: false,
           monthlyPrice: 6.99,
         );
@@ -711,17 +1161,70 @@ class UserProvider extends ChangeNotifier {
           tier: SubscriptionTier.pro,
           maxAlertRadiusMiles: 15,
           alertVolumePerDay: 25,
-          feeWaiverPct: 0.35,
+          zeroProcessingFee: true,
           prioritySupport: true,
           monthlyPrice: 14.99,
         );
     }
   }
 
-  Future<void> changePassword(String password) async {
-    if (_profile == null || password.isEmpty) return;
-    _profile = _profile!.copyWith(password: password);
-    await _repository.saveProfile(_profile!);
+  Future<String?> changePassword(String password) async {
+    if (password.isEmpty) {
+      return 'Password cannot be empty.';
+    }
+    final auth = _auth;
+    if (auth == null || !_firebaseEnabled) {
+      return 'Password updates unavailable (Firebase disabled on this build).';
+    }
+    final user = auth.currentUser;
+    if (user == null) {
+      return 'You must be signed in to update your password.';
+    }
+    try {
+      await user.updatePassword(password);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'weak-password':
+          return 'Choose a stronger password (6+ characters).';
+        case 'requires-recent-login':
+          return 'Please sign in again before changing your password.';
+        case 'network-request-failed':
+          return 'Network error. Check your connection and try again.';
+        default:
+          return 'Unable to update password (${e.code}).';
+      }
+    } catch (_) {
+      return 'Unable to update password right now.';
+    }
+  }
+
+  Future<void> _ensureProfileForUser(
+    User user, {
+    String? fallbackName,
+    String? phone,
+  }) async {
+    var stored = await _repository.loadProfile();
+    if (stored == null) {
+      final name = fallbackName ??
+          user.displayName?.trim() ??
+          _nameFromEmail(user.email ?? '');
+      stored = UserProfile(
+        id: user.uid,
+        name: name,
+        email: user.email ?? '',
+        phone: phone ?? user.phoneNumber,
+        preferences: UserPreferences.defaults(),
+        vehicles: const [],
+        permits: _seedPermits(ownerHint: name),
+        reservations: _seedReservations(ownerHint: name),
+        sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+      );
+      await _repository.saveProfile(stored);
+    }
+    _profile = stored;
+    _guestMode = false;
+    await _hydrateFromStorage();
     notifyListeners();
   }
 
@@ -777,6 +1280,7 @@ class UserProvider extends ChangeNotifier {
     bool? reminderNotifications,
     String? defaultVehicleId,
     int? geoRadiusMiles,
+    bool? ticketRiskAlerts,
   }) async {
     if (_profile == null) return;
     final prefs = _profile!.preferences.copyWith(
@@ -785,6 +1289,7 @@ class UserProvider extends ChangeNotifier {
       reminderNotifications: reminderNotifications,
       defaultVehicleId: defaultVehicleId,
       geoRadiusMiles: geoRadiusMiles,
+      ticketRiskAlerts: ticketRiskAlerts,
     );
     _profile = _profile!.copyWith(preferences: prefs);
     await _repository.saveProfile(_profile!);

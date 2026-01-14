@@ -16,8 +16,9 @@ class _PredictTimeBarState extends State<PredictTimeBar> {
       firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
-    if (d != null)
+    if (d != null) {
       setState(() => _when = DateTime(d.year, d.month, d.day, _when.hour));
+    }
   }
 
   Future<void> _pickTime() async {
@@ -25,10 +26,11 @@ class _PredictTimeBarState extends State<PredictTimeBar> {
       context: context,
       initialTime: TimeOfDay(hour: _when.hour, minute: 0),
     );
-    if (t != null)
+    if (t != null) {
       setState(
         () => _when = DateTime(_when.year, _when.month, _when.day, t.hour),
       );
+    }
   }
 
   @override
@@ -36,7 +38,7 @@ class _PredictTimeBarState extends State<PredictTimeBar> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B0C10).withOpacity(.85),
+        color: const Color(0xD90B0C10).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE0B000), width: 1.5),
       ),
