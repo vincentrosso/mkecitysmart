@@ -37,12 +37,13 @@ NOTES:
 - 2026-01-11: Verified app Firebase config points to mkeparkapp-1ad15 (iOS + Android). Verified firebase CLI using prod alias.
 - 2026-01-10: Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
 
-[F-002] [IN-PROGRESS] (P0) Inventory Cloud Functions (prod) and confirm deploy is clean
+[F-002] [DONE] (P0) Inventory Cloud Functions (prod) and confirm deploy is clean
 - List existing functions and regions
 - Confirm runtime versions and required env vars
 - Confirm logs show no auth/permission errors
 NOTES:
 - 2026-01-11: Confirmed helloWorld deployed and reachable. Located cleanupExpiredSightings code in repo; still need full prod inventory list (names/regions/triggers).
+- 2026-01-14: Full inventory via gcloud functions describe --gen2. Six functions deployed (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB. No errors in audit/runtime logs; cleanupExpiredSightings shows regular 200s via scheduler. submitSighting has no invocations yet.
 
 [F-003] [NEXT] (P0) Confirm app-to-backend connectivity
 - Identify exactly which endpoints/call sites the app uses
@@ -168,6 +169,9 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-14 — [F-002] Inventory Cloud Functions (prod) and confirm deploy is clean
+  Result: Full inventory via gcloud functions describe --gen2. Six functions deployed; consistent region/runtime/memory; audit/runtime logs clean; cleanupExpiredSightings runs every ~5 min with 200s; submitSighting not yet invoked.
+  Evidence: gcloud functions describe --gen2; gcloud logging read filters (cloud_run_revision, severity>=ERROR)
 2026-01-11 — [F-005] Sightings: create + store reliably (end-to-end)
   Result: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
   Evidence: Manual Firestore validation
