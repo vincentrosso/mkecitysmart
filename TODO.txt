@@ -170,8 +170,8 @@ RUNNING NOTES (quick scratchpad)
 DONE LOG (most recent first)
 ---------------------------------------------------------
 2026-01-14 — [F-002] Inventory Cloud Functions (prod) and confirm deploy is clean
-  Result: Full inventory via gcloud functions describe --gen2. Six functions deployed; consistent region/runtime/memory; audit/runtime logs clean; cleanupExpiredSightings runs every ~5 min with 200s; submitSighting not yet invoked.
-  Evidence: gcloud functions describe --gen2; gcloud logging read filters (cloud_run_revision, severity>=ERROR)
+  Result: Full visibility into prod functions (mkeparkapp-1ad15). Six v2 functions (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingsToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB; audit/runtime logs clean; cleanupExpiredSightings runs ~every 5 min with 200s; submitSighting has no invocations yet.
+  Evidence: gcloud functions describe --gen2; gcloud logging read (cloud_run_revision, severity>=ERROR)
 2026-01-11 — [F-005] Sightings: create + store reliably (end-to-end)
   Result: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
   Evidence: Manual Firestore validation
