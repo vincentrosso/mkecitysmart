@@ -57,72 +57,120 @@ class LandingScreen extends StatelessWidget {
                 : 'Muted');
         return Scaffold(
           appBar: AppBar(
-            title: const Text('CitySmart Dashboard'),
-            backgroundColor: const Color(0xFF203731),
+            title: const Text('Dashboard'),
             actions: [
               if (isGuest)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.only(right: 12.0),
                   child: Chip(
-                    label: const Text('Guest'),
-                    avatar: const Icon(Icons.visibility_outlined, size: 18),
-                    backgroundColor: Colors.white,
+                    label: const Text(
+                      'Guest Mode',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    avatar: const Icon(Icons.visibility_outlined, size: 16),
+                    backgroundColor: const Color(0xFFE8F5E9),
+                    labelStyle: const TextStyle(
+                      color: Color(0xFF2E7D32),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 )
               else
                 IconButton(
-                  icon: const Icon(Icons.person),
+                  icon: const Icon(Icons.account_circle_outlined),
                   onPressed: () => Navigator.pushNamed(context, '/profile'),
+                  tooltip: 'Profile',
                 ),
             ],
           ),
-          backgroundColor: const Color(0xFF203731),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Card(
-                color: const Color(0xFF003E29),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Hello, $name',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  address,
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _RiskBadge(score: provider.towRiskIndex),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Alert radius: ${provider.profile?.preferences.geoRadiusMiles ?? 5} miles',
-                        style:
-                            const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
+              // Welcome Card with gradient
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF5E8A45),
+                      Color(0xFF7CA726),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF5E8A45).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hello, $name 👋',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                address,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _RiskBadge(score: provider.towRiskIndex),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.radar,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Alert radius: ${provider.profile?.preferences.geoRadiusMiles ?? 5} miles',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -280,31 +328,60 @@ class _OverviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = (MediaQuery.of(context).size.width - 40) / 2;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width.clamp(150, double.infinity),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D4D3A),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: width.clamp(150, double.infinity),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: Colors.white70)),
-          ],
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF5E8A45),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF718096),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -319,33 +396,80 @@ class _RiskBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color;
+    Color bgColor;
     if (score >= 70) {
-      color = Colors.redAccent;
+      color = const Color(0xFFF56565);
+      bgColor = const Color(0xFFFFF5F5);
     } else if (score >= 40) {
-      color = Colors.orange;
+      color = const Color(0xFFED8936);
+      bgColor = const Color(0xFFFFFAF0);
     } else {
-      color = Colors.green;
+      color = const Color(0xFF48BB78);
+      bgColor = const Color(0xFFF0FFF4);
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Chip(
-          backgroundColor: color.withOpacity(0.15),
-          label: Text(
-            'Tow risk: $score',
-            style: TextStyle(color: color, fontWeight: FontWeight.w600),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          score >= 70
-              ? 'High risk'
-              : score >= 40
-              ? 'Moderate'
-              : 'Low',
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Risk',
+                style: TextStyle(
+                  color: const Color(0xFF718096),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$score',
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            score >= 70
+                ? 'High'
+                : score >= 40
+                ? 'Moderate'
+                : 'Low',
+            style: TextStyle(
+              color: const Color(0xFF4A5568),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
