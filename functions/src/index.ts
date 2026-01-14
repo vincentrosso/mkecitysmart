@@ -219,7 +219,8 @@ export const notifyOnApproval = onDocumentUpdated(
         .filter((part) => part && part.trim().length > 0)
         .join(" ");
 
-      await admin.messaging().sendToTopic("alerts", {
+      await admin.messaging().send({
+        topic: "alerts",
         notification: {
           title,
           body: body || "New alert approved.",

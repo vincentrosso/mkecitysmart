@@ -35,6 +35,7 @@ P0 — STABILIZE BACKEND + MAKE CORE LOOP WORK
 NOTES:
 - 2026-01-08: Created tracking. Need to verify configs.
 - 2026-01-11: Verified app Firebase config points to mkeparkapp-1ad15 (iOS + Android). Verified firebase CLI using prod alias.
+- 2026-01-10: Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
 
 [F-002] [IN-PROGRESS] (P0) Inventory Cloud Functions (prod) and confirm deploy is clean
 - List existing functions and regions
@@ -48,17 +49,19 @@ NOTES:
 - Ensure app hits correct function/URL and handles errors
 NOTES:
 
-[F-004] [NEXT] (P0) Finalize Firestore schema used by the app (source of truth)
+[F-004] [DONE] (P0) Finalize Firestore schema used by the app (source of truth)
 - Collections + document fields
 - Indexes needed (geo/time queries)
 - Security rules aligned with schema
 NOTES:
+- 2026-01-11: Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
 
-[F-005] [NEXT] (P0) Sightings: create + store reliably (end-to-end)
+[F-005] [DONE] (P0) Sightings: create + store reliably (end-to-end)
 - Submit tow/enforcer sighting
 - Fields: type, geo, createdAt, optional photo, notes, uid
 - Ensure write succeeds + read shows in feed
 NOTES:
+- 2026-01-11: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
 
 [F-006] [NEXT] (P0) Sightings feed: query + filters work
 - Filter: radius + time window (ex: last 2 hours)
@@ -142,6 +145,7 @@ P0/P1 — QUALITY / SECURITY / RELEASE READINESS
 - Prevent editing others’ sightings
 NOTES:
 - 2026-01-11: Added firestore target to firebase.json, created firestore.rules, fixed compilation error, deployed Firestore rules successfully to prod.
+- 2026-01-14: Updated alerts rules for public reads + admin deletes, added firestore.indexes.json reference, deployed rules + indexes.
 
 [F-402] [TODO] (P1) Performance (geo queries, feed pagination, caching)
 NOTES:
@@ -164,6 +168,18 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-11 — [F-005] Sightings: create + store reliably (end-to-end)
+  Result: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
+  Evidence: Manual Firestore validation
+2026-01-10 — [F-001] Verify Firebase project + environment configuration
+  Result: Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
+  Evidence: Firebase Console verification
+2026-01-11 — [F-004] Finalize Firestore schema used by the app (source of truth)
+  Result: Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
+  Evidence: Manual Firestore validation
+2026-01-14 — [F-401] Security rules audit (update)
+  Result: Updated alerts rules for public reads + admin deletes; added firestore.indexes.json reference; deployed rules + indexes.
+  Evidence: firebase deploy --only firestore (prod)
 2026-01-11 — [F-401] Security rules audit
   Result: Added firestore target to firebase.json, created firestore.rules, fixed compilation error, deployed Firestore rules to prod.
   Evidence: firebase deploy --only firestore:rules (prod)

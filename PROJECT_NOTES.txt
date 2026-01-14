@@ -1,6 +1,12 @@
 Development notes for mkecitysmart
 ---------------------------------------
 
+Change log (most recent first)
+- 2026-01-11 [F-005] Verified sightings can be created and persist in Firestore; manual docs showed feed invisibility comes from path/schema mismatch; data layer is sound when written to correct collections.
+- 2026-01-10 [F-001] Confirmed MKE City Smart is using the correct Firebase project (Blaze plan). Ruled out environment mismatch as cause of missing alerts/sightings. Removed “wrong project” as a failure vector in backend debugging.
+- 2026-01-11 [F-004] Defined and validated the production Firestore schema. Locked core collections (sightings, live_sightings, alerts) and required fields. Confirmed that writing to incorrect paths explains “missing” feed data. Schema is now the single source of truth for app + backend.
+- 2026-01-14 [F-401] Updated alerts rules for public reads + admin deletes; added firestore.indexes.json reference; deployed rules + indexes.
+
 - Flutter version: uses Flutter 3.29.x locally; run `flutter --version` if needed.
 - Platforms: iOS, Android, Web; web uses `web/firebase-config.json` and Dart config in `lib/firebase_options.dart`.
 - Firebase: Config in `lib/firebase_options.dart` (web/android/ios). Web also has `web/firebase-config.json`. Register authorized domains for web in Firebase Auth.
