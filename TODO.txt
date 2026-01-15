@@ -45,10 +45,11 @@ NOTES:
 - 2026-01-11: Confirmed helloWorld deployed and reachable. Located cleanupExpiredSightings code in repo; still need full prod inventory list (names/regions/triggers).
 - 2026-01-14: Full inventory via gcloud functions describe --gen2. Six functions deployed (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB. No errors in audit/runtime logs; cleanupExpiredSightings shows regular 200s via scheduler. submitSighting has no invocations yet.
 
-[F-003] [NEXT] (P0) Confirm app-to-backend connectivity
+[F-003] [DONE] (P0) Confirm app-to-backend connectivity
 - Identify exactly which endpoints/call sites the app uses
 - Ensure app hits correct function/URL and handles errors
 NOTES:
+- 2026-01-14: End-to-end app-to-backend write succeeded via iOS simulator submission (temp open rules enabled creation in sightings; mirroring worked). Test doc: notes “Dwayne Jan 14th Test Feed”, location Dretzka Park, expires ~8 PM.
 
 [F-004] [DONE] (P0) Finalize Firestore schema used by the app (source of truth)
 - Collections + document fields
@@ -169,6 +170,9 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-14 — [F-003] Confirm app-to-backend connectivity
+  Result: End-to-end write succeeded via iOS simulator submission (temp open rules enabled creation in sightings; mirroring worked). Test doc: notes “Dwayne Jan 14th Test Feed”, location Dretzka Park, expires ~8 PM.
+  Evidence: iOS simulator test doc in Firestore
 2026-01-14 — [F-002] Inventory Cloud Functions (prod) and confirm deploy is clean
   Result: Full visibility into prod functions (mkeparkapp-1ad15). Six v2 functions (cleanupExpiredSightings, helloWorld, mirrorSightingsToAlerts, mirrorUserSightingsToGlobal, notifyOnApproval, submitSighting). All us-central1/nodejs20/256MiB; audit/runtime logs clean; cleanupExpiredSightings runs ~every 5 min with 200s; submitSighting has no invocations yet.
   Evidence: gcloud functions describe --gen2; gcloud logging read (cloud_run_revision, severity>=ERROR)

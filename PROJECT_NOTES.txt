@@ -2,6 +2,7 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-01-14 [F-003] App-to-backend connectivity confirmed via iOS simulator submission; sightings write succeeded with mirroring; test doc "Dwayne Jan 14th Test Feed" at Dretzka Park, expires ~8 PM (temp open rules used).
 - 2026-01-14 [F-002] Inventory Cloud Functions (prod) - clean deploy confirmed with logs.
   Status: DONE
   Goal: Full visibility into deployed functions in production (project: mkeparkapp-1ad15), with confirmation of clean deploys, consistent configs (region: us-central1, runtime: nodejs20, memory: 256MiB), and no errors in audit/runtime logs. This answers "What backend actually exists right now?" and verifies stability for the P0 chain.
