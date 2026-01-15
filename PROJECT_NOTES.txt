@@ -2,8 +2,8 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
-- 2026-01-15 [F-007] Expiration verified; test doc status flipped to "expired" automatically.
-- 2026-01-15 [F-003] Permanent app-to-backend connectivity confirmed (docs created in sightings/alerts with mirroring, rate limits, anonymous auth).
+- 2026-01-15 [F-007] Expiration system verified: test doc flipped to status="expired"; cleanupExpiredSightings runs on schedule; no manual intervention required.
+- 2026-01-15 [F-003] Permanent app-to-backend connectivity confirmed: end-to-end app→backend→Firestore→mirror chain; sightings created; functions mirror to alerts/global; anonymous auth and rate limits verified; no crashes or silent failures.
 - 2026-01-14 [F-003] App-to-backend connectivity confirmed via iOS simulator submission; sightings write succeeded with mirroring; test doc "Dwayne Jan 14th Test Feed" at Dretzka Park, expires ~8 PM (temp open rules used).
 - 2026-01-14 [F-002] Inventory Cloud Functions (prod) - clean deploy confirmed with logs.
   Status: DONE

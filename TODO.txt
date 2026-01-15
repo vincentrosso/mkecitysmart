@@ -173,11 +173,11 @@ RUNNING NOTES (quick scratchpad)
 DONE LOG (most recent first)
 ---------------------------------------------------------
 2026-01-15 — [F-007] Expiration system for “live sightings”
-  Result: Expiration verified; test doc status flipped to "expired" automatically.
-  Evidence: Firestore doc update to status=expired
+  Result: Automated lifecycle confirmed; test doc flipped to status="expired"; cleanupExpiredSightings runs on schedule; no manual intervention required.
+  Evidence: Firestore doc update to status=expired; scheduler runs in logs
 2026-01-15 — [F-003] Confirm app-to-backend connectivity (permanent)
-  Result: Docs created in sightings/alerts with mirroring, rate limits, anonymous auth.
-  Evidence: Firestore docs created + submitSighting invocation
+  Result: End-to-end app→backend→Firestore→mirror chain verified; app creates sightings, functions mirror to alerts/global; anonymous auth and rate limits verified; no crashes or silent failures.
+  Evidence: Firestore docs created + submitSighting invocation; logs clean
 2026-01-14 — [F-003] Confirm app-to-backend connectivity
   Result: End-to-end write succeeded via iOS simulator submission (temp open rules enabled creation in sightings; mirroring worked). Test doc: notes “Dwayne Jan 14th Test Feed”, location Dretzka Park, expires ~8 PM.
   Evidence: iOS simulator test doc in Firestore
