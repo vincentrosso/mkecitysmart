@@ -229,3 +229,118 @@ export const notifyOnApproval = onDocumentUpdated(
     }
   },
 );
+
+export const sendNearbyAlerts = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+
+  const latitude = Number(request.data?.latitude);
+  const longitude = Number(request.data?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new HttpsError("invalid-argument", "Latitude/longitude required.");
+  }
+
+  const token = (request.data?.token ?? "").toString().trim();
+  if (!token) {
+    throw new HttpsError("invalid-argument", "FCM token required.");
+  }
+
+  const testMode = Boolean(request.data?.testMode);
+  if (testMode) {
+    await admin.messaging().send({
+      token,
+      notification: {
+        title: "Test alert",
+        body: "This is a test nearby alert.",
+      },
+      data: {
+        testMode: "true",
+      },
+    });
+    return {
+      success: true,
+      sent: 1,
+      totalMatches: 0,
+      testMode: true,
+    };
+  }
+
+  const radiusMiles = Number(request.data?.radiusMiles ?? 3);
+  const windowMinutes = Number(request.data?.windowMinutes ?? 180);
+  const limit = Math.min(Number(request.data?.limit ?? 25), 50);
+
+  const now = Date.now();
+  const since = admin.firestore.Timestamp.fromMillis(
+    now - windowMinutes * 60 * 1000,
+  );
+
+  const snap = await admin
+    .firestore()
+    .collection("alerts")
+    .where("status", "==", "active")
+    .where("createdAt", ">=", since)
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  const haversineMiles = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ) => {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const r = 3958.8;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return r * c;
+  };
+
+  const matches = snap.docs
+    .map((doc) => ({id: doc.id, data: doc.data()}))
+    .filter(({data}) => {
+      const geo = data.geo as admin.firestore.GeoPoint | undefined;
+      const lat = Number(geo?.latitude ?? data.latitude);
+      const lng = Number(geo?.longitude ?? data.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+      const dist = haversineMiles(latitude, longitude, lat, lng);
+      return dist <= radiusMiles;
+    });
+
+  const sendLimit = Math.min(matches.length, 5);
+  for (let i = 0; i < sendLimit; i++) {
+    const match = matches[i];
+    const title = (match.data.title ?? "Alert").toString();
+    const message = (match.data.message ?? "").toString();
+    const location = (match.data.location ?? "").toString();
+    const body = [message, location ? `at ${location}` : ""]
+      .filter((part) => part && part.trim().length > 0)
+      .join(" ");
+
+    await admin.messaging().send({
+      token,
+      notification: {
+        title,
+        body: body || "Nearby alert.",
+      },
+      data: {
+        alertId: match.id,
+        type: (match.data.type ?? "").toString(),
+      },
+    });
+  }
+
+  return {
+    success: true,
+    sent: sendLimit,
+    totalMatches: matches.length,
+  };
+});

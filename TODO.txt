@@ -158,10 +158,11 @@ NOTES:
 - Track post success/fail, feed latency, subscription funnel
 NOTES:
 
-[F-404] [NEXT] (P0) iOS TestFlight readiness checklist (backend + config)
+[F-404] [DONE] (P0) iOS TestFlight readiness checklist (backend + config)
 - Ensure release build points to correct env
 - Verify notifications (if enabled)
 NOTES:
+- 2026-01-15/16: Release build uploaded to App Store Connect. Internal TestFlight testing enabled and functioning. iOS build confirmed to run as a production-ready artifact.
 
 ========================================================
 RUNNING NOTES (quick scratchpad)
@@ -172,6 +173,9 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-15/16 — [F-404] iOS TestFlight readiness checklist (backend + config)
+  Result: Release build uploaded to App Store Connect; internal TestFlight testing enabled and functioning; iOS build confirmed production-ready.
+  Evidence: App Store Connect upload + TestFlight internal testing
 2026-01-15 — [F-007] Expiration system for “live sightings”
   Result: Automated lifecycle confirmed; test doc flipped to status="expired"; cleanupExpiredSightings runs on schedule; no manual intervention required.
   Evidence: Firestore doc update to status=expired; scheduler runs in logs

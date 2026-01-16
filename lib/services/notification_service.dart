@@ -43,6 +43,9 @@ class NotificationService {
       _messaging = FirebaseMessaging.instance;
       await _requestPermissions();
       await _registerToken();
+      _listenForTokenRefresh();
+      _listenForMessageOpens();
+      await _handleInitialMessage();
       _initTimeZones();
       CloudLogService.instance.logEvent('push_notifications_enabled');
 
@@ -159,6 +162,53 @@ class NotificationService {
       CloudLogService.instance
           .recordError('push_token_register_failed', e, StackTrace.current);
     }
+  }
+
+  void _listenForTokenRefresh() {
+    if (_messaging == null) return;
+    _messaging!.onTokenRefresh.listen((token) async {
+      try {
+        final client = ApiClient();
+        await client.post(
+          '/devices/register',
+          jsonBody: {
+            'token': token,
+            'platform': _platform(),
+          },
+        );
+        log('Refreshed push token: $token');
+        CloudLogService.instance.logEvent(
+          'push_token_refreshed',
+          data: {'platform': _platform()},
+        );
+      } catch (e) {
+        log('Failed to refresh push token: $e');
+        CloudLogService.instance
+            .recordError('push_token_refresh_failed', e, StackTrace.current);
+      }
+    });
+  }
+
+  void _listenForMessageOpens() {
+    if (_messaging == null) return;
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      log('Push opened: ${message.messageId}');
+      CloudLogService.instance.logEvent(
+        'push_opened',
+        data: {'messageId': message.messageId},
+      );
+    });
+  }
+
+  Future<void> _handleInitialMessage() async {
+    if (_messaging == null) return;
+    final message = await _messaging!.getInitialMessage();
+    if (message == null) return;
+    log('Push launched app: ${message.messageId}');
+    CloudLogService.instance.logEvent(
+      'push_launch',
+      data: {'messageId': message.messageId},
+    );
   }
 
   void _initTimeZones() {
