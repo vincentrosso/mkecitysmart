@@ -92,9 +92,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       if (firebaseReady) {
         try {
           await FirebaseAuth.instance.signInAnonymously();
-          debugPrint('Signed in anonymously: ${FirebaseAuth.instance.currentUser?.uid}');
+          print('Anonymous auth UID: ${FirebaseAuth.instance.currentUser?.uid}');
         } catch (e, st) {
-          debugPrint('Anonymous sign-in failed: $e');
+          print('Anonymous sign-in failed: $e');
           // Log to cloud if available; ignore failures here.
           try {
             log('Anonymous sign-in failed: $e', stackTrace: st);
