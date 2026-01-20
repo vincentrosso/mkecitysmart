@@ -2,6 +2,11 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-01-18 [F-102] Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable); emulator testing with rate limits/audit logs; ready for production activation.
+- 2026-01-17/18 [F-008] Moderation baseline implemented; report button increments reports; 4+ reports exclude from feed; per-anonymous UID rate limiting; verified locally.
+- 2026-01-16 [F-404] Production build uploaded to App Store Connect; internal TestFlight enabled; full core loop verified on real iOS devices (submit → appear → expire → disappear).
+- 2026-01-15/16 [F-007] Expiration engine active via cleanupExpiredSightings; sightings auto-expire and disappear from live feed; verified with Dretzka Park test doc (~8 PM).
+- 2026-01-15/16 [F-003] Permanent app-to-backend connectivity: anonymous auth; submissions create sightings/alerts with mirroring; verified via iOS simulator, curl, and Cloud Functions logs.
 - 2026-01-15 [EMULATORS] Wired debug-only emulators for Functions/Firestore/Auth in main bootstrap; TODO: add Storage emulator wiring (FirebaseStorage.useStorageEmulator).
 - 2026-01-15 [EMULATORS] Storage emulator note: FirebaseStorage.instance.useStorageEmulator('localhost', 9199).
 - 2026-01-15/16 [F-404] Release build uploaded to App Store Connect; TestFlight internal testing enabled and functioning; iOS build confirmed production-ready.

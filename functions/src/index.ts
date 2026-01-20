@@ -6,6 +6,12 @@ import {
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall, onRequest} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import {
+  FieldValue,
+  GeoPoint,
+  Timestamp,
+  getFirestore,
+} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 import * as crypto from 'crypto';
 
@@ -20,18 +26,28 @@ export const mirrorUserSightingToGlobal = onDocumentCreated(
     const uid = event.params.uid as string;
     const sightingId = event.params.sightingId as string;
 
-    const data = snap.data() as any;
-    const db = admin.firestore();
+    const data = (snap.data() as any) ?? null;
+    if (!data) {
+      logger.warn("mirrorUserSightingToGlobal missing data", {
+        sightingId,
+        uid,
+        sourcePath: snap.ref.path,
+      });
+      return;
+    }
+    const db = getFirestore();
 
-    const now = admin.firestore.Timestamp.now();
+    const now = Timestamp.now();
+    const timestamp = data.timestamp ?? FieldValue.serverTimestamp();
     const merged = {
       ...data,
       uid: data?.uid ?? uid,
       status: data?.status ?? "active",
       createdAt: data?.createdAt ?? now,
+      timestamp,
       expiresAt:
         data?.expiresAt ??
-        admin.firestore.Timestamp.fromMillis(now.toMillis() + 2 * 60 * 60 * 1000),
+        Timestamp.fromMillis(now.toMillis() + 2 * 60 * 60 * 1000),
       sourcePath: snap.ref.path,
       mirroredAt: now,
     };
@@ -46,8 +62,8 @@ export const helloWorld = onRequest((req, res) => {
 });
 
 export const cleanupExpiredSightings = onSchedule("every 5 minutes", async () => {
-  const db = admin.firestore();
-  const now = admin.firestore.Timestamp.now();
+  const db = getFirestore();
+  const now = Timestamp.now();
 
   const queries = [
     db
@@ -82,7 +98,7 @@ export const cleanupExpiredSightings = onSchedule("every 5 minutes", async () =>
 export const mirrorSightingsToAlerts = onDocumentWritten(
   "sightings/{sightingId}",
   async (event) => {
-    const db = admin.firestore();
+    const db = getFirestore();
     const sightingId = event.params.sightingId as string;
     const after = event.data?.after;
 
@@ -107,7 +123,7 @@ export const mirrorSightingsToAlerts = onDocumentWritten(
             ? `Tow trucks spotted near ${loc}.`
             : `Enforcer spotted near ${loc}.`);
 
-    const now = admin.firestore.Timestamp.now();
+    const now = Timestamp.now();
     const createdAt = data.createdAt ?? now;
     const expiresAt = data.expiresAt ?? null;
 
@@ -128,7 +144,7 @@ export const mirrorSightingsToAlerts = onDocumentWritten(
       status: isActive ? "active" : "inactive",
       active: isActive,
       sourcePath: after.ref.path,
-      mirroredAt: admin.firestore.FieldValue.serverTimestamp(),
+      mirroredAt: FieldValue.serverTimestamp(),
     };
 
     await db.collection("alerts").doc(sightingId).set(alertDoc, {merge: true});
@@ -143,13 +159,13 @@ export const submitSighting = onCall(async (request) => {
     request.auth?.uid ?? `anonymous_${request.rawRequest.ip ?? "unknown"}`;
   const uidKey = uidBase.replace(/[^A-Za-z0-9_.-]/g, "_");
 
-  const db = admin.firestore();
-  const now = admin.firestore.Timestamp.now();
+  const db = getFirestore();
+  const now = Timestamp.now();
   const rateRef = db.collection("rate_limits").doc(uidKey);
 
   const allowed = await db.runTransaction(async (tx) => {
     const snap = await tx.get(rateRef);
-    const data = snap.data() as {count?: number; windowStart?: admin.firestore.Timestamp} | undefined;
+    const data = snap.data() as {count?: number; windowStart?: Timestamp} | undefined;
     const windowStart = data?.windowStart ?? now;
     const elapsed =
       now.toMillis() - windowStart.toMillis();
@@ -191,12 +207,12 @@ export const submitSighting = onCall(async (request) => {
     location,
     type: isEnforcer ? "enforcer" : "tow",
     status: "pending",
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
+    timestamp: FieldValue.serverTimestamp(),
     source: isEnforcer ? "parking_enforcer" : "tow_truck",
     reporterUid: uidBase,
     isPublic: false,
-    geo: hasGeo ? new admin.firestore.GeoPoint(latitude, longitude) : null,
+    geo: hasGeo ? new GeoPoint(latitude, longitude) : null,
   });
 
   logger.info("submitSighting created alert", {alertId: alertRef.id, uid: uidBase});
@@ -418,12 +434,11 @@ export const sendNearbyAlerts = onCall(async (request) => {
   const limit = Math.min(Number(request.data?.limit ?? 25), 50);
 
   const now = Date.now();
-  const since = admin.firestore.Timestamp.fromMillis(
+  const since = Timestamp.fromMillis(
     now - windowMinutes * 60 * 1000,
   );
 
-  const snap = await admin
-    .firestore()
+  const snap = await getFirestore()
     .collection("alerts")
     .where("status", "==", "active")
     .where("createdAt", ">=", since)
@@ -454,7 +469,7 @@ export const sendNearbyAlerts = onCall(async (request) => {
   const matches = snap.docs
     .map((doc) => ({id: doc.id, data: doc.data()}))
     .filter(({data}) => {
-      const geo = data.geo as admin.firestore.GeoPoint | undefined;
+      const geo = data.geo as GeoPoint | undefined;
       const lat = Number(geo?.latitude ?? data.latitude);
       const lng = Number(geo?.longitude ?? data.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;

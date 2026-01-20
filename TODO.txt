@@ -50,7 +50,7 @@ NOTES:
 - Ensure app hits correct function/URL and handles errors
 NOTES:
 - 2026-01-14: End-to-end app-to-backend write succeeded via iOS simulator submission (temp open rules enabled creation in sightings; mirroring worked). Test doc: notes “Dwayne Jan 14th Test Feed”, location Dretzka Park, expires ~8 PM.
-- 2026-01-15: Permanent app-to-backend connectivity confirmed (docs created in sightings/alerts with mirroring, rate limits, anonymous auth).
+- 2026-01-15/16: Implemented permanent app-to-backend connectivity using anonymous auth; submissions now create documents in sightings/alerts with mirroring. Verified via iOS simulator, curl, and Cloud Functions logs. submitSighting fires reliably under production rules.
 
 [F-004] [DONE] (P0) Finalize Firestore schema used by the app (source of truth)
 - Collections + document fields
@@ -77,12 +77,13 @@ NOTES:
 - Remove from “live” feed without deleting history (optional)
 NOTES:
 - 2026-01-11: Cleanup scheduler function code located (marks expired). Need to confirm deploy + verify it runs against prod data.
-- 2026-01-15: Expiration verified; test doc status flipped to "expired" automatically.
+- 2026-01-15/16: Activated expiration engine via cleanupExpiredSightings scheduler. Sightings auto-flip to “expired” and disappear from live feed. Verified with Dretzka Park test document (~8 PM expiration).
 
-[F-008] [TODO] (P0) Moderation basics
+[F-008] [DONE] (P0) Moderation basics
 - Report button
 - Simple spam controls (rate limiting per uid/device)
 NOTES:
+- 2026-01-17/18: Implemented moderation baseline. Report button increments reports field. Sightings with 4+ reports excluded from feed. Added per-anonymous UID rate limiting. Verified locally with controlled abuse tests.
 
 ========================================================
 P1 — HIGH-IMPACT FEATURES (AFTER CORE LOOP)
@@ -93,10 +94,11 @@ P1 — HIGH-IMPACT FEATURES (AFTER CORE LOOP)
 - Identify hot zones
 NOTES:
 
-[F-102] [TODO] (P1) Smart notifications
+[F-102] [IN-PROGRESS] (P1) Smart notifications
 - Alerts near saved places / high-risk zones
 - Quiet hours + frequency rules
 NOTES:
+- 2026-01-18: Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable). Emulator testing with rate limits/audit logs; ready for production activation.
 
 [F-103] [TODO] (P1) Saved places (home/work/favorites)
 - Custom radius per place
@@ -163,6 +165,7 @@ NOTES:
 - Verify notifications (if enabled)
 NOTES:
 - 2026-01-15/16: Release build uploaded to App Store Connect. Internal TestFlight testing enabled and functioning. iOS build confirmed to run as a production-ready artifact.
+- 2026-01-16: Verified full core loop on real iOS devices (submit → appear → expire → disappear).
 
 ========================================================
 RUNNING NOTES (quick scratchpad)
@@ -173,6 +176,21 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-18 — [F-102] Smart notifications (partial)
+  Result: Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable); emulator testing with rate limits/audit logs; ready for production activation.
+  Evidence: Emulator logs + callable tests
+2026-01-17/18 — [F-008] Moderation basics
+  Result: Report button increments reports field; sightings with 4+ reports excluded from feed; per-anonymous UID rate limiting; verified locally with controlled abuse tests.
+  Evidence: Local tests
+2026-01-16 — [F-404] iOS TestFlight readiness checklist (backend + config)
+  Result: Production build uploaded; internal TestFlight enabled; full core loop verified on real iOS devices (submit → appear → expire → disappear).
+  Evidence: App Store Connect + device verification
+2026-01-15/16 — [F-007] Expiration system for “live sightings”
+  Result: cleanupExpiredSightings scheduler active; sightings auto-expire and disappear from live feed; verified with Dretzka Park test doc.
+  Evidence: Firestore status=expired + scheduler logs
+2026-01-15/16 — [F-003] Confirm app-to-backend connectivity (permanent)
+  Result: Anonymous auth enabled; submissions create sightings and alerts with mirroring; verified via iOS simulator, curl, and function logs.
+  Evidence: Firestore docs + Cloud Functions logs
 2026-01-15/16 — [F-404] iOS TestFlight readiness checklist (backend + config)
   Result: Release build uploaded to App Store Connect; internal TestFlight testing enabled and functioning; iOS build confirmed production-ready.
   Evidence: App Store Connect upload + TestFlight internal testing
