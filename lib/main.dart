@@ -106,13 +106,12 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       }
 
       if (firebaseReady) {
-        if (kDebugMode) {
-          FirebaseFunctions.instance
-              .useFunctionsEmulator('localhost', 5003);
-          FirebaseFirestore.instance
-              .useFirestoreEmulator('localhost', 8085);
-          FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-        }
+        // Local emulator wiring disabled for prod builds.
+        // if (kDebugMode) {
+        //   FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5003);
+        //   FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8085);
+        //   FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+        // }
 
         await diagnostics
             .recordFuture<void>(
@@ -235,7 +234,6 @@ class MKEParkApp extends StatelessWidget {
           '/vehicles': (context) => const VehicleManagementScreen(),
           '/preferences': (context) => const PreferencesScreen(),
           '/alerts': (context) => const AlertsLandingScreen(),
-          '/local': (context) => const LocalAlertsScreen(),
           '/charging': (context) => const ChargingMapScreen(),
           '/report-sighting': (context) => const ReportSightingScreen(),
           '/tickets': (context) => const TicketWorkflowScreen(),
@@ -260,13 +258,7 @@ class MKEParkApp extends StatelessWidget {
             }
             return AlertDetailScreen(alertId: alertId);
           },
-          '/local': (context) => const LocalAlertsScreen(),
         },
-        onUnknownRoute: (settings) => MaterialPageRoute(
-          builder: (context) => Scaffold(
-            body: Center(child: Text('Route not found: ${settings.name}')),
-          ),
-        ),
       ),
     );
   }
