@@ -21,20 +21,20 @@ Future<bool> initializeFirebaseIfAvailable() async {
     );
     // If running in debug mode, point Firebase clients at the local emulators.
     // Adjust ports as needed to match your `firebase emulators:start` output.
-    if (kDebugMode) {
-      // Use the standard emulator defaults. If you start emulators with
-      // custom ports, update these values to match the `firebase emulators:start` output.
-      try {
-        FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
-      } catch (_) {}
-      try {
-        FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-      } catch (_) {}
-      try {
-        // Auth emulator is set to 9199 in firebase.json (avoid local conflicts)
-        FirebaseAuth.instance.useAuthEmulator('localhost', 9199);
-      } catch (_) {}
-    }
+    // if (kDebugMode) {
+    //   // Use the standard emulator defaults. If you start emulators with
+    //   // custom ports, update these values to match the `firebase emulators:start` output.
+    //   try {
+    //     FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
+    //   } catch (_) {}
+    //   try {
+    //     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    //   } catch (_) {}
+    //   try {
+    //     // Auth emulator is set to 9199 in firebase.json (avoid local conflicts)
+    //     FirebaseAuth.instance.useAuthEmulator('localhost', 9199);
+    //   } catch (_) {}
+    // }
     debugPrint('[Bootstrap] Firebase init OK');
     return true;
   } catch (err, stack) {
