@@ -16,9 +16,30 @@ Future<bool> initializeFirebaseIfAvailable() async {
 
   debugPrint('[Bootstrap] Starting Firebase init for ${kIsWeb ? 'web' : defaultTargetPlatform.name}...');
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Guardrail: avoid crashing release/TestFlight when the iOS plist is the
+    // placeholder test config (e.g. API_KEY=TEST_API_KEY / projectId=test-project).
+    // In that case we treat Firebase as "not available" and let the app run
+    // without Firebase-backed features.
+    final options = DefaultFirebaseOptions.currentPlatform;
+
+    bool looksLikePlaceholderConfig() {
+      final apiKey = options.apiKey.trim();
+      final projectId = options.projectId.trim();
+      final iOSBundleId = options.iosBundleId?.trim() ?? '';
+
+      if (apiKey.isEmpty || projectId.isEmpty) return true;
+      if (apiKey.toUpperCase().contains('TEST')) return true;
+      if (projectId.toLowerCase().contains('test-')) return true;
+      if (iOSBundleId.isNotEmpty && iOSBundleId.startsWith('com.example.')) return true;
+      return false;
+    }
+
+    if (!kDebugMode && looksLikePlaceholderConfig()) {
+      debugPrint('[Bootstrap] Firebase config looks like a placeholder; skipping Firebase init in release.');
+      return false;
+    }
+
+    await Firebase.initializeApp(options: options);
     // If running in debug mode, point Firebase clients at the local emulators.
     // Adjust ports as needed to match your `firebase emulators:start` output.
     // if (kDebugMode) {
