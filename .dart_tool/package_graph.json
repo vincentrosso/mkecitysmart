@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "mkeparkapp_flutter",
-      "version": "1.0.32+35",
+      "version": "1.0.34+37",
       "dependencies": [
         "cloud_firestore",
         "cloud_functions",
