@@ -78,6 +78,18 @@ class UserProvider extends ChangeNotifier {
   String _tenantId = 'default';
   String _languageCode = 'en';
   Future<void>? _googleSignInInit;
+  String? _lastAuthError;
+
+  /// Whether Firebase-backed auth features are enabled for this build/run.
+  bool get firebaseEnabled => _firebaseEnabled && _auth != null;
+
+  /// Last user-visible auth error message (helps TestFlight debugging).
+  String? get lastAuthError => _lastAuthError;
+
+  void _setLastAuthError(String? message) {
+    _lastAuthError = message;
+    notifyListeners();
+  }
 
   bool get isInitializing => _initializing;
   bool get isLoggedIn => _profile != null;
@@ -285,13 +297,19 @@ class UserProvider extends ChangeNotifier {
   }) async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      return 'Sign-up is unavailable (Firebase disabled on this build).';
+      const msg = 'Sign-up is unavailable (Firebase disabled on this build).';
+      _setLastAuthError(msg);
+      return msg;
     }
     if (auth.currentUser != null && !_guestMode) {
-      return 'An account is already signed in on this device.';
+      const msg = 'An account is already signed in on this device.';
+      _setLastAuthError(msg);
+      return msg;
     }
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      return 'All fields are required.';
+      const msg = 'All fields are required.';
+      _setLastAuthError(msg);
+      return msg;
     }
 
     try {
@@ -330,26 +348,33 @@ class UserProvider extends ChangeNotifier {
           data: {'method': 'email', 'userId': user.uid},
         ),
       );
+      _setLastAuthError(null);
       return null;
     } on FirebaseAuthException catch (e) {
       unawaited(
         CloudLogService.instance
             .recordError('register_auth_error', e, StackTrace.current),
       );
-      return _mapAuthError(e);
+      final msg = _mapAuthError(e);
+      _setLastAuthError(msg);
+      return msg;
     } catch (err, stack) {
       unawaited(
         CloudLogService.instance
             .recordError('register_generic_error', err, stack),
       );
-      return 'Unable to create account right now.';
+      const msg = 'Unable to create account right now.';
+      _setLastAuthError(msg);
+      return msg;
     }
   }
 
   Future<String?> login(String email, String password) async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      return 'Sign-in is unavailable (Firebase disabled on this build).';
+      const msg = 'Sign-in is unavailable (Firebase disabled on this build).';
+      _setLastAuthError(msg);
+      return msg;
     }
     try {
       final credential = await auth.signInWithEmailAndPassword(
@@ -388,26 +413,33 @@ class UserProvider extends ChangeNotifier {
           data: {'method': 'email', 'userId': user.uid},
         ),
       );
+      _setLastAuthError(null);
       return null;
     } on FirebaseAuthException catch (e) {
       unawaited(
         CloudLogService.instance
             .recordError('login_auth_error', e, StackTrace.current),
       );
-      return _mapAuthError(e);
+      final msg = _mapAuthError(e);
+      _setLastAuthError(msg);
+      return msg;
     } catch (err, stack) {
       unawaited(
         CloudLogService.instance
             .recordError('login_generic_error', err, stack),
       );
-      return 'Unable to sign in right now.';
+      const msg = 'Unable to sign in right now.';
+      _setLastAuthError(msg);
+      return msg;
     }
   }
 
   Future<String?> signInWithGoogle() async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      return 'Google sign-in is unavailable (Firebase disabled).';
+      const msg = 'Google sign-in is unavailable (Firebase disabled).';
+      _setLastAuthError(msg);
+      return msg;
     }
     try {
       _googleSignInInit ??= GoogleSignIn.instance.initialize();
@@ -418,7 +450,9 @@ class UserProvider extends ChangeNotifier {
         rethrow;
       }
       if (!GoogleSignIn.instance.supportsAuthenticate()) {
-        return 'Google sign-in is unavailable on this platform.';
+        const msg = 'Google sign-in is unavailable on this platform.';
+        _setLastAuthError(msg);
+        return msg;
       }
       UserCredential credential;
       if (kIsWeb) {
@@ -429,18 +463,38 @@ class UserProvider extends ChangeNotifier {
         if (googleAuth.idToken == null) {
           return 'Missing Google ID token.';
         }
-        final clientAuth =
-            await googleUser.authorizationClient.authorizationForScopes(
-          const ['email', 'profile', 'openid'],
-        );
+        // On iOS/TestFlight, `authorizationForScopes` can fail depending on
+        // the Google configuration. Fall back to the default access token
+        // from the authentication session when needed.
+        // `GoogleSignInAuthorizationResponse` isn't exported publicly in all
+        // google_sign_in versions; keep this loosely typed.
+        dynamic clientAuth;
+        try {
+          clientAuth = await googleUser.authorizationClient
+              .authorizationForScopes(const ['email', 'profile', 'openid']);
+        } catch (e, st) {
+          unawaited(
+            CloudLogService.instance.recordError(
+              'google_authorization_scope_error',
+              e,
+              st,
+            ),
+          );
+        }
         final oauth = GoogleAuthProvider.credential(
-          accessToken: clientAuth?.accessToken,
+          // Some platforms don't surface an access token; idToken is enough
+          // for Firebase Auth in most configurations.
+          accessToken: clientAuth?.accessToken as String?,
           idToken: googleAuth.idToken,
         );
         credential = await auth.signInWithCredential(oauth);
       }
       final user = credential.user;
-      if (user == null) return 'Unable to sign in right now.';
+      if (user == null) {
+        const msg = 'Unable to sign in right now.';
+        _setLastAuthError(msg);
+        return msg;
+      }
       await _ensureProfileForUser(
         user,
         fallbackName: user.displayName ?? 'Google user',
@@ -451,16 +505,39 @@ class UserProvider extends ChangeNotifier {
           data: {'method': 'google', 'userId': user.uid},
         ),
       );
+      _setLastAuthError(null);
       return null;
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
-        return 'Sign-in was canceled.';
+        const msg = 'Sign-in was canceled.';
+        _setLastAuthError(msg);
+        return msg;
       }
-      return 'Google sign-in failed: ${e.description ?? e.code.name}.';
+      unawaited(
+        CloudLogService.instance.recordError(
+          'google_sign_in_error',
+          e,
+          StackTrace.current,
+        ),
+      );
+      final msg = 'Google sign-in failed: ${e.description ?? e.code.name}.';
+      _setLastAuthError(msg);
+      return msg;
     } on FirebaseAuthException catch (e) {
-      return _mapAuthError(e);
+      unawaited(
+        CloudLogService.instance.recordError(
+          'google_firebase_auth_error',
+          e,
+          StackTrace.current,
+        ),
+      );
+      final msg = _mapAuthError(e);
+      _setLastAuthError(msg);
+      return msg;
     } catch (_) {
-      return 'Google sign-in failed. Try again.';
+      const msg = 'Google sign-in failed. Try again.';
+      _setLastAuthError(msg);
+      return msg;
     }
   }
 
@@ -469,11 +546,13 @@ class UserProvider extends ChangeNotifier {
   ) async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
+      _setLastAuthError('Phone sign-in is unavailable (Firebase disabled).');
       return const PhoneAuthStartResult(
         error: 'Phone sign-in is unavailable (Firebase disabled).',
       );
     }
     if (kIsWeb) {
+      _setLastAuthError('Phone sign-in is not available on web.');
       return const PhoneAuthStartResult(
         error: 'Phone sign-in is not available on web.',
       );
@@ -494,12 +573,14 @@ class UserProvider extends ChangeNotifier {
           if (!completer.isCompleted) {
             completer.complete(const PhoneAuthStartResult());
           }
+          _setLastAuthError(null);
         } catch (e) {
           if (!completer.isCompleted) {
             completer.complete(
               PhoneAuthStartResult(error: 'Phone sign-in failed.'),
             );
           }
+          _setLastAuthError('Phone sign-in failed.');
         }
       },
       verificationFailed: (e) {
@@ -507,6 +588,7 @@ class UserProvider extends ChangeNotifier {
         if (!completer.isCompleted) {
           completer.complete(PhoneAuthStartResult(error: message));
         }
+        _setLastAuthError(message);
       },
       codeSent: (verificationId, _) {
         if (!completer.isCompleted) {
@@ -517,6 +599,7 @@ class UserProvider extends ChangeNotifier {
             ),
           );
         }
+        _setLastAuthError(null);
       },
       codeAutoRetrievalTimeout: (_) {
         if (!completer.isCompleted) {
@@ -526,6 +609,7 @@ class UserProvider extends ChangeNotifier {
             ),
           );
         }
+        _setLastAuthError('Verification timed out. Try again.');
       },
       timeout: const Duration(seconds: 60),
     );
@@ -539,7 +623,9 @@ class UserProvider extends ChangeNotifier {
   }) async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      return 'Phone sign-in is unavailable (Firebase disabled).';
+      const msg = 'Phone sign-in is unavailable (Firebase disabled).';
+      _setLastAuthError(msg);
+      return msg;
     }
     try {
       final credential = PhoneAuthProvider.credential(
@@ -548,16 +634,25 @@ class UserProvider extends ChangeNotifier {
       );
       final result = await auth.signInWithCredential(credential);
       final user = result.user;
-      if (user == null) return 'Unable to sign in right now.';
+      if (user == null) {
+        const msg = 'Unable to sign in right now.';
+        _setLastAuthError(msg);
+        return msg;
+      }
       await _ensureProfileForUser(
         user,
         fallbackName: _nameFromPhone(phoneNumber ?? user.phoneNumber ?? ''),
       );
+      _setLastAuthError(null);
       return null;
     } on FirebaseAuthException catch (e) {
-      return _mapPhoneError(e);
+      final msg = _mapPhoneError(e);
+      _setLastAuthError(msg);
+      return msg;
     } catch (_) {
-      return 'Unable to verify the code. Try again.';
+      const msg = 'Unable to verify the code. Try again.';
+      _setLastAuthError(msg);
+      return msg;
     }
   }
 
@@ -577,12 +672,16 @@ class UserProvider extends ChangeNotifier {
   Future<String?> signInWithApple() async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
-      return 'Apple sign-in is unavailable (Firebase disabled).';
+      const msg = 'Apple sign-in is unavailable (Firebase disabled).';
+      _setLastAuthError(msg);
+      return msg;
     }
     if (kIsWeb ||
         (defaultTargetPlatform != TargetPlatform.iOS &&
             defaultTargetPlatform != TargetPlatform.macOS)) {
-      return 'Apple sign-in is only available on Apple platforms.';
+      const msg = 'Apple sign-in is only available on Apple platforms.';
+      _setLastAuthError(msg);
+      return msg;
     }
     try {
       final appleId = await SignInWithApple.getAppleIDCredential(
@@ -591,13 +690,22 @@ class UserProvider extends ChangeNotifier {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
+      if (appleId.identityToken == null || appleId.identityToken!.isEmpty) {
+        const msg = 'Apple sign-in failed: missing identity token.';
+        _setLastAuthError(msg);
+        return msg;
+      }
       final oauth = OAuthProvider('apple.com').credential(
         idToken: appleId.identityToken,
         accessToken: appleId.authorizationCode,
       );
       final credential = await auth.signInWithCredential(oauth);
       final user = credential.user;
-      if (user == null) return 'Unable to sign in right now.';
+      if (user == null) {
+        const msg = 'Unable to sign in right now.';
+        _setLastAuthError(msg);
+        return msg;
+      }
       final name = appleId.givenName?.isNotEmpty == true
           ? '${appleId.givenName} ${appleId.familyName ?? ''}'.trim()
           : user.displayName ?? 'Apple user';
@@ -608,16 +716,39 @@ class UserProvider extends ChangeNotifier {
           data: {'method': 'apple', 'userId': user.uid},
         ),
       );
+      _setLastAuthError(null);
       return null;
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
-        return 'Sign-in was canceled.';
+        const msg = 'Sign-in was canceled.';
+        _setLastAuthError(msg);
+        return msg;
       }
-      return 'Apple sign-in failed (${e.code.name}).';
+      unawaited(
+        CloudLogService.instance.recordError(
+          'apple_sign_in_error',
+          e,
+          StackTrace.current,
+        ),
+      );
+      final msg = 'Apple sign-in failed (${e.code.name}).';
+      _setLastAuthError(msg);
+      return msg;
     } on FirebaseAuthException catch (e) {
-      return _mapAuthError(e);
+      unawaited(
+        CloudLogService.instance.recordError(
+          'apple_firebase_auth_error',
+          e,
+          StackTrace.current,
+        ),
+      );
+      final msg = _mapAuthError(e);
+      _setLastAuthError(msg);
+      return msg;
     } catch (_) {
-      return 'Apple sign-in failed. Try again.';
+      const msg = 'Apple sign-in failed. Try again.';
+      _setLastAuthError(msg);
+      return msg;
     }
   }
 

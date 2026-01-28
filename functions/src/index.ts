@@ -13,6 +13,194 @@ import {
 } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 
+type DevicePlatform = "ios" | "android" | "web" | "unknown";
+
+type ApprovalTier = "auto" | "soft" | "manual";
+type AlertStatus = "active" | "pending" | "rejected";
+
+type RegisterDeviceRequest = {
+  token: string;
+  platform?: DevicePlatform;
+  latitude?: number;
+  longitude?: number;
+  locationPrecisionMeters?: number;
+  radiusMiles?: number;
+};
+
+type DeviceDoc = {
+  uid: string;
+  token: string;
+  platform: DevicePlatform;
+  // Optional last known location
+  location?: GeoPoint;
+  geohash?: string;
+  locationPrecisionMeters?: number | null;
+  radiusMiles?: number;
+  // Auditing
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastSeenAt: Timestamp;
+};
+
+const DEFAULT_NEARBY_RADIUS_MILES = 5;
+const MAX_NEARBY_RADIUS_MILES = 25;
+const MAX_FANOUT_PER_SIGHTING = 2000;
+const MAX_CANDIDATE_SCAN = 5000;
+const MULTICAST_CHUNK_SIZE = 500;
+
+// Approval tiers
+const SOFT_AUTO_APPROVE_DELAY_MINUTES = 3;
+
+// Abuse controls
+const IP_RATE_LIMIT_MAX = 8;
+const IP_RATE_LIMIT_WINDOW_SECONDS = 10 * 60;
+const DUPLICATE_TEXT_WINDOW_MINUTES = 30;
+const DUPLICATE_TEXT_MAX = 2;
+
+const haversineMiles = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const r = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return r * c;
+};
+
+const approxBoundingBoxDegrees = (radiusMiles: number) => {
+  // Rough bounding box to reduce candidates before haversine.
+  // 1 degree latitude ~= 69 miles.
+  const latDelta = radiusMiles / 69;
+  // Longitude delta depends on latitude; caller should divide by cos(lat).
+  return {latDelta};
+};
+
+// --- Geohash helpers (no external deps) ---
+// Base32 alphabet used by standard geohash.
+const GEOHASH_BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
+
+const encodeGeohash = (lat: number, lon: number, precision = 8): string => {
+  // Typical precisions:
+  // 7 ~ 0.15km, 8 ~ 0.02km (varies by latitude)
+  // We mainly use this for prefiltering; final haversine correctness is preserved.
+  let idx = 0;
+  let bit = 0;
+  let evenBit = true;
+  let geohash = "";
+
+  let latMin = -90.0;
+  let latMax = 90.0;
+  let lonMin = -180.0;
+  let lonMax = 180.0;
+
+  while (geohash.length < precision) {
+    if (evenBit) {
+      const lonMid = (lonMin + lonMax) / 2;
+      if (lon >= lonMid) {
+        idx = (idx << 1) + 1;
+        lonMin = lonMid;
+      } else {
+        idx = (idx << 1) + 0;
+        lonMax = lonMid;
+      }
+    } else {
+      const latMid = (latMin + latMax) / 2;
+      if (lat >= latMid) {
+        idx = (idx << 1) + 1;
+        latMin = latMid;
+      } else {
+        idx = (idx << 1) + 0;
+        latMax = latMid;
+      }
+    }
+
+    evenBit = !evenBit;
+    if (++bit === 5) {
+      geohash += GEOHASH_BASE32.charAt(idx);
+      bit = 0;
+      idx = 0;
+    }
+  }
+
+  return geohash;
+};
+
+const geohashPrecisionForRadiusMiles = (radiusMiles: number): number => {
+  // Choose a geohash precision that keeps the number of candidate docs reasonable.
+  // This is heuristic; we still do haversine filtering afterwards.
+  if (radiusMiles <= 1) return 7;
+  if (radiusMiles <= 5) return 6;
+  if (radiusMiles <= 10) return 5;
+  return 5;
+};
+
+const geohashQueryRanges = (centerGeohash: string, prefixLen: number) => {
+  // Range query for all strings with the same prefix:
+  // [prefix, prefix + "\uf8ff"]
+  //
+  // NOTE: true neighbor-cell coverage is more complex. To reduce boundary misses
+  // without an external geohash-neighbors implementation, we widen the prefix
+  // by one character (coarser cell), which increases candidate coverage and
+  // relies on haversine filtering for correctness.
+  const effectivePrefixLen = Math.max(1, prefixLen - 1);
+  const prefix = centerGeohash.slice(0, effectivePrefixLen);
+  return [{start: prefix, end: prefix + "\uf8ff"}];
+};
+
+const chunk = <T>(arr: T[], size: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+};
+
+const determineApprovalTier = (report: {
+  reporterUid: string;
+  notes: string;
+  hasGeo: boolean;
+}): {tier: ApprovalTier; reviewReason?: string} => {
+  // IMPORTANT: Server-owned decision. Client must never provide approval tier.
+  // Heuristics (safe defaults):
+  // - manual: lots of text or missing geo (harder to verify / higher abuse risk)
+  // - soft: normal reports with geo
+  // - auto: trusted reporters or very short well-formed reports (placeholder logic)
+
+  const notes = (report.notes ?? "").toString();
+  const hasUrl = /http(s)?:\/\//i.test(notes);
+  const tooLong = notes.length >= 250;
+  const repeatedChars = /(.)\1{8,}/.test(notes);
+  const emojiHeavy = ((notes.match(/[\u{1F300}-\u{1FAFF}]/gu) ?? []).length / Math.max(1, notes.length)) > 0.05;
+  const looksSpammy = hasUrl || tooLong || repeatedChars || emojiHeavy;
+
+  if (!report.hasGeo) {
+    // Missing geo can't do precise nearby fanout (and is harder to validate),
+    // but we still want the community signal to flow with minimal moderation.
+    // Use soft tier so it becomes visible after a short delay if it isn't flagged.
+    // If it's spammy, go manual.
+    if (looksSpammy) {
+      return {tier: "manual", reviewReason: "missing_location_needs_review"};
+    }
+    return {tier: "soft", reviewReason: "missing_location"};
+  }
+
+  if (looksSpammy) {
+    return {tier: "manual", reviewReason: "needs_review"};
+  }
+
+  // Default: minimize manual approvals.
+  // Anything geo-present and not obviously spam is auto-approved.
+  return {tier: "auto"};
+};
+
 admin.initializeApp();
 
 export const mirrorUserSightingToGlobal = onDocumentCreated(
@@ -157,9 +345,13 @@ export const submitSighting = onCall(async (request) => {
     request.auth?.uid ?? `anonymous_${request.rawRequest.ip ?? "unknown"}`;
   const uidKey = uidBase.replace(/[^A-Za-z0-9_.-]/g, "_");
 
+  const ip = (request.rawRequest.ip ?? "unknown").toString();
+  const ipKey = `ip_${ip}`.replace(/[^A-Za-z0-9_.-]/g, "_");
+
   const db = getFirestore();
   const now = Timestamp.now();
   const rateRef = db.collection("rate_limits").doc(uidKey);
+  const ipRateRef = db.collection("rate_limits").doc(ipKey);
 
   const allowed = await db.runTransaction(async (tx) => {
     const snap = await tx.get(rateRef);
@@ -180,7 +372,25 @@ export const submitSighting = onCall(async (request) => {
     return true;
   });
 
-  if (!allowed) {
+  const ipAllowed = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ipRateRef);
+    const data = snap.data() as {count?: number; windowStart?: Timestamp} | undefined;
+    const windowStart = data?.windowStart ?? now;
+    const elapsed = now.toMillis() - windowStart.toMillis();
+
+    if (!snap.exists || elapsed >= IP_RATE_LIMIT_WINDOW_SECONDS * 1000) {
+      tx.set(ipRateRef, {count: 1, windowStart: now});
+      return true;
+    }
+
+    const count = data?.count ?? 0;
+    if (count >= IP_RATE_LIMIT_MAX) return false;
+
+    tx.update(ipRateRef, {count: count + 1});
+    return true;
+  });
+
+  if (!allowed || !ipAllowed) {
     throw new HttpsError(
       "resource-exhausted",
       "Rate limit exceeded. Try again later.",
@@ -198,24 +408,493 @@ export const submitSighting = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Invalid report");
   }
 
+  // Duplicate-content abuse signal (same text repeated across a short window).
+  // If tripped, we downgrade from auto -> soft/manual.
+  const notesKey = notes
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+
+  let duplicateTextCount = 0;
+  if (notesKey.length > 0 && request.auth?.uid) {
+    const since = Timestamp.fromMillis(Date.now() - DUPLICATE_TEXT_WINDOW_MINUTES * 60 * 1000);
+    const dupSnap = await db
+      .collection("alerts")
+      .where("reporterUid", "==", request.auth.uid)
+      .where("createdAt", ">=", since)
+      .limit(25)
+      .get()
+      .catch(() => null);
+
+    if (dupSnap) {
+      duplicateTextCount = dupSnap.docs
+        .map((d) => ((d.data() as any)?.message ?? "").toString().toLowerCase().replace(/\s+/g, " ").trim().slice(0, 200))
+        .filter((m) => m === notesKey).length;
+    }
+  }
+
   const alertRef = db.collection("alerts").doc();
+
+  let approvalDecision = determineApprovalTier({
+    reporterUid: uidBase,
+    notes,
+    hasGeo,
+  });
+
+  // If the user is repeating the same content, force review.
+  if (duplicateTextCount >= DUPLICATE_TEXT_MAX) {
+    approvalDecision = {tier: "manual", reviewReason: "duplicate_content"};
+  }
+
+  const approvalTier: ApprovalTier = approvalDecision.tier;
+  const initialStatus: AlertStatus = approvalTier === "auto" ? "active" : "pending";
+  const initialActive = initialStatus === "active";
+
   await alertRef.set({
     title: isEnforcer ? "Enforcement Sighting" : "Tow Sighting",
     message: notes || "No notes",
     location,
     type: isEnforcer ? "enforcer" : "tow",
-    status: "pending",
+    approvalTier,
+    reviewReason: approvalDecision.reviewReason ?? null,
+    status: initialStatus,
+    active: initialActive,
     createdAt: FieldValue.serverTimestamp(),
     timestamp: FieldValue.serverTimestamp(),
     source: isEnforcer ? "parking_enforcer" : "tow_truck",
     reporterUid: uidBase,
     isPublic: false,
     geo: hasGeo ? new GeoPoint(latitude, longitude) : null,
+    flagged: false,
+    softApproveAfter: approvalTier === "soft"
+      ? Timestamp.fromMillis(Date.now() + SOFT_AUTO_APPROVE_DELAY_MINUTES * 60 * 1000)
+      : null,
   });
 
   logger.info("submitSighting created alert", {alertId: alertRef.id, uid: uidBase});
 
-  return {success: true, message: "Report submitted for review!"};
+  // Immediate nearby-user push fan-out when geo is available.
+  // Only do this when we decide the report does NOT require manual review.
+  if (hasGeo && approvalTier !== "manual") {
+    try {
+      const reporterUid = uidBase;
+      const radiusMiles = Math.min(
+        Math.max(Number(request.data?.radiusMiles ?? DEFAULT_NEARBY_RADIUS_MILES), 0.1),
+        MAX_NEARBY_RADIUS_MILES,
+      );
+
+      const devicesRef = db.collection("devices");
+
+      const precision = geohashPrecisionForRadiusMiles(radiusMiles);
+      const centerHash = encodeGeohash(latitude, longitude, 8);
+      const ranges = geohashQueryRanges(centerHash, precision);
+
+      const {latDelta} = approxBoundingBoxDegrees(radiusMiles);
+      const latMin = latitude - latDelta;
+      const latMax = latitude + latDelta;
+      // Avoid huge lon deltas near the poles; Milwaukee is fine but keep safe.
+      const cosLat = Math.max(0.2, Math.cos((latitude * Math.PI) / 180));
+      const lonDelta = radiusMiles / (69 * cosLat);
+      const lonMin = longitude - lonDelta;
+      const lonMax = longitude + lonDelta;
+
+      // Query by geohash prefix/range to avoid scanning the whole devices collection.
+      // Note: We currently query only the center geohash prefix. For larger radii,
+      // we may need to query neighboring prefixes (follow-up improvement).
+      const candidateDocs: Array<{id: string; data: any}> = [];
+      for (const r of ranges) {
+        const snap = await devicesRef
+          .where("geohash", ">=", r.start)
+          .where("geohash", "<=", r.end)
+          .limit(MAX_CANDIDATE_SCAN)
+          .get();
+        snap.docs.forEach((d) => candidateDocs.push({id: d.id, data: d.data() as any}));
+      }
+
+      const candidates = candidateDocs
+        .filter(({data}) => (data.uid ?? "").toString() !== reporterUid)
+        .filter(({data}) => {
+          const gp = data.location as GeoPoint | undefined;
+          if (!gp) return false;
+          const lat = Number(gp.latitude);
+          const lon = Number(gp.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+          // Coarse bounding box first
+          if (lat < latMin || lat > latMax || lon < lonMin || lon > lonMax) return false;
+          // Then precise distance
+          const dist = haversineMiles(latitude, longitude, lat, lon);
+          const deviceRadius = Math.min(
+            Math.max(Number(data.radiusMiles ?? radiusMiles), 0.1),
+            MAX_NEARBY_RADIUS_MILES,
+          );
+          return dist <= deviceRadius;
+        })
+        .slice(0, MAX_FANOUT_PER_SIGHTING);
+
+      const tokens = Array.from(
+        new Set(
+          candidates
+            .map(({data}) => (data.token ?? "").toString().trim())
+            .filter((t) => t.length > 0),
+        ),
+      );
+
+      if (tokens.length > 0) {
+        const title = isEnforcer ? "Nearby enforcement" : "Nearby tow";
+        const bodyBase = notes
+          ? notes.toString().slice(0, 180)
+          : `Report near ${location}`;
+        const body = `${bodyBase} (within ~${radiusMiles} miles)`;
+
+        let totalSuccess = 0;
+        let totalFailure = 0;
+        const invalidTokens = new Set<string>();
+
+        for (const part of chunk(tokens, MULTICAST_CHUNK_SIZE)) {
+          const multicast = await admin.messaging().sendEachForMulticast({
+            tokens: part,
+            notification: {title, body},
+            data: {
+              kind: "nearby_sighting",
+              alertId: alertRef.id,
+              type: isEnforcer ? "enforcer" : "tow",
+            },
+          });
+
+          totalSuccess += multicast.successCount;
+          totalFailure += multicast.failureCount;
+
+          multicast.responses.forEach((r, i) => {
+            if (r.success) return;
+            const code = (r.error as any)?.code ?? "";
+            if (
+              code === "messaging/registration-token-not-registered" ||
+              code === "messaging/invalid-registration-token"
+            ) {
+              invalidTokens.add(part[i]);
+            }
+          });
+        }
+
+        logger.info("submitSighting fanout complete", {
+          alertId: alertRef.id,
+          reporterUid,
+          tokens: tokens.length,
+          successCount: totalSuccess,
+          failureCount: totalFailure,
+          geohashPrefixLen: precision,
+        });
+
+        if (invalidTokens.size > 0) {
+          const snap = await devicesRef
+            .where("token", "in", Array.from(invalidTokens).slice(0, 10))
+            .get()
+            .catch(() => null);
+          if (snap) {
+            const batch = db.batch();
+            snap.docs.forEach((d) => batch.delete(d.ref));
+            await batch.commit().catch(() => {});
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn("submitSighting fanout failed", {
+        alertId: alertRef.id,
+        err: (e as any)?.message ?? String(e),
+      });
+    }
+  }
+
+  const userMessage = hasGeo && approvalTier !== "manual"
+    ? "Report submitted. Nearby drivers will be warned."
+    : (approvalTier === "manual"
+      ? "Report submitted. It needs review before posting."
+      : "Report submitted. It will post shortly if unflagged.");
+
+  return {success: true, message: userMessage};
+});
+
+// Helper for development/testing: simulate a nearby warning push without creating an alert.
+// Admin-only to prevent abuse.
+export const simulateNearbyWarning = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const isAdmin = (request.auth.token as any)?.admin === true || (request.auth.token as any)?.moderator === true;
+  if (!isAdmin) {
+    throw new HttpsError("permission-denied", "Admin required.");
+  }
+
+  const latitude = Number(request.data?.latitude);
+  const longitude = Number(request.data?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new HttpsError("invalid-argument", "latitude/longitude required");
+  }
+  const radiusMiles = Math.min(
+    Math.max(Number(request.data?.radiusMiles ?? DEFAULT_NEARBY_RADIUS_MILES), 0.1),
+    MAX_NEARBY_RADIUS_MILES,
+  );
+  const title = (request.data?.title ?? "Test nearby warning").toString();
+  const bodyBase = (request.data?.body ?? "This is a test warning.").toString();
+  const body = `${bodyBase} (within ~${radiusMiles} miles)`;
+
+  const db = getFirestore();
+  const devicesRef = db.collection("devices");
+
+  const precision = geohashPrecisionForRadiusMiles(radiusMiles);
+  const centerHash = encodeGeohash(latitude, longitude, 8);
+  const ranges = geohashQueryRanges(centerHash, precision);
+
+  const {latDelta} = approxBoundingBoxDegrees(radiusMiles);
+  const latMin = latitude - latDelta;
+  const latMax = latitude + latDelta;
+  const cosLat = Math.max(0.2, Math.cos((latitude * Math.PI) / 180));
+  const lonDelta = radiusMiles / (69 * cosLat);
+  const lonMin = longitude - lonDelta;
+  const lonMax = longitude + lonDelta;
+
+  const candidateDocs: Array<any> = [];
+  for (const r of ranges) {
+    const snap = await devicesRef
+      .where("geohash", ">=", r.start)
+      .where("geohash", "<=", r.end)
+      .limit(MAX_CANDIDATE_SCAN)
+      .get();
+    snap.docs.forEach((d) => candidateDocs.push(d.data()));
+  }
+
+  const tokens = Array.from(
+    new Set(
+      candidateDocs
+        .filter((data) => {
+          const gp = data.location as GeoPoint | undefined;
+          if (!gp) return false;
+          const lat = Number(gp.latitude);
+          const lon = Number(gp.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+          if (lat < latMin || lat > latMax || lon < lonMin || lon > lonMax) return false;
+          const dist = haversineMiles(latitude, longitude, lat, lon);
+          const deviceRadius = Math.min(
+            Math.max(Number(data.radiusMiles ?? radiusMiles), 0.1),
+            MAX_NEARBY_RADIUS_MILES,
+          );
+          return dist <= deviceRadius;
+        })
+        .map((data) => (data.token ?? "").toString().trim())
+        .filter((t) => t.length > 0),
+    ),
+  ).slice(0, MAX_FANOUT_PER_SIGHTING);
+
+  let totalSuccess = 0;
+  let totalFailure = 0;
+  for (const part of chunk(tokens, MULTICAST_CHUNK_SIZE)) {
+    const multicast = await admin.messaging().sendEachForMulticast({
+      tokens: part,
+      notification: {title, body},
+      data: {kind: "test_nearby"},
+    });
+    totalSuccess += multicast.successCount;
+    totalFailure += multicast.failureCount;
+  }
+
+  return {success: true, tokens: tokens.length, successCount: totalSuccess, failureCount: totalFailure};
+});
+
+// Server-driven tier processing for alerts that may be created by other paths.
+// Ensures fields are consistent even if something writes into /alerts directly.
+export const applyApprovalTierOnAlertCreate = onDocumentCreated(
+  "alerts/{alertId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const data = (snap.data() as any) ?? {};
+    // If the document already has approvalTier, we assume it was created by backend logic.
+    if (data.approvalTier) return;
+
+    const reporterUid = (data.reporterUid ?? "unknown").toString();
+    const notes = (data.message ?? data.notes ?? "").toString();
+    const gp = data.geo as GeoPoint | null | undefined;
+    const hasGeo = Boolean(gp && Number.isFinite(gp.latitude) && Number.isFinite(gp.longitude));
+
+    const decision = determineApprovalTier({
+      reporterUid,
+      notes,
+      hasGeo,
+    });
+    const tier: ApprovalTier = decision.tier;
+    const status: AlertStatus = tier === "auto" ? "active" : "pending";
+
+    await snap.ref.set(
+      {
+        approvalTier: tier,
+        reviewReason: decision.reviewReason ?? null,
+        status,
+        active: status === "active",
+        flagged: false,
+        softApproveAfter: tier === "soft"
+          ? Timestamp.fromMillis(Date.now() + SOFT_AUTO_APPROVE_DELAY_MINUTES * 60 * 1000)
+          : null,
+      },
+      {merge: true},
+    );
+  },
+);
+
+export const autoApproveSoftAlerts = onSchedule("every 5 minutes", async () => {
+  const db = getFirestore();
+  const now = Timestamp.now();
+
+  const snap = await db
+    .collection("alerts")
+    .where("approvalTier", "==", "soft")
+    .where("status", "==", "pending")
+    .where("softApproveAfter", "<=", now)
+    .limit(250)
+    .get();
+
+  if (snap.empty) return;
+
+  const batch = db.batch();
+  snap.docs.forEach((d) => {
+    const data = d.data() as any;
+    if (data.flagged === true) return;
+    batch.set(
+      d.ref,
+      {
+        status: "active",
+        active: true,
+        autoApprovedAt: now,
+      },
+      {merge: true},
+    );
+  });
+
+  await batch.commit();
+});
+
+export const registerDevice = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+
+  const data = (request.data ?? {}) as RegisterDeviceRequest;
+  const token = (data.token ?? "").toString().trim();
+  if (!token) {
+    throw new HttpsError("invalid-argument", "FCM token required.");
+  }
+
+  const platform = ((data.platform ?? "unknown").toString().toLowerCase() as DevicePlatform) ||
+    "unknown";
+  const latitude = Number(data.latitude);
+  const longitude = Number(data.longitude);
+  const hasGeo = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const radiusMiles = Math.min(
+    Math.max(Number(data.radiusMiles ?? DEFAULT_NEARBY_RADIUS_MILES), 0.1),
+    MAX_NEARBY_RADIUS_MILES,
+  );
+  const precision = data.locationPrecisionMeters;
+
+  const db = getFirestore();
+  const now = Timestamp.now();
+
+  // One device record per token; users may reinstall so uid can change.
+  const docId = token.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 200);
+  const ref = db.collection("devices").doc(docId);
+
+  const payload: Partial<DeviceDoc> = {
+    uid: request.auth.uid,
+    token,
+    platform,
+    radiusMiles,
+    locationPrecisionMeters: precision ?? null,
+    updatedAt: now,
+    lastSeenAt: now,
+  };
+  if (hasGeo) {
+    payload.location = new GeoPoint(latitude, longitude);
+    payload.geohash = encodeGeohash(latitude, longitude, 8);
+  }
+
+  await ref.set(
+    {
+      ...payload,
+      createdAt: FieldValue.serverTimestamp(),
+    },
+    {merge: true},
+  );
+
+  return {success: true};
+});
+
+export const approveAlert = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  // Only admins/moderators can approve.
+  const isAdmin = (request.auth.token as any)?.admin === true || (request.auth.token as any)?.moderator === true;
+  if (!isAdmin) {
+    throw new HttpsError("permission-denied", "Admin approval required.");
+  }
+  const alertId = (request.data?.alertId ?? "").toString().trim();
+  if (!alertId) {
+    throw new HttpsError("invalid-argument", "alertId required");
+  }
+
+  const db = getFirestore();
+  const ref = db.collection("alerts").doc(alertId);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    throw new HttpsError("not-found", "Alert not found");
+  }
+
+  const now = Timestamp.now();
+  await ref.set(
+    {
+      status: "active",
+      active: true,
+      approvedAt: now,
+      approvedBy: request.auth.uid,
+    },
+    {merge: true},
+  );
+
+  return {success: true};
+});
+
+export const unregisterDevice = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const token = (request.data?.token ?? "").toString().trim();
+  if (!token) {
+    throw new HttpsError("invalid-argument", "FCM token required.");
+  }
+  const docId = token.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 200);
+  await getFirestore().collection("devices").doc(docId).delete().catch(() => {});
+  return {success: true};
+});
+
+export const testPushToSelf = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const token = (request.data?.token ?? "").toString().trim();
+  if (!token) {
+    throw new HttpsError("invalid-argument", "FCM token required.");
+  }
+
+  const title = (request.data?.title ?? "CitySmart test").toString();
+  const body = (request.data?.body ?? "Test notification").toString();
+
+  const resp = await admin.messaging().send({
+    token,
+    notification: {title, body},
+    data: {kind: "test"},
+  });
+
+  return {success: true, messageId: resp};
 });
 
 export const notifyOnApproval = onDocumentWritten(

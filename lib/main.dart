@@ -40,6 +40,7 @@ import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
 import 'screens/alerts_landing_screen.dart';
 import 'screens/alert_detail_screen.dart';
+import 'screens/auth_diagnostics_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -223,6 +224,7 @@ class MKEParkApp extends StatelessWidget {
           '/landing': (context) => LandingScreen(),
           '/auth': (context) => const AuthScreen(),
           '/register': (context) => const RegisterScreen(),
+          '/auth-diagnostics': (context) => const AuthDiagnosticsScreen(),
           '/parking': (context) => const ParkingScreen(),
           '/permit': (context) => const PermitScreen(),
           '/permit-workflow': (context) => const PermitWorkflowScreen(),

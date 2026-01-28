@@ -14,7 +14,9 @@ import 'firebase_options.dart';
 Future<bool> initializeFirebaseIfAvailable() async {
   if (Firebase.apps.isNotEmpty) return true;
 
-  debugPrint('[Bootstrap] Starting Firebase init for ${kIsWeb ? 'web' : defaultTargetPlatform.name}...');
+  debugPrint(
+    '[Bootstrap] Starting Firebase init for ${kIsWeb ? 'web' : defaultTargetPlatform.name}...',
+  );
   try {
     // Guardrail: avoid crashing release/TestFlight when the iOS plist is the
     // placeholder test config (e.g. API_KEY=TEST_API_KEY / projectId=test-project).
@@ -34,8 +36,18 @@ Future<bool> initializeFirebaseIfAvailable() async {
       return false;
     }
 
+    // Safe, non-secret identifiers that help debug TestFlight configuration.
+    debugPrint(
+      '[Bootstrap] Firebase options: projectId=${options.projectId}, appId=${options.appId}, iosBundleId=${options.iosBundleId ?? '(none)'}',
+    );
+
     if (!kDebugMode && looksLikePlaceholderConfig()) {
-      debugPrint('[Bootstrap] Firebase config looks like a placeholder; skipping Firebase init in release.');
+      debugPrint(
+        '[Bootstrap] Firebase init SKIPPED: config looks like placeholder (release).',
+      );
+      debugPrint(
+        '[Bootstrap] If this is unexpected, re-download iOS GoogleService-Info.plist for bundle id com.mkecitysmart.app and rebuild.',
+      );
       return false;
     }
 
@@ -60,6 +72,9 @@ Future<bool> initializeFirebaseIfAvailable() async {
     return true;
   } catch (err, stack) {
     debugPrint('[Bootstrap] Firebase init FAILED: $err');
+    debugPrint(
+      '[Bootstrap] When Firebase is disabled on iOS TestFlight, check: (1) correct GoogleService-Info.plist, (2) Firebase Console → Cloud Messaging APNs key, (3) aps-environment entitlement.',
+    );
     log(
       'Firebase config missing for ${defaultTargetPlatform.name}: $err',
       stackTrace: stack,

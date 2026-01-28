@@ -31,36 +31,6 @@
     "rules": "storage.rules"
   },
   "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "functions": {
-      "port": 5003
-    },
-    "firestore": {
-      "port": 8085,
-      "websocketPort": 9152
-    },
-    "storage": {
-      "port": 9199
-    },
-    "hosting": {
-      "port": 5002
-    },
-    "ui": {
-      "enabled": true,
-      "port": 4001
-    },
-    "logging": {
-      "port": 4501
-    },
-    "hub": {
-      "port": 4401
-    },
-    "singleProjectMode": true
-  }
-  ,
-  "emulators": {
     "functions": {
       "port": 5001
     },
@@ -73,6 +43,7 @@
     "ui": {
       "enabled": true,
       "port": 4000
-    }
+    },
+    "singleProjectMode": true
   }
 }

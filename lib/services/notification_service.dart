@@ -1,14 +1,16 @@
 import 'dart:developer';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../firebase_bootstrap.dart';
 import 'cloud_log_service.dart';
-import 'api_client.dart';
+import 'push_diagnostics_service.dart';
 
 class NotificationService {
   NotificationService._();
@@ -119,6 +121,7 @@ class NotificationService {
       badge: true,
       sound: true,
     );
+    PushDiagnosticsService.instance.recordPermission(settings);
     log('Notification permission: ${settings.authorizationStatus}');
     CloudLogService.instance.logEvent(
       'push_permission_prompt',
@@ -149,20 +152,28 @@ class NotificationService {
     try {
       final token = await _messaging!.getToken();
       if (token == null) return;
-      final client = ApiClient();
-      await client.post(
-        '/devices/register',
-        jsonBody: {
-          'token': token,
-          'platform': _platform(),
-        },
-      );
+      PushDiagnosticsService.instance.recordFcmToken(token);
+
+      final position = await _getBestEffortPosition();
+      final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
+      await callable.call({
+        'token': token,
+        'platform': _platform(),
+        if (position != null) 'latitude': position.latitude,
+        if (position != null) 'longitude': position.longitude,
+        if (position != null) 'locationPrecisionMeters': position.accuracy,
+      });
+      PushDiagnosticsService.instance.recordRegisterAttempt(success: true);
       log('Registered push token: $token');
       CloudLogService.instance.logEvent(
         'push_token_registered',
-        data: {'platform': _platform()},
+        data: {
+          'platform': _platform(),
+          'hasLocation': position != null,
+        },
       );
     } catch (e) {
+      PushDiagnosticsService.instance.recordRegisterAttempt(success: false, error: e);
       log('Failed to register push token: $e');
       CloudLogService.instance
           .recordError('push_token_register_failed', e, StackTrace.current);
@@ -190,20 +201,27 @@ class NotificationService {
     if (_messaging == null) return;
     _messaging!.onTokenRefresh.listen((token) async {
       try {
-        final client = ApiClient();
-        await client.post(
-          '/devices/register',
-          jsonBody: {
-            'token': token,
-            'platform': _platform(),
-          },
-        );
+        PushDiagnosticsService.instance.recordFcmToken(token);
+        final position = await _getBestEffortPosition();
+        final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
+        await callable.call({
+          'token': token,
+          'platform': _platform(),
+          if (position != null) 'latitude': position.latitude,
+          if (position != null) 'longitude': position.longitude,
+          if (position != null) 'locationPrecisionMeters': position.accuracy,
+        });
+        PushDiagnosticsService.instance.recordRegisterAttempt(success: true);
         log('Refreshed push token: $token');
         CloudLogService.instance.logEvent(
           'push_token_refreshed',
-          data: {'platform': _platform()},
+          data: {
+            'platform': _platform(),
+            'hasLocation': position != null,
+          },
         );
       } catch (e) {
+        PushDiagnosticsService.instance.recordRegisterAttempt(success: false, error: e);
         log('Failed to refresh push token: $e');
         CloudLogService.instance
             .recordError('push_token_refresh_failed', e, StackTrace.current);
@@ -240,6 +258,29 @@ class NotificationService {
     } catch (_) {
       // Best-effort.
     }
+  }
+}
+
+Future<Position?> _getBestEffortPosition() async {
+  try {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.medium,
+      timeLimit: const Duration(seconds: 8),
+    );
+  } catch (_) {
+    return null;
   }
 }
 

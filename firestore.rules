@@ -6,11 +6,27 @@ service cloud.firestore {
     // backend or authenticated users creating limited fields.
     match /alerts/{alertId} {
       allow read: if true;
-      allow create: if request.auth != null &&
-        request.resource.data.keys().hasAll(['type','title','message','createdAt']) &&
-        request.resource.data.createdAt == request.time;
-      // Only allow backend/admins to delete/update arbitrary fields.
-      allow update, delete: if request.auth != null && request.auth.token.admin == true;
+
+      // Clients may create only a minimal subset; they must NOT set approval/status fields.
+      // In practice, the app submits via callable functions, but keep rules safe anyway.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'title',
+          'message',
+          'location',
+          'type',
+          'timestamp',
+          'createdAt',
+          'source',
+          'reporterUid',
+          'isPublic',
+          'geo'
+        ])
+        && request.resource.data.reporterUid == request.auth.uid;
+
+      // Only admins/moderators can update/delete alerts.
+      allow update, delete: if request.auth != null &&
+        (request.auth.token.admin == true || request.auth.token.moderator == true);
     }
 
     // Sightings (user reports). Public reads allowed; reporters subcollection
@@ -47,6 +63,35 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if request.auth != null && request.auth.uid == userId;
       }
+    }
+
+    // Device registry for nearby-alert fanout.
+    // Clients can upsert their own device doc with a constrained schema.
+    match /devices/{deviceId} {
+      allow read: if request.auth != null;
+
+      // Create/update limited to the authenticated user that owns the uid field.
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.token is string
+        && request.resource.data.platform is string
+        && request.resource.data.radiusMiles is number
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'token',
+          'platform',
+          'location',
+          'geohash',
+          'locationPrecisionMeters',
+          'radiusMiles',
+          'createdAt',
+          'updatedAt',
+          'lastSeenAt'
+        ]);
+
+      // Delete allowed by owner; backend/admins can also delete.
+      allow delete: if request.auth != null
+        && (resource.data.uid == request.auth.uid || request.auth.token.admin == true);
     }
 
     // Deny everything else by default.
