@@ -38,7 +38,7 @@ class PushDiagnosticsService {
   void recordRegisterAttempt({required bool success, Object? error}) {
     _lastRegisterAttemptTime = DateTime.now();
     _lastRegisterSuccess = success;
-    _lastRegisterError = error;
+    _lastRegisterError = _formatFunctionsError(error);
   }
 
   /// Best-effort refresh of permission + FCM token even if NotificationService
@@ -72,14 +72,18 @@ class PushDiagnosticsService {
       throw StateError('Sign in required to run push self-test.');
     }
 
-    final callable = FirebaseFunctions.instance.httpsCallable('testPushToSelf');
-    final resp = await callable.call({
-      'token': token,
-      if (title != null) 'title': title,
-      if (body != null) 'body': body,
-    });
+    try {
+      final callable = FirebaseFunctions.instance.httpsCallable('testPushToSelf');
+      final resp = await callable.call({
+        'token': token,
+        if (title != null) 'title': title,
+        if (body != null) 'body': body,
+      });
 
-    return (resp.data as Map).cast<String, dynamic>();
+      return (resp.data as Map).cast<String, dynamic>();
+    } catch (e) {
+      throw StateError(_formatFunctionsError(e) ?? e.toString());
+    }
   }
 
   /// Admin-only helper to simulate nearby fan-out.
@@ -93,16 +97,28 @@ class PushDiagnosticsService {
       throw StateError('Sign in required to run simulation.');
     }
 
-    final callable = FirebaseFunctions.instance.httpsCallable('simulateNearbyWarning');
-    final resp = await callable.call({
-      'latitude': latitude,
-      'longitude': longitude,
-      if (radiusMiles != null) 'radiusMiles': radiusMiles,
-      'title': 'Test nearby warning',
-      'body': 'This is a TestFlight diagnostic push',
-    });
+    try {
+      final callable = FirebaseFunctions.instance.httpsCallable('simulateNearbyWarning');
+      final resp = await callable.call({
+        'latitude': latitude,
+        'longitude': longitude,
+        if (radiusMiles != null) 'radiusMiles': radiusMiles,
+        'title': 'Test nearby warning',
+        'body': 'This is a TestFlight diagnostic push',
+      });
 
-    return (resp.data as Map).cast<String, dynamic>();
+      return (resp.data as Map).cast<String, dynamic>();
+    } catch (e) {
+      throw StateError(_formatFunctionsError(e) ?? e.toString());
+    }
+  }
+
+  String? _formatFunctionsError(Object? error) {
+    if (error is FirebaseFunctionsException) {
+      final details = error.details == null ? '' : ' details=${error.details}';
+      return 'functions/${error.code}: ${error.message ?? 'Unknown error.'}$details';
+    }
+    return error?.toString();
   }
 
   static String redactToken(String? token) {
