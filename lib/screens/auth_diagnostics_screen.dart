@@ -121,6 +121,59 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                 icon: const Icon(Icons.notification_add),
                 label: const Text('Test push to self'),
               ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    // Get current location for the nearby warning test
+                    final locationDiag = pushDiag.lastLocationDiagnostics;
+                    // Default to Milwaukee coordinates if location not available
+                    const defaultLat = 43.0389;
+                    const defaultLng = -87.9065;
+                    
+                    final resp = await pushDiag.simulateNearbyWarning(
+                      latitude: defaultLat,
+                      longitude: defaultLng,
+                      radiusMiles: 10, // Wide radius to ensure we catch registered devices
+                    );
+                    if (!context.mounted) return;
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Nearby Warning Sent'),
+                        content: SingleChildScrollView(
+                          child: Text(
+                            'Result: ${resp.toString()}\n\n'
+                            'You should receive a push notification shortly if your device is registered within 10 miles of Milwaukee.',
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Nearby Warning Failed'),
+                        content: SingleChildScrollView(child: Text(e.toString())),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.warning_amber),
+                label: const Text('Simulate nearby'),
+              ),
             ],
           ),
           const SizedBox(height: 12),
