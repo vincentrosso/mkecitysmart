@@ -201,7 +201,10 @@ const determineApprovalTier = (report: {
   return {tier: "auto"};
 };
 
-admin.initializeApp();
+// Use the Firebase Admin SDK service account for proper FCM permissions
+admin.initializeApp({
+  serviceAccountId: "firebase-adminsdk-fbsvc@mkeparkapp-1ad15.iam.gserviceaccount.com",
+});
 
 export const mirrorUserSightingToGlobal = onDocumentCreated(
   "users/{uid}/sightings/{sightingId}",
