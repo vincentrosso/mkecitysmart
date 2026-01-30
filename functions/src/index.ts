@@ -900,41 +900,47 @@ export const unregisterDevice = onCall(async (request) => {
   return {success: true};
 });
 
-export const testPushToSelf = onCall(async (request) => {
-  if (!request.auth?.uid) {
-    throw new HttpsError("unauthenticated", "Sign in required.");
-  }
-  const token = (request.data?.token ?? "").toString().trim();
-  if (!token) {
-    throw new HttpsError("invalid-argument", "FCM token required.");
-  }
+// Run with firebase-adminsdk service account for FCM permissions
+export const testPushToSelf = onCall(
+  {
+    serviceAccount: "firebase-adminsdk-fbsvc@mkeparkapp-1ad15.iam.gserviceaccount.com",
+  },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const token = (request.data?.token ?? "").toString().trim();
+    if (!token) {
+      throw new HttpsError("invalid-argument", "FCM token required.");
+    }
 
-  const title = (request.data?.title ?? "CitySmart test").toString();
-  const body = (request.data?.body ?? "Test notification").toString();
+    const title = (request.data?.title ?? "CitySmart test").toString();
+    const body = (request.data?.body ?? "Test notification").toString();
 
-  try {
-    const resp = await admin.messaging().send({
-      token,
-      notification: {title, body},
-      data: {kind: "test"},
-    });
+    try {
+      const resp = await admin.messaging().send({
+        token,
+        notification: {title, body},
+        data: {kind: "test"},
+      });
 
-    return {success: true, messageId: resp};
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("testPushToSelf failed", {
-      uid: request.auth.uid,
-      tokenPrefix: token.slice(0, 10),
-      title,
-      body,
-      message,
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    throw new HttpsError("internal", "testPushToSelf failed", {
-      message,
-    });
+      return {success: true, messageId: resp};
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error("testPushToSelf failed", {
+        uid: request.auth.uid,
+        tokenPrefix: token.slice(0, 10),
+        title,
+        body,
+        message,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      throw new HttpsError("internal", "testPushToSelf failed", {
+        message,
+      });
+    }
   }
-});
+);
 
 export const notifyOnApproval = onDocumentWritten(
   "alerts/{alertId}",
