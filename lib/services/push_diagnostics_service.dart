@@ -18,6 +18,7 @@ class PushDiagnosticsService {
   Object? _lastRegisterError;
   DateTime? _lastRegisterAttemptTime;
   bool? _lastRegisterSuccess;
+  Map<String, Object?>? _lastLocationDiagnostics;
 
   NotificationSettings? get lastPermission => _lastPermission;
   String? get lastFcmToken => _lastFcmToken;
@@ -25,6 +26,7 @@ class PushDiagnosticsService {
   Object? get lastRegisterError => _lastRegisterError;
   DateTime? get lastRegisterAttemptTime => _lastRegisterAttemptTime;
   bool? get lastRegisterSuccess => _lastRegisterSuccess;
+  Map<String, Object?>? get lastLocationDiagnostics => _lastLocationDiagnostics;
 
   void recordPermission(NotificationSettings settings) {
     _lastPermission = settings;
@@ -39,6 +41,10 @@ class PushDiagnosticsService {
     _lastRegisterAttemptTime = DateTime.now();
     _lastRegisterSuccess = success;
     _lastRegisterError = _formatFunctionsError(error);
+  }
+
+  void recordLocationDiagnostics(Map<String, Object?> diagnostics) {
+    _lastLocationDiagnostics = diagnostics.isEmpty ? null : diagnostics;
   }
 
   /// Best-effort refresh of permission + FCM token even if NotificationService
@@ -115,10 +121,49 @@ class PushDiagnosticsService {
 
   String? _formatFunctionsError(Object? error) {
     if (error is FirebaseFunctionsException) {
-      final details = error.details == null ? '' : ' details=${error.details}';
-      return 'functions/${error.code}: ${error.message ?? 'Unknown error.'}$details';
+      final details = error.details;
+      String detailsStr = '';
+      
+      // Try to extract FCM error code from details map
+      if (details is Map) {
+        final message = details['message'];
+        if (message is String) {
+          // Decode common FCM error codes
+          final fcmCode = _decodeFcmErrorCode(message);
+          if (fcmCode.isNotEmpty) {
+            detailsStr = ' [$fcmCode]';
+          } else if (message.isNotEmpty) {
+            detailsStr = ' message=$message';
+          }
+        }
+      } else if (details != null) {
+        detailsStr = ' details=$details';
+      }
+      
+      return 'functions/${error.code}: ${error.message ?? 'Unknown error.'}$detailsStr';
     }
     return error?.toString();
+  }
+
+  /// Decode common FCM error messages to user-friendly error codes.
+  static String _decodeFcmErrorCode(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('registration-token-not-registered')) {
+      return 'FCM_TOKEN_NOT_REGISTERED: Token not registered with Firebase Messaging';
+    }
+    if (lower.contains('invalid-argument') || lower.contains('invalid.*token')) {
+      return 'FCM_INVALID_TOKEN: Token format is invalid or corrupted';
+    }
+    if (lower.contains('authentication-error') || lower.contains('unauthorized')) {
+      return 'FCM_AUTH_ERROR: Firebase Messaging authentication failed';
+    }
+    if (lower.contains('instance-id-error')) {
+      return 'FCM_INSTANCE_ERROR: Firebase Instance ID service error';
+    }
+    if (lower.contains('service-unavailable')) {
+      return 'FCM_UNAVAILABLE: Firebase Messaging service temporarily unavailable';
+    }
+    return '';
   }
 
   static String redactToken(String? token) {

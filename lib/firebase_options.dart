@@ -15,9 +15,9 @@ import 'package:flutter/foundation.dart';
 class DefaultFirebaseOptions {
   // Hard-coded API keys to avoid dart-define requirements.
   // Values sourced from platform configs (GoogleService-Info.plist / google-services.json).
-  static const String _webApiKey = 'AIzaSyB-I3Fa-4bmR-rB-jngHkgWQnjTTHTBZDo';
+  static const String _webApiKey = 'AIzaSyC39SUQ0SyewAcm0tzvlmXNxf5W8f5IM5Q';
   static const String _androidApiKey = 'AIzaSyBaT4ZkDKVhwjiFwYCEhhf8c1Sd0xvnf_g';
-  static const String _iosApiKey = 'AIzaSyB-I3Fa-4bmR-rB-jngHkgWQnjTTHTBZDo';
+  static const String _iosApiKey = 'AIzaSyC39SUQ0SyewAcm0tzvlmXNxf5W8f5IM5Q';
 
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {

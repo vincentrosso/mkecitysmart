@@ -154,7 +154,11 @@ class NotificationService {
       if (token == null) return;
       PushDiagnosticsService.instance.recordFcmToken(token);
 
-      final position = await _getBestEffortPosition();
+      final positionResult = await _getBestEffortPositionWithDiagnostics();
+      PushDiagnosticsService.instance.recordLocationDiagnostics(
+        positionResult.diagnostics,
+      );
+      final position = positionResult.position;
       final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
       await callable.call({
         'token': token,
@@ -170,6 +174,7 @@ class NotificationService {
         data: {
           'platform': _platform(),
           'hasLocation': position != null,
+          ...positionResult.diagnostics,
         },
       );
     } catch (e) {
@@ -202,7 +207,11 @@ class NotificationService {
     _messaging!.onTokenRefresh.listen((token) async {
       try {
         PushDiagnosticsService.instance.recordFcmToken(token);
-        final position = await _getBestEffortPosition();
+        final positionResult = await _getBestEffortPositionWithDiagnostics();
+        PushDiagnosticsService.instance.recordLocationDiagnostics(
+          positionResult.diagnostics,
+        );
+        final position = positionResult.position;
         final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
         await callable.call({
           'token': token,
@@ -218,6 +227,7 @@ class NotificationService {
           data: {
             'platform': _platform(),
             'hasLocation': position != null,
+            ...positionResult.diagnostics,
           },
         );
       } catch (e) {
@@ -281,6 +291,54 @@ Future<Position?> _getBestEffortPosition() async {
     );
   } catch (_) {
     return null;
+  }
+}
+
+class _BestEffortPositionResult {
+  final Position? position;
+  final Map<String, Object?> diagnostics;
+
+  const _BestEffortPositionResult({
+    required this.position,
+    required this.diagnostics,
+  });
+}
+
+Future<_BestEffortPositionResult> _getBestEffortPositionWithDiagnostics() async {
+  try {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    var permission = await Geolocator.checkPermission();
+    final permissionBefore = permission;
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    final diagnostics = <String, Object?>{
+      'locationServiceEnabled': serviceEnabled,
+      'locationPermissionBefore': permissionBefore.toString(),
+      'locationPermissionAfter': permission.toString(),
+    };
+
+    if (!serviceEnabled) {
+      return _BestEffortPositionResult(position: null, diagnostics: diagnostics);
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return _BestEffortPositionResult(position: null, diagnostics: diagnostics);
+    }
+
+    final pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.medium,
+      timeLimit: const Duration(seconds: 8),
+    );
+    return _BestEffortPositionResult(position: pos, diagnostics: diagnostics);
+  } catch (e) {
+    return _BestEffortPositionResult(
+      position: null,
+      diagnostics: <String, Object?>{
+        'locationError': e.toString(),
+      },
+    );
   }
 }
 

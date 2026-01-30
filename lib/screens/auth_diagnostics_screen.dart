@@ -18,6 +18,12 @@ class AuthDiagnosticsScreen extends StatelessWidget {
 
     final providerIds = user?.providerData.map((e) => e.providerId).toList();
     final perm = pushDiag.lastPermission;
+    final locationDiag = pushDiag.lastLocationDiagnostics;
+    String locationValue(String key, {String fallback = '(unknown)'}) {
+      return locationDiag == null
+          ? fallback
+          : (locationDiag[key]?.toString() ?? fallback);
+    }
 
     String permLabel(NotificationSettings? s) {
       if (s == null) return '(unknown - tap Refresh)';
@@ -52,6 +58,10 @@ class AuthDiagnosticsScreen extends StatelessWidget {
           _kv('Device register last', pushDiag.lastRegisterAttemptTime?.toIso8601String() ?? '(none)'),
           _kv('Device register OK', pushDiag.lastRegisterSuccess == null ? '(none)' : (pushDiag.lastRegisterSuccess! ? 'yes' : 'no')),
           _kv('Register error', pushDiag.lastRegisterError?.toString() ?? '(none)'),
+          _kv('Location service', locationValue('locationServiceEnabled')),
+          _kv('Location permission before', locationValue('locationPermissionBefore')),
+          _kv('Location permission after', locationValue('locationPermissionAfter')),
+          _kv('Location error', locationValue('locationError', fallback: '(none)')),
 
           const SizedBox(height: 12),
           Wrap(
@@ -111,6 +121,59 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                 icon: const Icon(Icons.notification_add),
                 label: const Text('Test push to self'),
               ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    // Get current location for the nearby warning test
+                    final locationDiag = pushDiag.lastLocationDiagnostics;
+                    // Default to Milwaukee coordinates if location not available
+                    const defaultLat = 43.0389;
+                    const defaultLng = -87.9065;
+                    
+                    final resp = await pushDiag.simulateNearbyWarning(
+                      latitude: defaultLat,
+                      longitude: defaultLng,
+                      radiusMiles: 10, // Wide radius to ensure we catch registered devices
+                    );
+                    if (!context.mounted) return;
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Nearby Warning Sent'),
+                        content: SingleChildScrollView(
+                          child: Text(
+                            'Result: ${resp.toString()}\n\n'
+                            'You should receive a push notification shortly if your device is registered within 10 miles of Milwaukee.',
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Nearby Warning Failed'),
+                        content: SingleChildScrollView(child: Text(e.toString())),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.warning_amber),
+                label: const Text('Simulate nearby'),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -133,6 +196,10 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                 'deviceRegisterTime=${pushDiag.lastRegisterAttemptTime?.toIso8601String()}',
                 'deviceRegisterOK=${pushDiag.lastRegisterSuccess}',
                 'deviceRegisterErr=${pushDiag.lastRegisterError}',
+                'locationServiceEnabled=${locationValue('locationServiceEnabled')}',
+                'locationPermissionBefore=${locationValue('locationPermissionBefore')}',
+                'locationPermissionAfter=${locationValue('locationPermissionAfter')}',
+                'locationError=${locationValue('locationError', fallback: '(none)')}',
               ].join('\n');
               showDialog<void>(
                 context: context,
