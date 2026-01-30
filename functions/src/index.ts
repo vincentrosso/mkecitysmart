@@ -622,22 +622,26 @@ export const submitSighting = onCall(async (request) => {
 
 // Helper for development/testing: simulate a nearby warning push without creating an alert.
 // Admin-only to prevent abuse.
-export const simulateNearbyWarning = onCall(async (request) => {
-  if (!request.auth?.uid) {
-    throw new HttpsError("unauthenticated", "Sign in required.");
-  }
-  const isAdmin = (request.auth.token as any)?.admin === true || (request.auth.token as any)?.moderator === true;
-  if (!isAdmin) {
-    throw new HttpsError("permission-denied", "Admin required.");
-  }
+export const simulateNearbyWarning = onCall(
+  {
+    secrets: [firebaseAdminSdkKey],
+  },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const isAdmin = (request.auth.token as any)?.admin === true || (request.auth.token as any)?.moderator === true;
+    if (!isAdmin) {
+      throw new HttpsError("permission-denied", "Admin required.");
+    }
 
-  const latitude = Number(request.data?.latitude);
-  const longitude = Number(request.data?.longitude);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    throw new HttpsError("invalid-argument", "latitude/longitude required");
-  }
-  const radiusMiles = Math.min(
-    Math.max(Number(request.data?.radiusMiles ?? DEFAULT_NEARBY_RADIUS_MILES), 0.1),
+    const latitude = Number(request.data?.latitude);
+    const longitude = Number(request.data?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      throw new HttpsError("invalid-argument", "latitude/longitude required");
+    }
+    const radiusMiles = Math.min(
+      Math.max(Number(request.data?.radiusMiles ?? DEFAULT_NEARBY_RADIUS_MILES), 0.1),
     MAX_NEARBY_RADIUS_MILES,
   );
   const title = (request.data?.title ?? "Test nearby warning").toString();
@@ -691,20 +695,74 @@ export const simulateNearbyWarning = onCall(async (request) => {
     ),
   ).slice(0, MAX_FANOUT_PER_SIGHTING);
 
+  // FALLBACK: If no nearby devices found, send to the caller's own devices for testing
+  if (tokens.length === 0) {
+    const callerDevices = await devicesRef
+      .where("uid", "==", request.auth.uid)
+      .limit(5)
+      .get();
+    callerDevices.docs.forEach((d) => {
+      const data = d.data();
+      const t = (data.token ?? "").toString().trim();
+      if (t.length > 0) tokens.push(t);
+    });
+    logger.info("simulateNearbyWarning: No nearby devices, falling back to caller devices", {
+      callerUid: request.auth.uid,
+      callerDeviceCount: tokens.length,
+    });
+  }
+
   let totalSuccess = 0;
   let totalFailure = 0;
-  for (const part of chunk(tokens, MULTICAST_CHUNK_SIZE)) {
-    const multicast = await admin.messaging().sendEachForMulticast({
-      tokens: part,
-      notification: {title, body},
-      data: {kind: "test_nearby"},
+  
+  if (tokens.length > 0) {
+    // Use direct HTTP API for FCM (same as testPushToSelf)
+    const {GoogleAuth} = await import("google-auth-library");
+    const secretValue = firebaseAdminSdkKey.value();
+    const serviceAccountKey = JSON.parse(secretValue);
+    
+    const auth = new GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
     });
-    totalSuccess += multicast.successCount;
-    totalFailure += multicast.failureCount;
+    const accessToken = await auth.getAccessToken();
+
+    for (const token of tokens) {
+      try {
+        const fcmResponse = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${serviceAccountKey.project_id}/messages:send`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: {
+                token,
+                notification: {title, body},
+                data: {kind: "test_nearby"},
+              },
+            }),
+          }
+        );
+        if (fcmResponse.ok) {
+          totalSuccess++;
+        } else {
+          totalFailure++;
+          const errBody = await fcmResponse.text();
+          logger.warn("simulateNearbyWarning FCM error", {token: token.slice(0, 10), error: errBody});
+        }
+      } catch (err) {
+        totalFailure++;
+        logger.error("simulateNearbyWarning send error", {error: String(err)});
+      }
+    }
   }
 
   return {success: true, tokens: tokens.length, successCount: totalSuccess, failureCount: totalFailure};
 });
+
 
 // Server-driven tier processing for alerts that may be created by other paths.
 // Ensures fields are consistent even if something writes into /alerts directly.
