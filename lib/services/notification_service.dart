@@ -121,6 +121,14 @@ class NotificationService {
       badge: true,
       sound: true,
     );
+    
+    // Enable foreground notification presentation on iOS
+    await _messaging!.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    
     PushDiagnosticsService.instance.recordPermission(settings);
     log('Notification permission: ${settings.authorizationStatus}');
     CloudLogService.instance.logEvent(
@@ -248,6 +256,25 @@ class NotificationService {
         data: {'messageId': message.messageId},
       );
     });
+  }
+
+  /// Re-register the FCM token with the current authenticated user.
+  /// Call this after sign-in completes to ensure the token is associated
+  /// with the correct UID (not an anonymous auth UID from app startup).
+  Future<void> reregisterTokenAfterSignIn() async {
+    if (_messaging == null || !_initialized) return;
+    try {
+      await _registerToken();
+      log('Re-registered push token after sign-in');
+      CloudLogService.instance.logEvent('push_token_reregistered_after_signin');
+    } catch (e) {
+      log('Failed to re-register push token after sign-in: $e');
+      CloudLogService.instance.recordError(
+        'push_token_reregister_failed',
+        e,
+        StackTrace.current,
+      );
+    }
   }
 
   Future<void> _handleInitialMessage() async {

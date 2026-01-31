@@ -206,7 +206,124 @@ admin.initializeApp();
 
 // Define a secret reference for service account key
 import {defineSecret} from "firebase-functions/params";
+import {GoogleAuth} from "google-auth-library";
 const firebaseAdminSdkKey = defineSecret("firebase-adminsdk-key");
+
+// FCM helper using direct HTTP API to avoid OAuth issues with default credentials
+// This requires the secret to be available in the function's runtime
+interface FcmSendResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+// Helper for FCM - exported for potential future use or testing
+export const sendFcmMessage = async (
+  secretValue: string,
+  message: {
+    token?: string;
+    topic?: string;
+    notification: {title: string; body: string};
+    data?: Record<string, string>;
+  }
+): Promise<FcmSendResult> => {
+  try {
+    const serviceAccountKey = JSON.parse(secretValue);
+    const auth = new GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+    });
+    const accessToken = await auth.getAccessToken();
+
+    const fcmMessage: any = {
+      notification: message.notification,
+    };
+    if (message.token) {
+      fcmMessage.token = message.token;
+    }
+    if (message.topic) {
+      fcmMessage.topic = message.topic;
+    }
+    if (message.data) {
+      fcmMessage.data = message.data;
+    }
+
+    const response = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${serviceAccountKey.project_id}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({message: fcmMessage}),
+      }
+    );
+
+    const result = await response.json();
+    if (response.ok) {
+      return {success: true, messageId: result.name};
+    } else {
+      return {success: false, error: JSON.stringify(result)};
+    }
+  } catch (err) {
+    return {success: false, error: err instanceof Error ? err.message : String(err)};
+  }
+};
+
+// Multicast version for sending to multiple tokens - exported for potential future use
+export const sendFcmMulticast = async (
+  secretValue: string,
+  tokens: string[],
+  notification: {title: string; body: string},
+  data?: Record<string, string>
+): Promise<{successCount: number; failureCount: number; invalidTokens: string[]}> => {
+  const serviceAccountKey = JSON.parse(secretValue);
+  const auth = new GoogleAuth({
+    credentials: serviceAccountKey,
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+  });
+  const accessToken = await auth.getAccessToken();
+
+  let successCount = 0;
+  let failureCount = 0;
+  const invalidTokens: string[] = [];
+
+  for (const token of tokens) {
+    try {
+      const fcmMessage: any = {token, notification};
+      if (data) {
+        fcmMessage.data = data;
+      }
+
+      const response = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${serviceAccountKey.project_id}/messages:send`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({message: fcmMessage}),
+        }
+      );
+
+      if (response.ok) {
+        successCount++;
+      } else {
+        failureCount++;
+        const errBody = await response.text();
+        if (errBody.includes("UNREGISTERED") || errBody.includes("INVALID_ARGUMENT")) {
+          invalidTokens.push(token);
+        }
+      }
+    } catch {
+      failureCount++;
+    }
+  }
+
+  return {successCount, failureCount, invalidTokens};
+};
 
 export const mirrorUserSightingToGlobal = onDocumentCreated(
   "users/{uid}/sightings/{sightingId}",
@@ -1062,13 +1179,25 @@ export const notifyOnApproval = onDocumentWritten(
         .filter((part) => part && part.trim().length > 0)
         .join(" ");
 
-      await admin.messaging().send({
-        topic: "alerts",
-        notification: {
+      try {
+        await admin.messaging().send({
+          topic: "alerts",
+          notification: {
+            title,
+            body: body || "New alert.",
+          },
+        });
+        logger.info("notifyOnApproval sent topic notification", {
+          alertId: event.params.alertId,
           title,
-          body: body || "New alert.",
-        },
-      });
+        });
+      } catch (err) {
+        // Log but don't throw - we don't want to retry document triggers for FCM failures
+        logger.error("notifyOnApproval FCM failed", {
+          alertId: event.params.alertId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
   },
 );
@@ -1138,6 +1267,9 @@ export const sendNearbyAlerts = onCall(async (request) => {
     });
 
   const sendLimit = Math.min(matches.length, 5);
+  let successCount = 0;
+  let failureCount = 0;
+  
   for (let i = 0; i < sendLimit; i++) {
     const match = matches[i];
     const title = (match.data.title ?? "Alert").toString();
@@ -1147,22 +1279,38 @@ export const sendNearbyAlerts = onCall(async (request) => {
       .filter((part) => part && part.trim().length > 0)
       .join(" ");
 
-    await admin.messaging().send({
-      token,
-      notification: {
-        title,
-        body: body || "Nearby alert.",
-      },
-      data: {
+    try {
+      await admin.messaging().send({
+        token,
+        notification: {
+          title,
+          body: body || "Nearby alert.",
+        },
+        data: {
+          alertId: match.id,
+          type: (match.data.type ?? "").toString(),
+        },
+      });
+      successCount++;
+    } catch (err) {
+      failureCount++;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.warn("sendNearbyAlerts FCM send failed", {
         alertId: match.id,
-        type: (match.data.type ?? "").toString(),
-      },
-    });
+        tokenPrefix: token.slice(0, 10),
+        error: errMsg,
+      });
+      // If token is invalid, break early - no point sending more
+      if (errMsg.includes("not-registered") || errMsg.includes("invalid")) {
+        break;
+      }
+    }
   }
 
   return {
     success: true,
-    sent: sendLimit,
+    sent: successCount,
+    failed: failureCount,
     totalMatches: matches.length,
   };
 });

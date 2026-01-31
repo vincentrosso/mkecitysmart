@@ -407,6 +407,10 @@ class UserProvider extends ChangeNotifier {
             ? user.displayName!.trim()
             : _nameFromEmail(email),
       );
+      
+      // Re-register FCM token with the new UID after successful sign-in
+      unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
+      
       unawaited(
         CloudLogService.instance.logEvent(
           'user_login',
@@ -499,6 +503,10 @@ class UserProvider extends ChangeNotifier {
         user,
         fallbackName: user.displayName ?? 'Google user',
       );
+      
+      // Re-register FCM token with the new UID after successful sign-in
+      unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
+      
       unawaited(
         CloudLogService.instance.logEvent(
           'user_login',
@@ -569,6 +577,8 @@ class UserProvider extends ChangeNotifier {
               user,
               fallbackName: _nameFromPhone(user.phoneNumber ?? phoneNumber),
             );
+            // Re-register FCM token with the new UID after successful sign-in
+            unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
           }
           if (!completer.isCompleted) {
             completer.complete(const PhoneAuthStartResult());
@@ -643,6 +653,10 @@ class UserProvider extends ChangeNotifier {
         user,
         fallbackName: _nameFromPhone(phoneNumber ?? user.phoneNumber ?? ''),
       );
+      
+      // Re-register FCM token with the new UID after successful sign-in
+      unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
+      
       _setLastAuthError(null);
       return null;
     } on FirebaseAuthException catch (e) {
@@ -710,6 +724,10 @@ class UserProvider extends ChangeNotifier {
           ? '${appleId.givenName} ${appleId.familyName ?? ''}'.trim()
           : user.displayName ?? 'Apple user';
       await _ensureProfileForUser(user, fallbackName: name);
+      
+      // Re-register FCM token with the new UID after successful sign-in
+      unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
+      
       unawaited(
         CloudLogService.instance.logEvent(
           'user_login',
