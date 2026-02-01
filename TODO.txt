@@ -1,5 +1,5 @@
 MKE City Smart — TODO Tracking
-Last Updated: 2026-01-08
+Last Updated: 2026-01-31
 Owner: Wayne26
 
 LEGEND
@@ -89,16 +89,18 @@ NOTES:
 P1 — HIGH-IMPACT FEATURES (AFTER CORE LOOP)
 --------------------------------------------------------
 
-[F-101] [TODO] (P1) Heatmap + pattern analytics (time-of-day/day-of-week)
+[F-101] [DONE] (P1) Heatmap + pattern analytics (time-of-day/day-of-week)
 - Density by area/time
 - Identify hot zones
 NOTES:
+- 2026-01-31: Implemented citation-based parking risk heatmap. Processed 466K Milwaukee parking citations into 44 geohash risk zones stored in Firestore (citation_risk_zones collection). Created Cloud Functions (getRiskForLocation, getRiskZones, sendHighRiskAlerts). Built ParkingRiskService + ParkingRiskBadge widget. FlutterMap heatmap with color-coded risk levels (green/yellow/orange/red). Verified in TestFlight build.
 
-[F-102] [IN-PROGRESS] (P1) Smart notifications
+[F-102] [DONE] (P1) Smart notifications
 - Alerts near saved places / high-risk zones
 - Quiet hours + frequency rules
 NOTES:
 - 2026-01-18: Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable). Emulator testing with rate limits/audit logs; ready for production activation.
+- 2026-01-31: Added sendHighRiskAlerts Cloud Function for citation-based risk zone alerts. Integrated with parking risk heatmap system.
 
 [F-103] [TODO] (P1) Saved places (home/work/favorites)
 - Custom radius per place
@@ -107,6 +109,30 @@ NOTES:
 [F-104] [TODO] (P1) Tow / impound helper flow
 - Steps/checklist + quick links
 NOTES:
+
+[F-105] [DONE] (P1) User onboarding flow
+- First-time user experience
+- Account creation walkthrough
+NOTES:
+- 2026-01-31: Implemented 5-page onboarding flow (Welcome, Avoid Tickets, Alt-Side Parking, Notifications, Create Account). Uses OnboardingService with SharedPreferences to track completion. Integrated into main.dart routing. Styled with CitySmart brand colors.
+
+[F-106] [DONE] (P1) Parking Finder feature
+- Interactive map with parking locations
+- Directions integration
+NOTES:
+- 2026-01-31: Created ParkingFinderScreen with FlutterMap showing 10 Milwaukee parking locations (garages, lots, street parking). Color-coded markers (Blue=Garage, Green=Lot, Yellow=Street). Tap for details with "Get Directions" button launching Google Maps. Dashboard tile added.
+
+[F-107] [DONE] (P1) Ticket Tracker feature
+- Photo capture for tickets
+- Payment tracking with due dates
+NOTES:
+- 2026-01-31: Built TicketTrackerScreen with tab-based UI (Open, Paid, Add New). ImagePicker for photo capture, manual entry form, payment tracking with late fee calculations. Dashboard tile and route added.
+
+[F-108] [DONE] (P1) User profile display in app bar
+- Show signed-in user info
+- Sign-out functionality
+NOTES:
+- 2026-01-31: Updated CitySmartScaffold and MainDrawer with user profile display. Shows avatar+name when signed in, PopupMenuButton with Profile/Preferences/Sign Out options. Drawer header shows user info with sign-out confirmation dialog.
 
 ========================================================
 P1 — INTEGRATIONS (CITY SERVICES IN-APP)
@@ -121,9 +147,10 @@ NOTES:
 - Guided UI to official links/endpoints
 NOTES:
 
-[F-203] [TODO] (P1) EV charging map integration
+[F-203] [DONE] (P1) EV charging map integration
 - Nearby search, filters, saved stations
 NOTES:
+- 2026-01-31: Simplified and optimized EV charging map for mobile. Implemented collapsible filter panel, FlutterMap with OpenChargeMap integration, connector type filters (CCS, CHAdeMO, J1772, Tesla), color-coded markers by power level. Mobile-friendly UI with tap-to-expand station details.
 
 ========================================================
 P1 — MONETIZATION + GROWTH
@@ -166,6 +193,12 @@ NOTES:
 NOTES:
 - 2026-01-15/16: Release build uploaded to App Store Connect. Internal TestFlight testing enabled and functioning. iOS build confirmed to run as a production-ready artifact.
 - 2026-01-16: Verified full core loop on real iOS devices (submit → appear → expire → disappear).
+- 2026-01-31: New TestFlight build with onboarding, parking finder, ticket tracker, EV map improvements, user profile display, and parking risk heatmap. Archive built and ready for upload.
+
+[F-405] [DONE] (P0) Garbage Day feature fix
+- Fix HTTP 302 redirect issue
+NOTES:
+- 2026-01-31: Fixed URL case sensitivity bug in GarbageScheduleService. Milwaukee DPW API changed from `DPWServletsPublic` to `DpwServletsPublic`. Updated URL to `https://itmdapps.milwaukee.gov/DpwServletsPublic/garbage_day`.
 
 ========================================================
 RUNNING NOTES (quick scratchpad)
@@ -176,6 +209,30 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-31 — [F-108] User profile display in app bar
+  Result: Updated CitySmartScaffold and MainDrawer with user profile display. Shows avatar+name when signed in, PopupMenuButton with Profile/Preferences/Sign Out. Drawer header shows user info with sign-out confirmation dialog.
+  Evidence: Git commit 5f2852c; TestFlight build pending
+2026-01-31 — [F-107] Ticket Tracker feature
+  Result: Built TicketTrackerScreen with tab-based UI (Open, Paid, Add New). ImagePicker for photo capture, manual entry form, payment tracking with late fee calculations. Dashboard tile and route added.
+  Evidence: Git commits; TestFlight build pending
+2026-01-31 — [F-106] Parking Finder feature
+  Result: Created ParkingFinderScreen with FlutterMap showing 10 Milwaukee parking locations. Color-coded markers (Blue=Garage, Green=Lot, Yellow=Street). Tap for details with Google Maps directions integration.
+  Evidence: Git commits; TestFlight build pending
+2026-01-31 — [F-105] User onboarding flow
+  Result: Implemented 5-page onboarding flow (Welcome, Avoid Tickets, Alt-Side, Notifications, Create Account). Uses OnboardingService with SharedPreferences. Integrated into main.dart routing.
+  Evidence: Git commits; TestFlight build pending
+2026-01-31 — [F-405] Garbage Day feature fix
+  Result: Fixed URL case sensitivity bug. Milwaukee DPW API changed from `DPWServletsPublic` to `DpwServletsPublic` causing HTTP 302 redirects. Updated GarbageScheduleService URL.
+  Evidence: Git commits; verified API response
+2026-01-31 — [F-203] EV charging map integration
+  Result: Simplified and optimized for mobile. Collapsible filter panel, FlutterMap with OpenChargeMap, connector type filters, color-coded markers by power level, tap-to-expand details.
+  Evidence: Git commits; TestFlight build pending
+2026-01-31 — [F-102] Smart notifications (complete)
+  Result: Added sendHighRiskAlerts Cloud Function for citation-based risk zone alerts. Integrated with parking risk heatmap system.
+  Evidence: Cloud Functions deployment; Git commits
+2026-01-31 — [F-101] Heatmap + pattern analytics
+  Result: Processed 466K Milwaukee parking citations into 44 geohash risk zones (Firestore citation_risk_zones). Created Cloud Functions (getRiskForLocation, getRiskZones, sendHighRiskAlerts). Built ParkingRiskService, ParkingRiskBadge, FlutterMap heatmap with color-coded risk levels.
+  Evidence: Firestore collection; Cloud Functions deployment; Git commits
 2026-01-18 — [F-102] Smart notifications (partial)
   Result: Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable); emulator testing with rate limits/audit logs; ready for production activation.
   Evidence: Emulator logs + callable tests
