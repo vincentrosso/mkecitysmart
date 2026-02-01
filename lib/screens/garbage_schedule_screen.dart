@@ -173,7 +173,7 @@ class _GarbageScheduleScreenState extends State<GarbageScheduleScreen> {
   void initState() {
     super.initState();
     _service = GarbageScheduleService(
-      baseUrl: 'https://itmdapps.milwaukee.gov/DPWServletsPublic/garbage_day',
+      baseUrl: 'https://itmdapps.milwaukee.gov/DpwServletsPublic/garbage_day',
     );
   }
 
