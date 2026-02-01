@@ -49,6 +49,7 @@ import 'screens/auth_diagnostics_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/parking_finder_screen.dart';
 import 'screens/saved_places_screen.dart';
+import 'screens/tow_helper_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -309,6 +310,7 @@ class MKEParkApp extends StatelessWidget {
           '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
           '/parking-finder': (context) => const ParkingFinderScreen(),
           '/saved-places': (context) => const SavedPlacesScreen(),
+          '/tow-helper': (context) => const TowHelperScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
