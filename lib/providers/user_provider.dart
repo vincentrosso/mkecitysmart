@@ -1086,6 +1086,13 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  /// Add a new ticket to tracking
+  void addTicket(Ticket ticket) {
+    _tickets = [ticket, ..._tickets];
+    _persistTickets();
+    notifyListeners();
+  }
+
   PaymentReceipt settleTicket({
     required Ticket ticket,
     required String method,

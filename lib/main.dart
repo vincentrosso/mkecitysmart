@@ -24,6 +24,7 @@ import 'screens/register_screen.dart';
 import 'screens/report_sighting_screen.dart';
 import 'screens/subscription_screen.dart';
 import 'screens/ticket_workflow_screen.dart';
+import 'screens/ticket_tracker_screen.dart';
 import 'screens/street_sweeping_screen.dart';
 import 'screens/vehicle_management_screen.dart';
 import 'screens/history_receipts_screen.dart';
@@ -42,6 +43,7 @@ import 'screens/alerts_landing_screen.dart';
 import 'screens/alert_detail_screen.dart';
 import 'screens/auth_diagnostics_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/parking_finder_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -241,6 +243,7 @@ class MKEParkApp extends StatelessWidget {
           '/charging': (context) => const ChargingMapScreen(),
           '/report-sighting': (context) => const ReportSightingScreen(),
           '/tickets': (context) => const TicketWorkflowScreen(),
+          '/ticket-tracker': (context) => const TicketTrackerScreen(),
           '/subscriptions': (context) => const SubscriptionScreen(),
           '/maintenance': (context) => const MaintenanceReportScreen(),
           '/predictions': (context) => const ChargingMapScreen(),
@@ -249,6 +252,7 @@ class MKEParkApp extends StatelessWidget {
           '/alternate-side-parking': (context) => const AlternateSideParkingScreen(),
           '/alternate-parking': (context) => const AlternateSideParkingScreen(),
           '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
+          '/parking-finder': (context) => const ParkingFinderScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
