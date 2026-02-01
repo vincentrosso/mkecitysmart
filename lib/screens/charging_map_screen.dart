@@ -28,7 +28,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   final _ocm = OpenChargeMapService();
   final _weather = WeatherService();
   bool _showFastOnly = false;
-  bool _showAvailableOnly = true;
+  bool _showAvailableOnly = false;
   bool _loadingStations = true;
   String? _stationError;
   List<EVStation> _stations = mockEvStations;
@@ -43,6 +43,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   double _currentLat = 43.0389;
   double _currentLng = -87.9065;
   bool _showSightings = true;
+  bool _showFilters = false;
 
   bool get _hasFastStation =>
       _stations.any((s) => s.hasFastCharging && s.maxPowerKw >= 50);
@@ -75,311 +76,222 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
         .where((s) => s.latitude != null && s.longitude != null)
         .toList();
     return CitySmartScaffold(
-      title: 'EV charging map',
+      title: 'EV charging',
       currentIndex: 1,
       actions: [
         IconButton(
-          onPressed: _loadPredictions,
+          onPressed: () => setState(() => _showFilters = !_showFilters),
+          icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
+          tooltip: 'Filters',
+        ),
+        IconButton(
+          onPressed: _loadStations,
           icon: const Icon(Icons.refresh),
-          tooltip: 'Refresh predictions',
+          tooltip: 'Refresh',
         ),
         IconButton(
           onPressed: () => _openDetails(context),
           icon: const Icon(Icons.list_alt_outlined),
-          tooltip: 'View station list',
+          tooltip: 'Station list',
         ),
       ],
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          // Compact status bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            color: const Color(0xFF0D2924),
             child: Row(
               children: [
+                Icon(
+                  Icons.ev_station,
+                  size: 16,
+                  color: _loadingStations ? Colors.grey : Colors.green,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${stations.length} stations nearby',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
                 if (_weatherSummary != null) ...[
-                  const Icon(Icons.cloud, size: 18),
+                  const Spacer(),
+                  const Icon(Icons.cloud, size: 14, color: Colors.white54),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_weatherSummary!.temperatureF.toStringAsFixed(0)}°F',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+                const Spacer(),
+                if (_stationError != null)
+                  const Icon(Icons.warning_amber, size: 14, color: Colors.orange)
+                else if (!_loadingStations)
+                  const Icon(Icons.check_circle, size: 14, color: Colors.green),
+              ],
+            ),
+          ),
+          // Collapsible filters
+          if (_showFilters)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              color: const Color(0xFF122A25),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  FilterChip(
+                    selected: _showAvailableOnly,
+                    label: const Text('Available', style: TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.check_circle, size: 16),
+                    onSelected: (v) => setState(() => _showAvailableOnly = v),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  FilterChip(
+                    selected: _showFastOnly,
+                    label: const Text('50kW+', style: TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.flash_on, size: 16),
+                    onSelected: (v) => setState(() => _showFastOnly = v),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  FilterChip(
+                    selected: _showSightings,
+                    label: const Text('Sightings', style: TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.visibility_outlined, size: 16),
+                    onSelected: (v) => setState(() => _showSightings = v),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            ),
+          // Weather alerts (compact)
+          if (_weatherAlerts.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              color: Colors.red.shade900,
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber, color: Colors.white, size: 16),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '${_weatherSummary!.temperatureF.toStringAsFixed(0)}°F • ${_weatherSummary!.shortForecast} (${_weatherSummary!.probabilityOfPrecip}% rain)',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      '${_weatherAlerts.length} weather alert${_weatherAlerts.length > 1 ? "s" : ""}: ${_weatherAlerts.first.event}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 12),
                 ],
-                if (_hasAvailabilityVariance)
-                  FilterChip(
-                    selected: _showAvailableOnly,
-                    label: const Text('Only available'),
-                    avatar: const Icon(Icons.ev_station, size: 18),
-                    onSelected: (value) =>
-                        setState(() => _showAvailableOnly = value),
-                  )
-                else
-                  const Text(
-                    'Live availability not provided',
-                    style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                const SizedBox(width: 8),
-                if (_hasFastStation)
-                  FilterChip(
-                    selected: _showFastOnly,
-                    label: const Text('50kW+'),
-                    avatar: const Icon(Icons.flash_on, size: 18),
-                    onSelected: (value) =>
-                        setState(() => _showFastOnly = value),
-                  )
-                else
-                  const Text(
-                    'No fast chargers nearby',
-                    style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                const Spacer(),
-                Text('${stations.length} spots',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilterChip(
-                  selected: _includeEvents,
-                  label: const Text('Events on'),
-                  onSelected: (v) {
-                    setState(() => _includeEvents = v);
-                    _loadPredictions();
-                  },
-                ),
-                FilterChip(
-                  selected: _includeWeather,
-                  label: const Text('Weather on'),
-                  onSelected: (v) {
-                    setState(() => _includeWeather = v);
-                    _loadPredictions();
-                  },
-                ),
-                ChoiceChip(
-                  selected: _mode == _PredictionMode.heatmap,
-                  label: const Text('Heatmap'),
-                  onSelected: (_) {
-                    setState(() => _mode = _PredictionMode.heatmap);
-                    _loadPredictions();
-                  },
-                ),
-                ChoiceChip(
-                  selected: _mode == _PredictionMode.points,
-                  label: const Text('Points'),
-                  onSelected: (_) {
-                    setState(() => _mode = _PredictionMode.points);
-                    _loadPredictions();
-                  },
-                ),
-                FilterChip(
-                  selected: _showSightings,
-                  label: const Text('Sightings'),
-                  avatar: const Icon(Icons.visibility_outlined, size: 18),
-                  onSelected: (v) => setState(() => _showSightings = v),
-                ),
-              ],
-            ),
-          ),
-          if (_weatherAlerts.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Card(
-                color: Colors.red.shade50,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              color: Colors.red),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              '${_weatherAlerts.length} weather alert${_weatherAlerts.length > 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ..._weatherAlerts.take(2).map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            '${a.event} • ${a.severity}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_weatherAlerts.length > 2)
-                        Text(
-                          '+${_weatherAlerts.length - 2} more',
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                    ],
-                  ),
-                ),
               ),
             ),
-          // OpenChargeMap embed (web) or CTA (mobile/desktop).
-          OpenChargeMapEmbed(onOpenExternal: _openExternalMap),
+          // Map takes remaining space
           Expanded(
-            child: FlutterMap(
-              options: const MapOptions(
-                initialCenter: center,
-                initialZoom: 12.2,
-              ),
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.mkecitysmart.app',
-                ),
-                if (predictions.isNotEmpty && _mode == _PredictionMode.heatmap)
-                  CircleLayer(
-                    circles: predictions
-                        .map(
-                          (p) => CircleMarker(
-                            point: LatLng(p.lat, p.lng),
-                            radius: (50 + (p.score * 80)).clamp(40, 120),
-                            useRadiusInMeter: false,
-                            color: _scoreColor(p.score).withValues(alpha: 0.35),
-                            borderColor: _scoreColor(p.score),
-                            borderStrokeWidth: 1.5,
-                          ),
-                        )
-                        .toList(),
+                FlutterMap(
+                  options: MapOptions(
+                    initialCenter: center,
+                    initialZoom: 12.5,
+                    onTap: (_, __) => setState(() => _selected = null),
                   ),
-                if (predictions.isNotEmpty && _mode == _PredictionMode.points)
-                  MarkerLayer(
-                    markers: predictions
-                        .map(
-                          (p) => Marker(
-                            point: LatLng(p.lat, p.lng),
-                            width: 20,
-                            height: 20,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _scoreColor(p.score),
-                                shape: BoxShape.circle,
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.mkecitysmart.app',
+                    ),
+                    if (predictions.isNotEmpty && _mode == _PredictionMode.heatmap)
+                      CircleLayer(
+                        circles: predictions
+                            .map(
+                              (p) => CircleMarker(
+                                point: LatLng(p.lat, p.lng),
+                                radius: (50 + (p.score * 80)).clamp(40, 120),
+                                useRadiusInMeter: false,
+                                color: _scoreColor(p.score).withValues(alpha: 0.35),
+                                borderColor: _scoreColor(p.score),
+                                borderStrokeWidth: 1.5,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    MarkerLayer(
+                      markers: stations
+                          .map<Marker>(
+                            (station) => Marker(
+                              width: 42,
+                              height: 42,
+                              point: LatLng(station.latitude, station.longitude),
+                              alignment: Alignment.center,
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selected = station),
+                                child: _StationMarker(
+                                  station: station,
+                                  isSelected: _selected?.id == station.id,
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                MarkerLayer(
-                  markers: stations
-                      .map<Marker>(
-                        (station) => Marker(
-                          width: 42,
-                          height: 42,
-                          point: LatLng(station.latitude, station.longitude),
-                          alignment: Alignment.center,
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selected = station),
-                            child: _StationMarker(
-                              station: station,
-                              isSelected: _selected?.id == station.id,
+                          )
+                          .toList(),
+                    ),
+                    if (_showSightings && sightings.isNotEmpty)
+                      MarkerLayer(
+                        markers: sightings.map((s) {
+                          final isTow = s.type == SightingType.towTruck;
+                          return Marker(
+                            width: 36,
+                            height: 36,
+                            point: LatLng(s.latitude!, s.longitude!),
+                            child: Tooltip(
+                              message: '${isTow ? 'Tow' : 'Enforcer'} • ${s.location}',
+                              child: Icon(
+                                isTow
+                                    ? Icons.local_shipping_outlined
+                                    : Icons.shield_moon_outlined,
+                                color: isTow ? Colors.redAccent : Colors.blueGrey,
+                                size: 32,
+                              ),
                             ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                          );
+                        }).toList(),
+                      ),
+                  ],
                 ),
-                if (_showSightings && sightings.isNotEmpty)
-                  MarkerLayer(
-                    markers: sightings.map((s) {
-                      final isTow = s.type == SightingType.towTruck;
-                      return Marker(
-                        width: 36,
-                        height: 36,
-                        point: LatLng(s.latitude!, s.longitude!),
-                        child: Tooltip(
-                          message: '${isTow ? 'Tow' : 'Enforcer'} • ${s.location}',
-                          child: Icon(
-                            isTow
-                                ? Icons.local_shipping_outlined
-                                : Icons.shield_moon_outlined,
-                            color: isTow ? Colors.redAccent : Colors.blueGrey,
-                            size: 32,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                // Loading indicator overlay
+                if (_loadingStations || _loadingPredictions)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(minHeight: 3),
                   ),
+                // Legend
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _LegendItem(color: Colors.blueAccent, label: 'Fast'),
+                        _LegendItem(color: Colors.green, label: 'Available'),
+                        _LegendItem(color: Colors.orange, label: 'Limited'),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+          // Station detail card at bottom
           if (_selected != null)
             _StationDetailCard(
               station: _selected!,
               onDirections: () => _openDirections(_selected!),
               onClose: () => setState(() => _selected = null),
-            ),
-          if (_loadingStations)
-            const LinearProgressIndicator(minHeight: 3),
-          if (_stationError != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text(
-                _stationError!,
-                style:
-                    const TextStyle(color: Colors.redAccent, fontSize: 12),
-              ),
-            ),
-          if (_loadingPredictions)
-            const LinearProgressIndicator(minHeight: 3),
-          if (predictions.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Availability preview'),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _HeatLegend(color: _scoreColor(0.8), label: 'High'),
-                      _HeatLegend(color: _scoreColor(0.5), label: 'Med'),
-                      _HeatLegend(color: _scoreColor(0.2), label: 'Low'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ...predictions.take(5).map(
-                        (p) => ListTile(
-                          dense: true,
-                          leading: Icon(Icons.local_parking,
-                              color: _scoreColor(p.score)),
-                          title: Text('Block ${p.blockId}'),
-                          subtitle: Text(
-                            'Score ${(p.score * 100).round()}% • Hour ${p.hour} • D${p.dayOfWeek}',
-                          ),
-                        ),
-                      ),
-                ],
-              ),
             ),
         ],
       ),
@@ -574,6 +486,38 @@ class _HeatLegend extends StatelessWidget {
     return Chip(
       backgroundColor: color.withValues(alpha: 0.15),
       label: Text(label, style: TextStyle(color: color)),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Colors.black87),
+          ),
+        ],
+      ),
     );
   }
 }

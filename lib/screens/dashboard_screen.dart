@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../providers/user_provider.dart';
 import '../services/alternate_side_parking_service.dart';
 import '../services/location_service.dart';
+import '../services/parking_risk_service.dart';
 import '../theme/app_theme.dart';
 import 'alerts_landing_screen.dart';
 import '../widgets/citysmart_scaffold.dart';
@@ -17,6 +18,37 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  LocationRisk? _locationRisk;
+  bool _loadingRisk = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRiskData();
+  }
+
+  Future<void> _loadRiskData() async {
+    try {
+      final loc = await LocationService().getCurrentPosition();
+      if (loc != null && mounted) {
+        final risk = await ParkingRiskService.instance.getRiskForLocation(
+          loc.latitude,
+          loc.longitude,
+        );
+        if (mounted) {
+          setState(() {
+            _locationRisk = risk;
+            _loadingRisk = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingRisk = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingRisk = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -31,7 +63,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Dashboard', style: textTheme.headlineMedium),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            // Risk Badge Card
+            if (!_loadingRisk && _locationRisk != null)
+              _RiskBadgeCard(risk: _locationRisk!)
+            else if (_loadingRisk)
+              const _RiskBadgeCardLoading(),
+            const SizedBox(height: 16),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -257,4 +295,150 @@ Future<String> _resolveAltSubtitle(UserProvider provider) async {
   return instructions.parkingSide == ParkingSide.odd
       ? 'Odd side today'
       : 'Even side today';
+}
+
+/// Risk badge card for dashboard
+class _RiskBadgeCard extends StatelessWidget {
+  const _RiskBadgeCard({required this.risk});
+  final LocationRisk risk;
+
+  Color get _color {
+    switch (risk.riskLevel) {
+      case RiskLevel.high:
+        return const Color(0xFFE53935);
+      case RiskLevel.medium:
+        return const Color(0xFFFFA726);
+      case RiskLevel.low:
+        return const Color(0xFF66BB6A);
+    }
+  }
+
+  String get _label {
+    switch (risk.riskLevel) {
+      case RiskLevel.high:
+        return 'HIGH RISK';
+      case RiskLevel.medium:
+        return 'MEDIUM RISK';
+      case RiskLevel.low:
+        return 'LOW RISK';
+    }
+  }
+
+  IconData get _icon {
+    switch (risk.riskLevel) {
+      case RiskLevel.high:
+        return Icons.warning_rounded;
+      case RiskLevel.medium:
+        return Icons.info_rounded;
+      case RiskLevel.low:
+        return Icons.check_circle_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _color.withOpacity(0.4), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _color,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(_icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _color,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${risk.riskScore}% citation probability',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Your current location • Based on 466K+ citations',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[400],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RiskBadgeCardLoading extends StatelessWidget {
+  const _RiskBadgeCardLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            'Loading citation risk for your area...',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[400],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -38,7 +38,7 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     final provider = context.read<UserProvider>();
-    await provider.reportSighting(
+    final message = await provider.reportSighting(
       type: _type,
       location: _locationController.text.trim(),
       notes: _notesController.text.trim(),
@@ -50,7 +50,10 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
     _locationController.clear();
     _notesController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thanks! Sighting reported.')),
+      SnackBar(
+        content: Text(message ?? 'Thanks! Sighting reported.'),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 

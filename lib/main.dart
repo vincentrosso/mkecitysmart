@@ -24,6 +24,7 @@ import 'screens/register_screen.dart';
 import 'screens/report_sighting_screen.dart';
 import 'screens/subscription_screen.dart';
 import 'screens/ticket_workflow_screen.dart';
+import 'screens/ticket_tracker_screen.dart';
 import 'screens/street_sweeping_screen.dart';
 import 'screens/vehicle_management_screen.dart';
 import 'screens/history_receipts_screen.dart';
@@ -41,6 +42,8 @@ import 'screens/feed_screen.dart';
 import 'screens/alerts_landing_screen.dart';
 import 'screens/alert_detail_screen.dart';
 import 'screens/auth_diagnostics_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/parking_finder_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -210,7 +213,7 @@ class MKEParkApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'MKE CitySmart',
         theme: buildCitySmartTheme(),
-        initialRoute: '/dashboard',
+        initialRoute: '/',
         onUnknownRoute: (settings) => MaterialPageRoute(
           builder: (context) => Scaffold(
             body: Center(
@@ -219,7 +222,8 @@ class MKEParkApp extends StatelessWidget {
           ),
         ),
         routes: {
-          '/': (context) => const DashboardScreen(),
+          '/': (context) => const _InitialRouteDecider(),
+          '/onboarding': (context) => const OnboardingScreen(),
           '/dashboard': (context) => const DashboardScreen(),
           '/landing': (context) => LandingScreen(),
           '/auth': (context) => const AuthScreen(),
@@ -239,6 +243,7 @@ class MKEParkApp extends StatelessWidget {
           '/charging': (context) => const ChargingMapScreen(),
           '/report-sighting': (context) => const ReportSightingScreen(),
           '/tickets': (context) => const TicketWorkflowScreen(),
+          '/ticket-tracker': (context) => const TicketTrackerScreen(),
           '/subscriptions': (context) => const SubscriptionScreen(),
           '/maintenance': (context) => const MaintenanceReportScreen(),
           '/predictions': (context) => const ChargingMapScreen(),
@@ -247,6 +252,7 @@ class MKEParkApp extends StatelessWidget {
           '/alternate-side-parking': (context) => const AlternateSideParkingScreen(),
           '/alternate-parking': (context) => const AlternateSideParkingScreen(),
           '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
+          '/parking-finder': (context) => const ParkingFinderScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
@@ -263,5 +269,70 @@ class MKEParkApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+/// Decides whether to show onboarding or dashboard on initial app launch.
+class _InitialRouteDecider extends StatefulWidget {
+  const _InitialRouteDecider();
+
+  @override
+  State<_InitialRouteDecider> createState() => _InitialRouteDeciderState();
+}
+
+class _InitialRouteDeciderState extends State<_InitialRouteDecider> {
+  bool _isLoading = true;
+  bool _showOnboarding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    final isComplete = await OnboardingService.instance.isOnboardingComplete();
+    if (mounted) {
+      setState(() {
+        _showOnboarding = !isComplete;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF081D19),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/brand/citysmart_icon_rounded.png',
+                width: 80,
+                height: 80,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.location_city,
+                  size: 80,
+                  color: Color(0xFFE0C164),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE0C164)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_showOnboarding) {
+      return const OnboardingScreen();
+    }
+
+    return const DashboardScreen();
   }
 }

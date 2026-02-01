@@ -10,6 +10,7 @@ import 'location_service.dart';
 import 'notification_service.dart';
 import 'city_ticket_stats_service.dart';
 import 'ticket_risk_prediction_service.dart';
+import 'parking_risk_service.dart';
 
 /// Lightweight in-app risk watcher. In background, this should be replaced by
 /// a push-based solution (FCM/APNs) driven by the backend.
@@ -47,12 +48,19 @@ class RiskAlertService {
   bool _running = false;
   DateTime? _lastHighAlert;
   DateTime? _lastTicketAlert;
+  DateTime? _lastCitationAlert; // NEW: Cooldown for citation-based alerts
   Position? _lastPosition;
   final TicketRiskPredictionService _ticketRisk;
   final LocationService _location;
   final NotificationService _notification;
   final CityTicketStatsService _cityStats;
+  final ParkingRiskService _parkingRisk = ParkingRiskService.instance;
   final DateTime Function() _now;
+
+  // ABUSE PREVENTION: Track alert counts per day to prevent spam
+  int _dailyAlertCount = 0;
+  DateTime? _dailyAlertReset;
+  static const int _maxDailyAlerts = 6; // Max 6 risk alerts per day
 
   void start(UserProvider provider) {
     if (_running) return;
@@ -66,6 +74,14 @@ class RiskAlertService {
 
   Future<void> _check(UserProvider provider) async {
     final now = _now();
+    
+    // Reset daily counter at midnight
+    if (_dailyAlertReset == null || 
+        now.day != _dailyAlertReset!.day) {
+      _dailyAlertCount = 0;
+      _dailyAlertReset = now;
+    }
+    
     final score = provider.towRiskIndex;
     if (score >= 70) {
       if (_lastHighAlert == null ||
@@ -87,6 +103,10 @@ class RiskAlertService {
     try {
       final position = await _location.getCurrentPosition();
       if (position == null) return;
+      
+      // === NEW: Check citation-based risk from backend ===
+      await _checkCitationRisk(position, now);
+      
       final ticketDensity =
           provider.tickets.where((t) => t.status == TicketStatus.open).length /
               10;
@@ -131,6 +151,54 @@ class RiskAlertService {
     _timer?.cancel();
     _timer = null;
     _running = false;
+  }
+
+  /// Check citation-based risk from backend and alert if high risk during peak time.
+  /// 
+  /// SPAM PREVENTION:
+  /// - Max 1 citation alert per 2 hours per location
+  /// - Max 6 alerts per day total
+  /// - Only alerts for HIGH risk (70%+) during peak hours
+  Future<void> _checkCitationRisk(Position position, DateTime now) async {
+    // Don't spam - check daily limit first
+    if (_dailyAlertCount >= _maxDailyAlerts) {
+      dev.log('Citation risk check skipped: daily limit reached ($_dailyAlertCount)');
+      return;
+    }
+    
+    // Cooldown: min 2 hours between citation alerts
+    if (_lastCitationAlert != null &&
+        now.difference(_lastCitationAlert!).inMinutes < 120) {
+      return;
+    }
+    
+    try {
+      final risk = await _parkingRisk.getRiskForLocation(
+        position.latitude,
+        position.longitude,
+      );
+      
+      if (risk == null) return;
+      
+      // Only alert for HIGH risk areas during peak hours
+      if (risk.riskLevel == RiskLevel.high && 
+          risk.peakHours.contains(now.hour)) {
+        _lastCitationAlert = now;
+        _dailyAlertCount++;
+        
+        final message = '${risk.riskPercentage}% citation risk here. '
+            '${risk.topViolations.isNotEmpty ? "Watch for: ${risk.topViolations.first.replaceAll('_', ' ')}" : "Check parking signs!"}';
+        
+        _notification.showLocal(
+          title: '⚠️ High Risk Parking Zone',
+          body: message,
+        );
+        
+        dev.log('Citation risk alert sent: ${risk.riskPercentage}% at hour ${now.hour}');
+      }
+    } catch (e) {
+      dev.log('Citation risk check failed: $e');
+    }
   }
 
   bool _isNewArea(Position pos) {

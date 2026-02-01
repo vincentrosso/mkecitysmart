@@ -62,7 +62,7 @@ class GarbageScheduleService {
 
   /// Fetch schedule by address. If the endpoint is the DPW HTML servlet, fall back to HTML parsing.
   Future<List<GarbageSchedule>> fetchByAddress(String address) async {
-    if (baseUrl.contains('DPWServletsPublic/garbage_day')) {
+    if (baseUrl.toLowerCase().contains('dpwservletspublic/garbage_day')) {
       return _fetchByAddressHtml(address);
     }
 

@@ -144,8 +144,14 @@ class AlternateSideParkingCard extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: instructions.isOddDay ? Colors.orange : Colors.blue,
+              color: instructions.isOddDay 
+                  ? const Color(0xFFE0C164)  // Theme yellow for odd
+                  : const Color(0xFF4FC3F7), // Bright cyan for even
               shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 2,
+              ),
             ),
             child: Center(
               child: Text(
@@ -198,7 +204,9 @@ class AlternateSideParkingCard extends StatelessWidget {
           // Icon indicator
           Icon(
             instructions.isOddDay ? Icons.looks_one : Icons.looks_two,
-            color: instructions.isOddDay ? Colors.orange : Colors.blue,
+            color: instructions.isOddDay 
+                ? const Color(0xFFE0C164) // Theme yellow
+                : const Color(0xFF4FC3F7), // Bright cyan
             size: 32,
           ),
         ],
@@ -278,14 +286,24 @@ class AlternateSideParkingCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: isOdd ? Colors.orange[100] : Colors.blue[100],
+                  color: isOdd 
+                      ? const Color(0xFFE0C164).withOpacity(0.2) 
+                      : const Color(0xFF4FC3F7).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isOdd 
+                        ? const Color(0xFFE0C164) 
+                        : const Color(0xFF4FC3F7),
+                    width: 1,
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     '${instructions.dayOfMonth}',
                     style: TextStyle(
-                      color: isOdd ? Colors.orange[900] : Colors.blue[900],
+                      color: isOdd 
+                          ? const Color(0xFFE0C164) 
+                          : const Color(0xFF4FC3F7),
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -340,8 +358,14 @@ class AlternateSideParkingTile extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: today.isOddDay ? Colors.orange : Colors.blue,
+                  color: today.isOddDay 
+                      ? const Color(0xFFE0C164) 
+                      : const Color(0xFF4FC3F7),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 2,
+                  ),
                 ),
                 child: Center(
                   child: Text(

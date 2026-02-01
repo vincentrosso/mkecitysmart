@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
-import '../providers/user_provider.dart';
 import '../services/location_service.dart';
-import '../services/parking_prediction_service.dart';
+import '../services/parking_risk_service.dart';
+import '../widgets/parking_risk_badge.dart';
 
 class ParkingHeatmapScreen extends StatefulWidget {
   const ParkingHeatmapScreen({super.key});
@@ -13,13 +14,17 @@ class ParkingHeatmapScreen extends StatefulWidget {
 }
 
 class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
-  final _service = ParkingPredictionService();
-  double _centerLat = 43.0389;
+  final _riskService = ParkingRiskService.instance;
+  final _mapController = MapController();
+  
+  double _centerLat = 43.0389; // Milwaukee default
   double _centerLng = -87.9065;
-  final _eventLoad = 0.2;
-  List<PredictedPoint> _points = const [];
+  
+  List<RiskZone> _riskZones = [];
+  LocationRisk? _locationRisk;
   bool _loading = true;
   String? _error;
+  RiskZone? _selectedZone;
 
   @override
   void initState() {
@@ -32,9 +37,11 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
       _loading = true;
       _error = null;
     });
+    
     double lat = _centerLat;
     double lng = _centerLng;
-    final userProvider = context.read<UserProvider>();
+    
+    // Get current location
     try {
       final loc = await LocationService().getCurrentPosition();
       if (loc != null) {
@@ -42,18 +49,25 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
         lng = loc.longitude;
       }
     } catch (e) {
-      _error = 'Location unavailable; showing defaults.';
+      debugPrint('Location unavailable: \$e');
     }
+    
     if (!mounted) return;
-    final cityBias = _cityBias(userProvider.cityId);
-    _points = _service.predictNearby(
-      when: DateTime.now(),
-      latitude: lat,
-      longitude: lng,
-      eventLoad: _eventLoad,
-      samples: 60,
-      cityBias: cityBias,
-    );
+    
+    // Load citation risk data from backend
+    try {
+      final results = await Future.wait([
+        _riskService.getRiskForLocation(lat, lng),
+        _riskService.getRiskZones(forceRefresh: true),
+      ]);
+      _locationRisk = results[0] as LocationRisk?;
+      _riskZones = results[1] as List<RiskZone>;
+      debugPrint('Loaded \${_riskZones.length} risk zones');
+    } catch (e) {
+      debugPrint('Failed to load citation risk: \$e');
+      _error = 'Failed to load risk data. Pull to refresh.';
+    }
+    
     setState(() {
       _centerLat = lat;
       _centerLng = lng;
@@ -61,116 +75,271 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
     });
   }
 
-  Color _scoreColor(double score) {
-    // 0 -> red, 0.5 -> yellow, 1 -> green
-    if (score < 0.33) {
-      return Colors.redAccent.withValues(alpha: 0.6 + score * 0.2);
-    } else if (score < 0.66) {
-      return Colors.orangeAccent.withValues(alpha: 0.6 + (score - 0.33) * 0.2);
+  Color _getRiskColor(RiskLevel level) {
+    switch (level) {
+      case RiskLevel.high:
+        return const Color(0xFFE53935); // Red
+      case RiskLevel.medium:
+        return const Color(0xFFFFA726); // Orange
+      case RiskLevel.low:
+        return const Color(0xFF66BB6A); // Green
     }
-    return Colors.greenAccent.withValues(alpha: 0.6 + (score - 0.66) * 0.2);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parking Heatmap'),
+        title: const Text('Citation Risk Map'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _load,
+            tooltip: 'Refresh data',
+          ),
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            onPressed: () {
+              _mapController.move(
+                LatLng(_centerLat, _centerLng),
+                12.0,
+              );
+            },
+            tooltip: 'My location',
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Predicted availability',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.orangeAccent),
-                ),
-              ),
-            if (_loading)
-              const Expanded(
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Map coords to a simple grid for demo purposes.
-                  final minLat = _centerLat - 0.002;
-                  final maxLat = _centerLat + 0.002;
-                  final minLng = _centerLng - 0.002;
-                  final maxLng = _centerLng + 0.002;
-
-                  double toX(double lng) =>
-                      ((lng - minLng) / (maxLng - minLng)) *
-                      constraints.maxWidth;
-                  double toY(double lat) =>
-                      constraints.maxHeight -
-                      ((lat - minLat) / (maxLat - minLat)) *
-                          constraints.maxHeight;
-
-                  return Stack(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Risk badge at top
+                if (_locationRisk != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    color: Color(_locationRisk!.colorValue).withOpacity(0.1),
+                    child: ParkingRiskBadge(risk: _locationRisk!),
+                  ),
+                
+                // Map
+                Expanded(
+                  child: Stack(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black12,
-                          borderRadius: BorderRadius.circular(16),
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: LatLng(_centerLat, _centerLng),
+                          initialZoom: 11.5,
+                          minZoom: 9,
+                          maxZoom: 18,
+                          onTap: (_, __) {
+                            setState(() => _selectedZone = null);
+                          },
                         ),
-                      ),
-                      ..._points.map((p) {
-                        final x = toX(p.longitude);
-                        final y = toY(p.latitude);
-                        return Positioned(
-                          left: x - 10,
-                          top: y - 10,
-                          child: Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: _scoreColor(p.score),
-                              shape: BoxShape.circle,
-                            ),
+                        children: [
+                          // OpenStreetMap tile layer
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.mkecitysmart.app',
                           ),
-                        );
-                      }),
+                          
+                          // Risk zone circles
+                          CircleLayer(
+                            circles: _riskZones.map((zone) {
+                              final color = _getRiskColor(zone.riskLevel);
+                              // Size based on citation count
+                              final radius = 400.0 + (zone.totalCitations / 100).clamp(0, 600);
+                              return CircleMarker(
+                                point: LatLng(zone.lat, zone.lng),
+                                radius: radius,
+                                useRadiusInMeter: true,
+                                color: color.withOpacity(0.3),
+                                borderColor: color,
+                                borderStrokeWidth: 2,
+                              );
+                            }).toList(),
+                          ),
+                          
+                          // Risk zone markers (tappable)
+                          MarkerLayer(
+                            markers: _riskZones.map((zone) {
+                              final color = _getRiskColor(zone.riskLevel);
+                              final isSelected = _selectedZone == zone;
+                              return Marker(
+                                point: LatLng(zone.lat, zone.lng),
+                                width: isSelected ? 60 : 40,
+                                height: isSelected ? 60 : 40,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _selectedZone = zone);
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: isSelected ? 3 : 2,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: color.withOpacity(0.5),
+                                                blurRadius: 8,
+                                                spreadRadius: 2,
+                                              )
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '\${zone.riskScore}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          
+                          // Current location marker
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(_centerLat, _centerLng),
+                                width: 24,
+                                height: 24,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.blue.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      
+                      // Legend
                       Positioned(
                         right: 12,
                         top: 12,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            _LegendDot(color: Colors.greenAccent, label: 'High chance'),
-                            SizedBox(height: 6),
-                            _LegendDot(color: Colors.orangeAccent, label: 'Medium'),
-                            SizedBox(height: 6),
-                            _LegendDot(color: Colors.redAccent, label: 'Lower'),
-                          ],
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.95),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                'Risk Level',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              _LegendItem(color: Color(0xFFE53935), label: 'High (50%+)'),
+                              SizedBox(height: 4),
+                              _LegendItem(color: Color(0xFFFFA726), label: 'Medium (30-49%)'),
+                              SizedBox(height: 4),
+                              _LegendItem(color: Color(0xFF66BB6A), label: 'Low (<30%)'),
+                            ],
+                          ),
                         ),
                       ),
+                      
+                      // Zone stats
+                      Positioned(
+                        left: 12,
+                        bottom: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.95),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            '\${_riskZones.length} risk zones • Based on 466K+ citations',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      
+                      // Selected zone detail card
+                      if (_selectedZone != null)
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 50,
+                          child: _ZoneDetailCard(
+                            zone: _selectedZone!,
+                            onClose: () => setState(() => _selectedZone = null),
+                          ),
+                        ),
+                      
+                      // Error message
+                      if (_error != null)
+                        Positioned(
+                          top: 12,
+                          left: 12,
+                          right: 80,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _error!,
+                              style: TextStyle(color: Colors.orange.shade900),
+                            ),
+                          ),
+                        ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
     );
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color, required this.label});
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
   final Color color;
   final String label;
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -179,32 +348,145 @@ class _LegendDot extends StatelessWidget {
         Container(
           width: 14,
           height: 14,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 11),
         ),
       ],
     );
   }
 }
 
-double _cityBias(String cityId) {
-  switch (cityId.toLowerCase()) {
-    case 'milwaukee':
-    case 'milwaukee-county':
-      return 0.05;
-    case 'chicago':
-      return 0.08;
-    case 'new-york':
-    case 'nyc':
-      return 0.1;
-    default:
-      return 0.04;
+class _ZoneDetailCard extends StatelessWidget {
+  const _ZoneDetailCard({required this.zone, required this.onClose});
+  final RiskZone zone;
+  final VoidCallback onClose;
+
+  Color get _color {
+    switch (zone.riskLevel) {
+      case RiskLevel.high:
+        return const Color(0xFFE53935);
+      case RiskLevel.medium:
+        return const Color(0xFFFFA726);
+      case RiskLevel.low:
+        return const Color(0xFF66BB6A);
+    }
+  }
+
+  String get _riskLabel {
+    switch (zone.riskLevel) {
+      case RiskLevel.high:
+        return 'HIGH RISK';
+      case RiskLevel.medium:
+        return 'MEDIUM RISK';
+      case RiskLevel.low:
+        return 'LOW RISK';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _color,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _riskLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '\${zone.riskScore}% citation probability',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.receipt_long, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  '\${_formatNumber(zone.totalCitations)} citations recorded',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  'Zone: \${zone.geohash}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _getRiskAdvice(),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 1000) {
+      return '\${(n / 1000).toStringAsFixed(1)}K';
+    }
+    return n.toString();
+  }
+
+  String _getRiskAdvice() {
+    switch (zone.riskLevel) {
+      case RiskLevel.high:
+        return '⚠️ Be extra careful parking here. Check signs, meters, and time limits.';
+      case RiskLevel.medium:
+        return '⚡ Moderate risk area. Pay attention to parking restrictions.';
+      case RiskLevel.low:
+        return '✅ Lower risk area, but always check posted signs.';
+    }
   }
 }

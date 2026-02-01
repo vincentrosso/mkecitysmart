@@ -1314,3 +1314,393 @@ export const sendNearbyAlerts = onCall(async (request) => {
     totalMatches: matches.length,
   };
 });
+
+// ============================================================================
+// PARKING RISK HEATMAP FUNCTIONS
+// ============================================================================
+
+// Rate limits for risk functions - more permissive than sighting submission
+// but still prevents abuse
+const RISK_RATE_LIMIT_MAX = 30; // 30 lookups per window
+const RISK_RATE_LIMIT_WINDOW_SECONDS = 10 * 60; // 10 minutes
+
+/**
+ * Get parking risk score for a given location.
+ * Uses geohash-based citation data to calculate risk percentage.
+ * 
+ * RATE LIMITED: 30 calls per 10 minutes per user/IP to prevent abuse
+ */
+export const getRiskForLocation = onCall(async (request) => {
+  const latitude = Number(request.data?.latitude);
+  const longitude = Number(request.data?.longitude);
+  
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new HttpsError("invalid-argument", "latitude/longitude required");
+  }
+  
+  const db = getFirestore();
+  const now = Timestamp.now();
+  
+  // Rate limiting by IP (no auth required for basic risk lookup)
+  const ip = (request.rawRequest.ip ?? "unknown").toString();
+  const ipKey = `risk_ip_${ip}`.replace(/[^A-Za-z0-9_.-]/g, "_");
+  const ipRateRef = db.collection("rate_limits").doc(ipKey);
+  
+  const ipAllowed = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ipRateRef);
+    const data = snap.data() as {count?: number; windowStart?: Timestamp} | undefined;
+    const windowStart = data?.windowStart ?? now;
+    const elapsed = now.toMillis() - windowStart.toMillis();
+
+    if (!snap.exists || elapsed >= RISK_RATE_LIMIT_WINDOW_SECONDS * 1000) {
+      tx.set(ipRateRef, {count: 1, windowStart: now});
+      return true;
+    }
+
+    const count = data?.count ?? 0;
+    if (count >= RISK_RATE_LIMIT_MAX) return false;
+
+    tx.update(ipRateRef, {count: count + 1});
+    return true;
+  });
+
+  if (!ipAllowed) {
+    throw new HttpsError(
+      "resource-exhausted",
+      "Too many risk lookups. Please wait a few minutes.",
+    );
+  }
+  
+  // Get current hour and day of week for time-specific risk
+  const nowDate = new Date();
+  const hour = nowDate.getHours();
+  const dayOfWeek = nowDate.getDay(); // 0=Sunday
+  
+  // Calculate geohash for the location (precision 5 matches our risk zones)
+  const locationGeohash = encodeGeohash(latitude, longitude, 5);
+  
+  // Look up the risk zone
+  const zoneDoc = await db.collection("citation_risk_zones").doc(locationGeohash).get();
+  
+  if (!zoneDoc.exists) {
+    // No citation data for this zone - low risk
+    return {
+      success: true,
+      riskScore: 5,
+      riskLevel: "low",
+      riskPercentage: 5,
+      message: "Low risk area - no recent citation history",
+      hourlyRisk: null,
+      peakHours: [],
+      topViolations: [],
+    };
+  }
+  
+  const zoneData = zoneDoc.data()!;
+  const baseRiskScore = zoneData.riskScore ?? 10;
+  
+  // Get hourly risk multiplier
+  const byHour = (zoneData.byHour as Record<string, number>) ?? {};
+  const hourlyCount = byHour[hour.toString()] ?? 0;
+  const maxHourlyCount = Math.max(...Object.values(byHour), 1);
+  const hourlyMultiplier = 0.7 + (0.6 * hourlyCount / maxHourlyCount); // 0.7 to 1.3x
+  
+  // Get day-of-week risk multiplier
+  const byDay = (zoneData.byDayOfWeek as Record<string, number>) ?? {};
+  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const dayName = dayNames[dayOfWeek];
+  const dayCount = byDay[dayName] ?? 0;
+  const maxDayCount = Math.max(...Object.values(byDay), 1);
+  const dayMultiplier = 0.8 + (0.4 * dayCount / maxDayCount); // 0.8 to 1.2x
+  
+  // Calculate final risk score
+  let adjustedRisk = Math.round(baseRiskScore * hourlyMultiplier * dayMultiplier);
+  adjustedRisk = Math.max(5, Math.min(100, adjustedRisk)); // Clamp 5-100
+  
+  // Determine risk level
+  let riskLevel: string;
+  if (adjustedRisk >= 70) riskLevel = "high";
+  else if (adjustedRisk >= 40) riskLevel = "medium";
+  else riskLevel = "low";
+  
+  // Build user-friendly message
+  const peakHours = (zoneData.peakHours as number[]) ?? [];
+  const topCategories = (zoneData.topCategories as Array<{category: string; count: number}>) ?? [];
+  
+  let message = "";
+  if (riskLevel === "high") {
+    message = `High citation risk (${adjustedRisk}%). `;
+    if (topCategories.length > 0) {
+      message += `Watch for: ${topCategories.slice(0, 2).map(c => c.category.replace(/_/g, " ")).join(", ")}`;
+    }
+  } else if (riskLevel === "medium") {
+    message = `Moderate risk (${adjustedRisk}%). Pay attention to parking rules.`;
+  } else {
+    message = `Low risk area (${adjustedRisk}%).`;
+  }
+  
+  return {
+    success: true,
+    riskScore: adjustedRisk,
+    riskLevel,
+    riskPercentage: adjustedRisk,
+    message,
+    hourlyRisk: {
+      currentHour: hour,
+      hourlyMultiplier: parseFloat(hourlyMultiplier.toFixed(2)),
+    },
+    peakHours: peakHours.slice(0, 3),
+    topViolations: topCategories.slice(0, 3).map(c => c.category),
+    totalCitations: zoneData.totalCitations ?? 0,
+  };
+});
+
+/**
+ * Decode a geohash to its center lat/lng coordinates.
+ */
+const decodeGeohash = (geohash: string): {lat: number; lng: number} => {
+  let latMin = -90.0;
+  let latMax = 90.0;
+  let lonMin = -180.0;
+  let lonMax = 180.0;
+  let evenBit = true;
+  
+  for (const char of geohash.toLowerCase()) {
+    const idx = GEOHASH_BASE32.indexOf(char);
+    if (idx === -1) continue;
+    
+    for (let bit = 4; bit >= 0; bit--) {
+      const bitN = (idx >> bit) & 1;
+      if (evenBit) {
+        const lonMid = (lonMin + lonMax) / 2;
+        if (bitN === 1) {
+          lonMin = lonMid;
+        } else {
+          lonMax = lonMid;
+        }
+      } else {
+        const latMid = (latMin + latMax) / 2;
+        if (bitN === 1) {
+          latMin = latMid;
+        } else {
+          latMax = latMid;
+        }
+      }
+      evenBit = !evenBit;
+    }
+  }
+  
+  return {
+    lat: (latMin + latMax) / 2,
+    lng: (lonMin + lonMax) / 2,
+  };
+};
+
+/**
+ * Get all risk zones for map overlay (heatmap data).
+ * Returns simplified data suitable for client-side rendering.
+ */
+export const getRiskZones = onCall(async (request) => {
+  const db = getFirestore();
+  
+  // Optionally filter by bounding box
+  const minLat = Number(request.data?.minLat);
+  const maxLat = Number(request.data?.maxLat);
+  const minLng = Number(request.data?.minLng);
+  const maxLng = Number(request.data?.maxLng);
+  const hasBounds = Number.isFinite(minLat) && Number.isFinite(maxLat) &&
+                    Number.isFinite(minLng) && Number.isFinite(maxLng);
+  
+  const snap = await db.collection("citation_risk_zones")
+    .orderBy("riskScore", "desc")
+    .limit(100)
+    .get();
+  
+  const zones = snap.docs
+    .map(doc => {
+      const data = doc.data();
+      // Decode geohash to get center coordinates
+      const geohash = doc.id;
+      const {lat, lng} = decodeGeohash(geohash);
+      
+      // Filter by bounds if provided
+      if (hasBounds) {
+        if (lat < minLat || lat > maxLat ||
+            lng < minLng || lng > maxLng) {
+          return null;
+        }
+      }
+      
+      return {
+        geohash,
+        lat,
+        lng,
+        riskScore: data.riskScore ?? 0,
+        riskLevel: data.riskLevel ?? "low",
+        totalCitations: data.totalCitations ?? 0,
+      };
+    })
+    .filter(z => z !== null);
+  
+  return {
+    success: true,
+    zones,
+    count: zones.length,
+  };
+});
+
+/**
+ * Scheduled function to send high-risk alerts to users.
+ * Runs hourly to check if any users are in high-risk zones at peak times.
+ * 
+ * SPAM PREVENTION:
+ * - Max 500 alerts per hour globally
+ * - Tracks last alert per user/zone to prevent duplicate alerts
+ * - Only alerts during verified peak hours for the zone
+ */
+export const sendHighRiskAlerts = onSchedule(
+  {
+    schedule: "0 * * * *", // Every hour at :00
+    timeZone: "America/Chicago",
+  },
+  async () => {
+    const db = getFirestore();
+    const now = new Date();
+    const hour = now.getHours();
+    const dayOfWeek = now.getDay();
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const dayName = dayNames[dayOfWeek];
+    const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    
+    logger.info("sendHighRiskAlerts starting", { hour, dayName });
+    
+    // Find zones where current hour is a peak hour
+    const zonesSnap = await db.collection("citation_risk_zones")
+      .where("riskScore", ">=", 50) // Only high-risk zones
+      .get();
+    
+    const highRiskZones = zonesSnap.docs.filter(doc => {
+      const data = doc.data();
+      const peakHours = (data.peakHours as number[]) ?? [];
+      return peakHours.includes(hour);
+    });
+    
+    if (highRiskZones.length === 0) {
+      logger.info("sendHighRiskAlerts: No high-risk zones at this hour");
+      return;
+    }
+    
+    logger.info("sendHighRiskAlerts: Found high-risk zones", { count: highRiskZones.length });
+    
+    // Get geohashes for high-risk zones
+    const highRiskGeohashes = new Set(highRiskZones.map(doc => doc.id));
+    
+    // Find devices in those zones (using geohash prefix matching)
+    // Our risk zones use precision 5, devices use precision 8
+    const devicesRef = db.collection("devices");
+    const candidateDevices: Array<{token: string; uid: string; geohash: string}> = [];
+    
+    for (const zoneGeohash of highRiskGeohashes) {
+      const snap = await devicesRef
+        .where("geohash", ">=", zoneGeohash)
+        .where("geohash", "<=", zoneGeohash + "~")
+        .limit(100)
+        .get();
+      
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        const token = (data.token ?? "").toString().trim();
+        if (token) {
+          candidateDevices.push({
+            token,
+            uid: data.uid ?? "",
+            geohash: data.geohash ?? "",
+          });
+        }
+      });
+    }
+    
+    if (candidateDevices.length === 0) {
+      logger.info("sendHighRiskAlerts: No devices in high-risk zones");
+      return;
+    }
+    
+    // Deduplicate by token
+    const uniqueDevices = Array.from(
+      new Map(candidateDevices.map(d => [d.token, d])).values()
+    );
+    
+    // SPAM PREVENTION: Check which users already got an alert today for this zone
+    const alertTrackingRef = db.collection("risk_alert_tracking");
+    const devicesToAlert: typeof uniqueDevices = [];
+    
+    for (const device of uniqueDevices) {
+      if (devicesToAlert.length >= 500) break; // Global hourly limit
+      
+      const zonePrefix = device.geohash.slice(0, 5);
+      const trackingKey = `${device.uid}_${zonePrefix}_${todayKey}`;
+      const trackingDoc = await alertTrackingRef.doc(trackingKey).get();
+      
+      if (!trackingDoc.exists) {
+        devicesToAlert.push(device);
+      }
+    }
+    
+    if (devicesToAlert.length === 0) {
+      logger.info("sendHighRiskAlerts: All eligible users already alerted today");
+      return;
+    }
+    
+    logger.info("sendHighRiskAlerts: Sending to devices", { 
+      count: devicesToAlert.length,
+      skippedDuplicates: uniqueDevices.length - devicesToAlert.length,
+    });
+    
+    // Send alerts
+    let successCount = 0;
+    let failureCount = 0;
+    
+    const title = "⚠️ High Citation Risk Area";
+    const body = `You're in a high-risk parking zone. Peak enforcement time is now (${hour}:00). Check local signs!`;
+    
+    for (const device of devicesToAlert) {
+      try {
+        await admin.messaging().send({
+          token: device.token,
+          notification: { title, body },
+          data: {
+            kind: "high_risk_alert",
+            hour: hour.toString(),
+            geohash: device.geohash.slice(0, 5),
+          },
+        });
+        successCount++;
+        
+        // Track that we sent this alert (prevents duplicate today)
+        const zonePrefix = device.geohash.slice(0, 5);
+        const trackingKey = `${device.uid}_${zonePrefix}_${todayKey}`;
+        await alertTrackingRef.doc(trackingKey).set({
+          uid: device.uid,
+          zone: zonePrefix,
+          hour,
+          sentAt: Timestamp.now(),
+        }).catch(() => {}); // Don't fail if tracking write fails
+        
+      } catch (err) {
+        failureCount++;
+        const errMsg = err instanceof Error ? err.message : String(err);
+        // Delete invalid tokens
+        if (errMsg.includes("not-registered") || errMsg.includes("invalid")) {
+          const docId = device.token.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 200);
+          await db.collection("devices").doc(docId).delete().catch(() => {});
+        }
+      }
+    }
+    
+    logger.info("sendHighRiskAlerts complete", {
+      successCount,
+      failureCount,
+      totalDevices: devicesToAlert.length,
+    });
+  }
+);

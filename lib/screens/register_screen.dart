@@ -71,11 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage('Phone sign-in is not available on web.');
       return;
     }
-    final phone = await _promptForValue(
-      title: 'Verify phone',
-      hint: 'Enter your phone number',
-      keyboardType: TextInputType.phone,
-    );
+    final phone = await _promptForPhoneNumber();
     if (phone == null || !mounted) return;
     setState(() => _socialLoading = true);
     final provider = context.read<UserProvider>();
@@ -113,6 +109,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Auto-verified path.
     _showMessage('Phone verified and account created.');
     Navigator.pushReplacementNamed(context, '/dashboard');
+  }
+
+  /// Format phone number to E.164 format for Firebase
+  String _formatPhoneNumber(String phone) {
+    // Remove all non-digit characters
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // If already has country code (11 digits starting with 1 for US)
+    if (digits.length == 11 && digits.startsWith('1')) {
+      return '+$digits';
+    }
+    // US number without country code (10 digits)
+    if (digits.length == 10) {
+      return '+1$digits';
+    }
+    // Already formatted or international
+    if (phone.startsWith('+')) {
+      return phone;
+    }
+    // Default: assume US and add +1
+    return '+1$digits';
+  }
+
+  Future<String?> _promptForPhoneNumber() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Verify phone'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  hintText: '(414) 555-1234',
+                  labelText: 'Phone number',
+                  prefixText: '+1 ',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'US numbers only. We\'ll send a verification code.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final formatted = _formatPhoneNumber(controller.text.trim());
+                Navigator.pop(ctx, formatted);
+              },
+              child: const Text('Send Code'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (result == null || result.isEmpty) return null;
+    return result;
   }
 
   Future<void> _handleApple() async {
