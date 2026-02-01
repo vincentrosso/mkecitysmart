@@ -2,6 +2,7 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-01-31 [F-006] Sightings feed filters: Created FeedFilterService for scalable query building; FeedScreen with filter bar UI (radius: 1mi/5mi/10mi/city-wide; time: 1hr/2hr/6hr/24hr/all); haversine distance filtering from user position; Firestore time window queries; pagination with Load More (20/page); improved card UI with relative time and distance display.
 - 2026-01-31 [F-108] User profile display: Updated CitySmartScaffold and MainDrawer with signed-in user info; avatar+name in app bar with PopupMenu (Profile/Preferences/Sign Out); drawer header with user details and sign-out confirmation dialog.
 - 2026-01-31 [F-107] Ticket Tracker: Built TicketTrackerScreen with tab-based UI (Open/Paid/Add New); ImagePicker photo capture; manual entry form; payment tracking with late fee calculations; dashboard tile and route.
 - 2026-01-31 [F-106] Parking Finder: Created ParkingFinderScreen with FlutterMap; 10 Milwaukee parking locations (garages/lots/street); color-coded markers (Blue=Garage, Green=Lot, Yellow=Street); tap for details with Google Maps directions.

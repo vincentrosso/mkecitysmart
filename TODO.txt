@@ -66,11 +66,12 @@ NOTES:
 NOTES:
 - 2026-01-11: Verified that sightings can be created and persist correctly in Firestore. Manually tested documents to prove feed invisibility is caused by path/schema mismatch. Established that the data layer is sound when written to correct collections.
 
-[F-006] [NEXT] (P0) Sightings feed: query + filters work
+[F-006] [DONE] (P0) Sightings feed: query + filters work
 - Filter: radius + time window (ex: last 2 hours)
 - Sort newest first
 - Pagination (basic)
 NOTES:
+- 2026-01-31: Implemented full feed filtering system. Created FeedFilterService for query building and radius calculations. Updated FeedScreen with filter bar UI (radius: 1mi/5mi/10mi/city-wide; time: 1hr/2hr/6hr/24hr/all). Radius filter uses haversine distance from user's current position. Time filter queries Firestore by createdAt. Added pagination with "Load More" button (20 items per page). Cards show relative time and distance from user. Pull-to-refresh support.
 
 [F-007] [DONE] (P0) Expiration system for “live sightings”
 - Auto-expire after X minutes/hours
@@ -209,6 +210,9 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-01-31 — [F-006] Sightings feed: query + filters work
+  Result: Implemented full feed filtering system. Created FeedFilterService for query building and radius calculations. Updated FeedScreen with filter bar UI (radius: 1mi/5mi/10mi/city-wide; time: 1hr/2hr/6hr/24hr/all). Haversine distance filtering, time window queries, pagination with Load More (20/page). Cards show relative time and distance.
+  Evidence: Git commits; FeedFilterService + FeedScreen updated
 2026-01-31 — [F-108] User profile display in app bar
   Result: Updated CitySmartScaffold and MainDrawer with user profile display. Shows avatar+name when signed in, PopupMenuButton with Profile/Preferences/Sign Out. Drawer header shows user info with sign-out confirmation dialog.
   Evidence: Git commit 5f2852c; TestFlight build pending
