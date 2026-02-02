@@ -62,10 +62,15 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
       ]);
       _locationRisk = results[0] as LocationRisk?;
       _riskZones = results[1] as List<RiskZone>;
-      debugPrint('Loaded \${_riskZones.length} risk zones');
+      debugPrint('Loaded ${_riskZones.length} risk zones');
+      
+      // If no zones loaded, show error
+      if (_riskZones.isEmpty) {
+        _error = 'No risk zone data available. The backend may be unavailable.';
+      }
     } catch (e) {
-      debugPrint('Failed to load citation risk: \$e');
-      _error = 'Failed to load risk data. Pull to refresh.';
+      debugPrint('Failed to load citation risk: $e');
+      _error = 'Failed to load risk data: $e';
     }
     
     setState(() {

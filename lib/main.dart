@@ -265,19 +265,32 @@ class MKEParkApp extends StatelessWidget {
         userRepository: userRepository,
         firebaseReady: firebaseReady,
       )..initialize(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'MKE CitySmart',
-        theme: buildCitySmartTheme(),
-        initialRoute: '/',
-        onUnknownRoute: (settings) => MaterialPageRoute(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: Text('Route not found: ${settings.name}'),
+      child: Consumer<UserProvider>(
+        builder: (context, provider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'MKE CitySmart',
+            theme: buildCitySmartTheme(),
+            locale: Locale(provider.languageCode),
+            supportedLocales: const [
+              Locale('en'),
+              Locale('es'),
+              Locale('hmn'),
+              Locale('ar'),
+              Locale('fr'),
+              Locale('zh'),
+              Locale('hi'),
+              Locale('el'),
+            ],
+            initialRoute: '/',
+            onUnknownRoute: (settings) => MaterialPageRoute(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: Text('Route not found: ${settings.name}'),
+                ),
+              ),
             ),
-          ),
-        ),
-        routes: {
+            routes: {
           '/': (context) => const _InitialRouteDecider(),
           '/onboarding': (context) => const OnboardingScreen(),
           '/dashboard': (context) => const DashboardScreen(),
@@ -324,6 +337,8 @@ class MKEParkApp extends StatelessWidget {
             }
             return AlertDetailScreen(alertId: alertId);
           },
+        },
+          );
         },
       ),
     );

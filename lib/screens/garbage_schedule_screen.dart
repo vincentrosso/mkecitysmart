@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/garbage_schedule.dart';
 import '../providers/user_provider.dart';
+import '../services/calendar_service.dart';
 import '../services/garbage_schedule_service.dart';
 import '../services/location_service.dart';
 
@@ -88,19 +89,30 @@ class _GarbageScheduleScreenState extends State<GarbageScheduleScreen> {
                         'Smart reminders',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Get notified with 30-minute intervals on pickup day until the truck arrives',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       SwitchListTile(
                         title: const Text('Night before'),
+                        subtitle: const Text('Reminder at 7 PM'),
                         value: _nightBefore,
                         onChanged: (value) => setState(() => _nightBefore = value),
                       ),
                       SwitchListTile(
                         title: const Text('Morning of'),
+                        subtitle: const Text('Every 30 min until pickup'),
                         value: _morningOf,
                         onChanged: (value) => setState(() => _morningOf = value),
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        initialValue: _language,
+                        value: _language,
                         decoration: const InputDecoration(labelText: 'Language'),
                         items: const [
                           DropdownMenuItem(value: 'en', child: Text('English')),
@@ -111,31 +123,49 @@ class _GarbageScheduleScreenState extends State<GarbageScheduleScreen> {
                         ],
                         onChanged: (value) => setState(() => _language = value ?? 'en'),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       FilledButton.icon(
-                        onPressed: () {
-                          provider.scheduleGarbageReminders(
+                        onPressed: () async {
+                          await provider.scheduleGarbageReminders(
                             nightBefore: _nightBefore
                                 ? const Duration(hours: 12)
-                                : const Duration(hours: 0),
+                                : Duration.zero,
                             morningOf: _morningOf
                                 ? const Duration(hours: 2)
-                                : const Duration(hours: 0),
+                                : Duration.zero,
                             languageCode: _language,
+                            useRepeatingReminders: _morningOf,
                           );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Reminders scheduled.'),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.notifications_active),
-                    label: const Text('Schedule reminders'),
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Reminders scheduled! You\'ll get 30-min alerts on pickup day.'),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.notifications_active),
+                        label: const Text('Schedule app reminders'),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: schedules.isEmpty ? null : () async {
+                          await CalendarService.instance.addAllPickupsToCalendar(schedules);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Pickup events added to your calendar!'),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_month),
+                        label: const Text('Add to system calendar'),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
           const SizedBox(height: 12),
           Text(
             'Upcoming pickups (${schedules.length})',

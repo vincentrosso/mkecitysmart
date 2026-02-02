@@ -107,10 +107,76 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime when,
+    int? id,
   }) async {
-    // For web and to avoid API changes, fall back to an immediate local
-    // notification instead of true scheduling.
-    await showLocal(title: title, body: body);
+    // Skip if the scheduled time has already passed
+    if (when.isBefore(DateTime.now())) return;
+    
+    try {
+      final tzWhen = tz.TZDateTime.from(when, tz.local);
+      final notificationId = id ?? when.millisecondsSinceEpoch ~/ 1000;
+      
+      await _local.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        tzWhen,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'garbage_reminders',
+            'Garbage & Recycling Reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: null,
+      );
+    } catch (e) {
+      // Fallback to immediate notification if scheduling fails
+      log('Failed to schedule notification: $e');
+      await showLocal(title: title, body: body);
+    }
+  }
+
+  /// Schedule repeating reminders every 30 minutes until a cutoff time
+  Future<void> scheduleRepeatingReminders({
+    required String title,
+    required String body,
+    required DateTime startTime,
+    required DateTime cutoffTime,
+    required int baseId,
+  }) async {
+    var currentTime = startTime;
+    var idOffset = 0;
+    
+    while (currentTime.isBefore(cutoffTime)) {
+      if (currentTime.isAfter(DateTime.now())) {
+        await scheduleLocal(
+          title: title,
+          body: body,
+          when: currentTime,
+          id: baseId + idOffset,
+        );
+      }
+      currentTime = currentTime.add(const Duration(minutes: 30));
+      idOffset++;
+    }
+  }
+
+  /// Cancel all pending notifications
+  Future<void> cancelAllScheduled() async {
+    await _local.cancelAll();
+  }
+
+  /// Cancel a specific notification by ID
+  Future<void> cancelScheduled(int id) async {
+    await _local.cancel(id);
   }
 
   Future<void> _requestPermissions() async {

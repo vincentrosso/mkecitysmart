@@ -1207,28 +1207,56 @@ class UserProvider extends ChangeNotifier {
     Duration nightBefore = const Duration(hours: 12),
     Duration morningOf = const Duration(hours: 2),
     String languageCode = 'en',
+    bool useRepeatingReminders = true,
   }) async {
+    // Cancel any existing garbage reminders first
+    await NotificationService.instance.cancelAllScheduled();
+    
     final now = DateTime.now();
     final upcoming = _garbageSchedules.where((g) => g.pickupDate.isAfter(now));
+    var scheduleIndex = 0;
+    
     for (final sched in upcoming) {
-      final before = sched.pickupDate.subtract(nightBefore);
-      final morning = sched.pickupDate.subtract(morningOf);
+      final pickupTime = sched.pickupDate;
+      final nightBeforeTime = pickupTime.subtract(nightBefore);
+      final morningOfTime = pickupTime.subtract(morningOf);
       final typeLabel = _pickupLabel(sched.type, languageCode);
       final address = sched.address;
-      if (before.isAfter(now)) {
+      final routeId = sched.routeId;
+      
+      // Format pickup time for display
+      final pickupTimeStr = '${pickupTime.hour.toString().padLeft(2, '0')}:${pickupTime.minute.toString().padLeft(2, '0')}';
+      
+      // Night before reminder
+      if (nightBeforeTime.isAfter(now)) {
         await NotificationService.instance.scheduleLocal(
           title: _translate('Reminder', languageCode),
-          body: '$typeLabel pickup soon near $address',
-          when: before,
+          body: '$typeLabel pickup tomorrow at $pickupTimeStr (Route $routeId) - $address',
+          when: nightBeforeTime,
+          id: 100000 + scheduleIndex * 100,
         );
       }
-      if (morning.isAfter(now)) {
+      
+      // Morning of - use repeating reminders every 30 min until pickup time
+      if (useRepeatingReminders && morningOfTime.isAfter(now)) {
+        await NotificationService.instance.scheduleRepeatingReminders(
+          title: '🚛 $typeLabel ${_translate('Pickup', languageCode)}',
+          body: '$typeLabel truck coming at $pickupTimeStr - $address (Route $routeId)',
+          startTime: morningOfTime,
+          cutoffTime: pickupTime,
+          baseId: 200000 + scheduleIndex * 100,
+        );
+      } else if (morningOfTime.isAfter(now)) {
+        // Single morning reminder if repeating is disabled
         await NotificationService.instance.scheduleLocal(
           title: _translate('Reminder', languageCode),
-          body: '$typeLabel pickup today near $address',
-          when: morning,
+          body: '$typeLabel pickup today at $pickupTimeStr - $address',
+          when: morningOfTime,
+          id: 200000 + scheduleIndex * 100,
         );
       }
+      
+      scheduleIndex++;
     }
   }
 
@@ -1254,6 +1282,13 @@ class UserProvider extends ChangeNotifier {
         'zh': '提醒',
         'hi': 'स्मरण',
         'el': 'Υπενθύμιση',
+      },
+      'Pickup': {
+        'en': 'Pickup',
+        'fr': 'Ramassage',
+        'zh': '收集',
+        'hi': 'संग्रह',
+        'el': 'Συλλογή',
       },
     };
     final translations = dict[text];

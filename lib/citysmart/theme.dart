@@ -28,13 +28,12 @@ class CSTheme {
       secondary: secondary,
       tertiary: accent,
       surface: surface,
-      background: background,
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: background,
     
     // Card styling
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

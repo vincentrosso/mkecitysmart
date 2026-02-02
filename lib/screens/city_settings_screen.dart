@@ -80,7 +80,7 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
               Text('Language', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _languageCode,
+                value: _languageCode,
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
                   DropdownMenuItem(value: 'es', child: Text('Español')),
