@@ -566,10 +566,14 @@ class UserProvider extends ChangeNotifier {
         error: 'Phone sign-in is not available on web.',
       );
     }
+    
+    debugPrint('[PhoneAuth] Starting verification for: $phoneNumber');
+    
     final completer = Completer<PhoneAuthStartResult>();
     await auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (credential) async {
+        debugPrint('[PhoneAuth] Auto-verification completed');
         try {
           final result = await auth.signInWithCredential(credential);
           final user = result.user;
@@ -586,6 +590,7 @@ class UserProvider extends ChangeNotifier {
           }
           _setLastAuthError(null);
         } catch (e) {
+          debugPrint('[PhoneAuth] Auto-verification sign-in error: $e');
           if (!completer.isCompleted) {
             completer.complete(
               PhoneAuthStartResult(error: 'Phone sign-in failed.'),
@@ -595,13 +600,15 @@ class UserProvider extends ChangeNotifier {
         }
       },
       verificationFailed: (e) {
+        debugPrint('[PhoneAuth] Verification failed: ${e.code} - ${e.message}');
         final message = _mapPhoneError(e);
         if (!completer.isCompleted) {
           completer.complete(PhoneAuthStartResult(error: message));
         }
         _setLastAuthError(message);
       },
-      codeSent: (verificationId, _) {
+      codeSent: (verificationId, resendToken) {
+        debugPrint('[PhoneAuth] SMS code sent, verificationId: $verificationId');
         if (!completer.isCompleted) {
           completer.complete(
             PhoneAuthStartResult(
@@ -612,17 +619,19 @@ class UserProvider extends ChangeNotifier {
         }
         _setLastAuthError(null);
       },
-      codeAutoRetrievalTimeout: (_) {
+      codeAutoRetrievalTimeout: (verificationId) {
+        debugPrint('[PhoneAuth] Auto-retrieval timeout for: $verificationId');
+        // Don't treat timeout as error if code was already sent
         if (!completer.isCompleted) {
           completer.complete(
-            const PhoneAuthStartResult(
-              error: 'Verification timed out. Try again.',
+            PhoneAuthStartResult(
+              requiresSmsCode: true,
+              verificationId: verificationId,
             ),
           );
         }
-        _setLastAuthError('Verification timed out. Try again.');
       },
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 120),
     );
     return completer.future;
   }
@@ -672,15 +681,30 @@ class UserProvider extends ChangeNotifier {
   }
 
   String _mapPhoneError(FirebaseAuthException e) {
+    debugPrint('[PhoneAuth] Error code: ${e.code}, message: ${e.message}');
     switch (e.code) {
       case 'invalid-phone-number':
-        return 'The phone number looks invalid.';
+        return 'The phone number looks invalid. Use format: +1XXXXXXXXXX';
       case 'too-many-requests':
-        return 'Too many attempts. Try again later.';
+        return 'Too many attempts. Please wait a few minutes and try again.';
       case 'session-expired':
         return 'Verification expired. Request a new code.';
+      case 'invalid-verification-code':
+        return 'Invalid code. Please check and try again.';
+      case 'quota-exceeded':
+        return 'SMS quota exceeded. Please try again tomorrow.';
+      case 'app-not-authorized':
+        return 'App not authorized for phone auth. Contact support.';
+      case 'captcha-check-failed':
+        return 'Security check failed. Please try again.';
+      case 'missing-phone-number':
+        return 'Please enter a phone number.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'operation-not-allowed':
+        return 'Phone sign-in is not enabled. Contact support.';
       default:
-        return 'Phone verification failed (${e.code}).';
+        return 'Phone verification failed (${e.code}). Please try again.';
     }
   }
 

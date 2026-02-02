@@ -45,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage(error);
       return;
     }
-    _showMessage('Account created! You are now signed in.');
+    _showMessage('✓ Account created! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
@@ -63,6 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage(error);
       return;
     }
+    _showMessage('✓ Signed in with Google! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
@@ -74,21 +75,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final phone = await _promptForPhoneNumber();
     if (phone == null || !mounted) return;
     setState(() => _socialLoading = true);
+    _showMessage('Sending verification code to $phone...');
     final provider = context.read<UserProvider>();
     final result = await provider.startPhoneSignIn(phone);
-    setState(() => _socialLoading = false);
     if (!mounted) return;
     if (result.error != null) {
+      setState(() => _socialLoading = false);
       _showMessage(result.error!);
       return;
     }
     if (result.requiresSmsCode && result.verificationId != null) {
+      setState(() => _socialLoading = false);
+      _showMessage('Verification code sent! Check your SMS messages.');
       _phoneVerificationId = result.verificationId;
-      final code = await _promptForValue(
-        title: 'Enter code',
-        hint: '6-digit SMS code',
-        keyboardType: TextInputType.number,
-      );
+      final code = await _promptForSmsCode(phone);
       if (code == null || !mounted) return;
       setState(() => _socialLoading = true);
       final error = await provider.confirmPhoneCode(
@@ -102,13 +102,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _showMessage(error);
         return;
       }
-      _showMessage('Phone verified and account created.');
+      _showMessage('✓ Phone verified! Welcome to MKE CitySmart.');
       Navigator.pushReplacementNamed(context, '/dashboard');
       return;
     }
-    // Auto-verified path.
-    _showMessage('Phone verified and account created.');
+    // Auto-verified path (rare on iOS, common on Android with SMS Retriever).
+    setState(() => _socialLoading = false);
+    _showMessage('✓ Phone auto-verified! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
+  }
+  
+  Future<String?> _promptForSmsCode(String phoneNumber) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Enter verification code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'We sent a 6-digit code to $phoneNumber',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  letterSpacing: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '000000',
+                  counterText: '',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  if (value.length == 6) {
+                    Navigator.pop(ctx, value);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Didn\'t receive the code? Check your spam folder or try again in a few minutes.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.trim().length == 6) {
+                  Navigator.pop(ctx, controller.text.trim());
+                }
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return result;
   }
 
   /// Format phone number to E.164 format for Firebase
@@ -197,45 +271,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage(error);
       return;
     }
+    _showMessage('✓ Signed in with Apple! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
   void _showMessage(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  Future<String?> _promptForValue({
-    required String title,
-    required String hint,
-    TextInputType keyboardType = TextInputType.text,
-  }) async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            decoration: InputDecoration(hintText: hint),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
-    );
-    controller.dispose();
-    if (result == null || result.isEmpty) return null;
-    return result;
   }
 
   @override
