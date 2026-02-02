@@ -164,6 +164,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         subtitle: Text(profile.email),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // Quick access to Saved Places
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.place),
+                        title: const Text('Saved Places'),
+                        subtitle: const Text('Home, work, and favorites'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.pushNamed(context, '/saved-places'),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _nameController,

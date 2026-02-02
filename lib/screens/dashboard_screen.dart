@@ -158,6 +158,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'EV Chargers',
                     onTap: () => Navigator.pushNamed(context, '/charging'),
                   ),
+                  HomeTile(
+                    icon: Icons.local_shipping,
+                    title: 'Tow Helper',
+                    onTap: () => Navigator.pushNamed(context, '/tow-helper'),
+                  ),
+                  HomeTile(
+                    icon: Icons.place,
+                    title: 'Saved Places',
+                    onTap: () => Navigator.pushNamed(context, '/saved-places'),
+                  ),
                 ],
               ),
             ),

@@ -2,6 +2,20 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-01-31 [F-104] Tow Helper: Created TowHelperScreen with Recovery Guide (5-step process) and Tow Lots directory; Milwaukee tow lot data with phone/address/hours; quick-dial phone integration; Google/Apple Maps directions; fee estimator; tips to avoid future tows; dashboard tile.
+- 2026-01-31 [F-103] Saved Places: SavedPlace model + SavedPlacesService with Firestore persistence, local caching, geohash encoding; SavedPlacesScreen with home/work cards, favorites list, place editor sheet; per-place notification radius; linked from Profile screen.
+- 2026-01-31 [F-403] Analytics Instrumentation: Added firebase_analytics + firebase_crashlytics; AnalyticsService with screen/event/error tracking; FlutterError.onError and PlatformDispatcher.onError handlers; user ID binding; tracking in FeedScreen, SavedPlacesScreen, TowHelperScreen.
+- 2026-01-31 [F-402] Performance: Enabled Firestore persistence (100MB cache); CacheService with LRU eviction, TTL, namespaced storage; geohash-based querying in FeedFilterService.
+- 2026-01-31 [F-006] Sightings feed filters: Created FeedFilterService for scalable query building; FeedScreen with filter bar UI (radius: 1mi/5mi/10mi/city-wide; time: 1hr/2hr/6hr/24hr/all); haversine distance filtering from user position; Firestore time window queries; pagination with Load More (20/page); improved card UI with relative time and distance display.
+- 2026-01-31 [F-108] User profile display: Updated CitySmartScaffold and MainDrawer with signed-in user info; avatar+name in app bar with PopupMenu (Profile/Preferences/Sign Out); drawer header with user details and sign-out confirmation dialog.
+- 2026-01-31 [F-107] Ticket Tracker: Built TicketTrackerScreen with tab-based UI (Open/Paid/Add New); ImagePicker photo capture; manual entry form; payment tracking with late fee calculations; dashboard tile and route.
+- 2026-01-31 [F-106] Parking Finder: Created ParkingFinderScreen with FlutterMap; 10 Milwaukee parking locations (garages/lots/street); color-coded markers (Blue=Garage, Green=Lot, Yellow=Street); tap for details with Google Maps directions.
+- 2026-01-31 [F-105] User onboarding: 5-page flow (Welcome, Avoid Tickets, Alt-Side, Notifications, Create Account); OnboardingService with SharedPreferences; integrated into main.dart routing; CitySmart brand styling.
+- 2026-01-31 [F-405] Garbage Day fix: Fixed URL case sensitivity in GarbageScheduleService; Milwaukee DPW API changed `DPWServletsPublic` → `DpwServletsPublic`; was causing HTTP 302 redirects.
+- 2026-01-31 [F-203] EV charging map: Simplified for mobile; collapsible filter panel; FlutterMap with OpenChargeMap; connector filters (CCS/CHAdeMO/J1772/Tesla); color-coded markers by power; tap-to-expand station details.
+- 2026-01-31 [F-102] Smart notifications complete: Added sendHighRiskAlerts Cloud Function for citation-based risk alerts; integrated with parking risk heatmap system.
+- 2026-01-31 [F-101] Parking risk heatmap: Processed 466K Milwaukee citations into 44 geohash risk zones (Firestore citation_risk_zones); Cloud Functions (getRiskForLocation, getRiskZones, sendHighRiskAlerts); ParkingRiskService + ParkingRiskBadge; FlutterMap heatmap with color-coded risk levels (green/yellow/orange/red).
+- 2026-01-31 [F-404] TestFlight build: New archive with onboarding, parking finder, ticket tracker, EV map improvements, user profile display, parking risk heatmap; ready for App Store Connect upload.
 - 2026-01-18 [F-102] Push notification infrastructure completed (FCM tokens, APNs forwarding, sendNearbyAlerts callable); emulator testing with rate limits/audit logs; ready for production activation.
 - 2026-01-17/18 [F-008] Moderation baseline implemented; report button increments reports; 4+ reports exclude from feed; per-anonymous UID rate limiting; verified locally.
 - 2026-01-16 [F-404] Production build uploaded to App Store Connect; internal TestFlight enabled; full core loop verified on real iOS devices (submit → appear → expire → disappear).
@@ -69,7 +83,61 @@ Change log (most recent first)
   * iOS/macOS app icons updated from `assets/MKE_AppIcon.appiconset.zip` into:
     - `ios/Runner/Assets.xcassets/AppIcon.appiconset/`
     - `macos/Runner/Assets.xcassets/AppIcon.appiconset/` (currently uses the same set; replace with macOS-specific sizes if provided).
-  * Web manifest renamed to “MKE CitySmart” with updated icons (`web/icons/Icon-192.png`, `Icon-512.png`, maskable variants) and favicon regenerated from the 1024px master.
+  * Web manifest renamed to "MKE CitySmart" with updated icons (`web/icons/Icon-192.png`, `Icon-512.png`, maskable variants) and favicon regenerated from the 1024px master.
+
+New Features (2026-01-31)
+- Onboarding:
+  * 5-page first-time user experience in `lib/screens/onboarding_screen.dart`
+  * Pages: Welcome, Avoid Tickets, Alt-Side Parking, Notifications, Create Account
+  * OnboardingService (`lib/services/onboarding_service.dart`) tracks completion via SharedPreferences
+  * Auto-routes first-time users; skips for returning users
+- Parking Risk Heatmap:
+  * Citation data: 466K Milwaukee parking citations processed into 44 geohash risk zones
+  * Firestore collection: `citation_risk_zones` with geohash, riskScore, citationCount, topViolations, coordinates
+  * Cloud Functions: `getRiskForLocation`, `getRiskZones`, `sendHighRiskAlerts` (us-central1, nodejs20)
+  * Flutter: `ParkingRiskService` (`lib/services/parking_risk_service.dart`), `ParkingRiskBadge` widget
+  * Heatmap screen: `lib/screens/parking_heatmap_screen.dart` with FlutterMap + color-coded risk polygons
+- Parking Finder:
+  * `lib/screens/parking_finder_screen.dart` - interactive map with 10 Milwaukee parking locations
+  * Color-coded markers: Blue (Garage), Green (Lot), Yellow (Street)
+  * Tap markers for details; "Get Directions" launches Google Maps
+  * Route: `/parking-finder`, dashboard tile added
+- Ticket Tracker:
+  * `lib/screens/ticket_tracker_screen.dart` - photo capture and ticket tracking
+  * Tab-based UI: Open tickets, Paid tickets, Add New
+  * ImagePicker for photo capture; manual entry form with violation type, amount, due date
+  * Payment tracking with late fee calculations ($25 after 14 days)
+  * Route: `/ticket-tracker`, dashboard tile added
+- EV Charging Map:
+  * Simplified `lib/screens/charging_map_screen.dart` for mobile
+  * Collapsible filter panel with connector types (CCS, CHAdeMO, J1772, Tesla)
+  * FlutterMap with OpenChargeMap integration
+  * Color-coded markers by power level; tap-to-expand station details
+- User Profile Display:
+  * `CitySmartScaffold` updated with user avatar + name in app bar when signed in
+  * PopupMenuButton with Profile, Preferences, Sign Out options
+  * `MainDrawer` header shows avatar, name, email with Sign Out option
+  * Sign-out confirmation dialog prevents accidental logout
+- Saved Places (F-103):
+  * `lib/models/saved_place.dart` - SavedPlace model with Firestore/JSON serialization, geohash support
+  * `lib/services/saved_places_service.dart` - Firestore persistence, local caching, real-time sync
+  * `lib/screens/saved_places_screen.dart` - Home/work cards, favorites list, place editor sheet
+  * Per-place notification radius settings (0.1 to 2.0 miles)
+  * One home/work location, up to 50 favorites per user
+  * Linked from Profile screen; initialized in app bootstrap
+- Tow Helper (F-104):
+  * `lib/screens/tow_helper_screen.dart` - Vehicle recovery guidance
+  * Recovery Guide tab: 5-step process with phone/map actions
+  * Tow Lots tab: Milwaukee tow lot directory with contacts
+  * Quick-dial phone integration, Google/Apple Maps directions
+  * Fee estimator with tow/storage/admin breakdown
+  * Tips to avoid future tows
+- Performance + Analytics (F-402/F-403):
+  * Firestore persistence enabled (100MB cache) for offline-first
+  * `lib/services/cache_service.dart` - LRU eviction, TTL, namespaced storage
+  * `lib/services/analytics_service.dart` - Firebase Analytics + Crashlytics wrapper
+  * Automatic crash reporting via FlutterError.onError, PlatformDispatcher.onError
+  * Event tracking in FeedScreen, SavedPlacesScreen, TowHelperScreen
 
 Open items / reminders:
 - If re-enabling welcome or quick-start, restore content in `main.dart`.
@@ -79,10 +147,10 @@ Open items / reminders:
 - The project should maintain at least 80% unit test coverage.
 
 App layout (current)
-- Shell: `CitySmartScaffold` (drawer + title + bottom nav) wraps dashboard/feed/map/profile/auth/vehicles/charging map.
-- Routes: `/dashboard` (default home), `/citysmart-feed`, `/citysmart-map`, `/profile`, `/auth/login`, `/auth/register`, `/vehicles`, `/charging-map`.
-- Drawer: dashboard, map, feed, profile; auth/profile icon in top-right of scaffold.
-- Dashboard tiles include alerts, permits, tickets, street sweeping, vehicles, EV chargers (last), alt side parking (third).
+- Shell: `CitySmartScaffold` (drawer + title + bottom nav + user profile) wraps all main screens.
+- Routes: `/dashboard` (default home), `/citysmart-feed`, `/citysmart-map`, `/profile`, `/auth/login`, `/auth/register`, `/vehicles`, `/charging-map`, `/parking-heatmap`, `/parking-finder`, `/ticket-tracker`, `/onboarding`, `/saved-places`, `/tow-helper`.
+- Drawer: dashboard, map, feed, profile, parking finder, ticket tracker, tow helper, saved places; user info in header with sign-out.
+- Dashboard tiles include alerts, permits, tickets, street sweeping, vehicles, EV chargers, alt side parking, parking finder, ticket tracker, parking risk heatmap, tow helper, saved places.
 - Quick start, welcome banner, and promo banner are disabled via flags in `lib/main.dart` / `dashboard_screen.dart`.
 
 Coverage and size snapshot (after latest tests)

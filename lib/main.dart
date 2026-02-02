@@ -1,10 +1,14 @@
 import 'dart:developer' as developer;
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'services/analytics_service.dart';
+import 'services/saved_places_service.dart';
 
 import 'citysmart/branding_preview.dart';
 import 'firebase_bootstrap.dart';
@@ -44,10 +48,36 @@ import 'screens/alert_detail_screen.dart';
 import 'screens/auth_diagnostics_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/parking_finder_screen.dart';
+import 'screens/saved_places_screen.dart';
+import 'screens/tow_helper_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set up error handlers for crash reporting BEFORE anything else
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // Log to analytics once initialized (fire-and-forget)
+    AnalyticsService.instance.recordError(
+      details.exception,
+      stackTrace: details.stack,
+      reason: details.context?.toString(),
+      fatal: true,
+    );
+  };
+  
+  // Handle async errors that aren't caught by Flutter's error handling
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AnalyticsService.instance.recordError(
+      error,
+      stackTrace: stack,
+      reason: 'PlatformDispatcher unhandled error',
+      fatal: true,
+    );
+    return true; // Error handled
+  };
+  
   // Start UI immediately; bootstrap runs asynchronously to avoid splash hangs.
   runApp(const _BootstrapApp());
 }
@@ -110,6 +140,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       }
 
       if (firebaseReady) {
+        // Initialize analytics and crash reporting
+        await diagnostics
+            .recordFuture<void>(
+              'Analytics',
+              () => AnalyticsService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'Analytics & Crashlytics ready.',
+            )
+            .timeout(const Duration(seconds: 5), onTimeout: () async {});
+        
         // Local emulator wiring disabled for prod builds.
         // if (kDebugMode) {
         //   FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5003);
@@ -125,6 +165,22 @@ class _BootstrapAppState extends State<_BootstrapApp> {
                   entry.details = 'Signed in (anonymous ok).',
             )
             .timeout(const Duration(seconds: 8), onTimeout: () async {});
+        
+        // Set user ID for analytics once auth is ready
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          AnalyticsService.instance.setUserId(uid);
+        }
+        
+        // Initialize SavedPlacesService for location-based alerts
+        await diagnostics
+            .recordFuture<void>(
+              'SavedPlaces',
+              () => SavedPlacesService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'Saved places loaded.',
+            )
+            .timeout(const Duration(seconds: 5), onTimeout: () async {});
       }
 
       if (!kIsWeb) {
@@ -253,6 +309,8 @@ class MKEParkApp extends StatelessWidget {
           '/alternate-parking': (context) => const AlternateSideParkingScreen(),
           '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
           '/parking-finder': (context) => const ParkingFinderScreen(),
+          '/saved-places': (context) => const SavedPlacesScreen(),
+          '/tow-helper': (context) => const TowHelperScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
