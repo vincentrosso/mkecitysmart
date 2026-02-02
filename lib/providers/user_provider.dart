@@ -8,6 +8,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/permit.dart';
+import '../models/parking_event.dart';
 import '../models/payment_receipt.dart';
 import '../models/permit_eligibility.dart';
 import '../models/reservation.dart';
@@ -29,6 +30,7 @@ import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../services/parking_history_service.dart';
 import '../services/report_api_service.dart';
 import '../services/subscription_service.dart';
 import '../services/ticket_api_service.dart';
@@ -898,6 +900,15 @@ class UserProvider extends ChangeNotifier {
     // Also show local notification if nearby (for immediate feedback)
     _maybeNotifyNearbySighting(report);
     
+    // Log to parking history
+    unawaited(ParkingHistoryService.instance.logSightingReported(
+      sightingType: type == SightingType.towTruck ? 'Tow Truck' : 'Parking Enforcer',
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+      notes: notes.isNotEmpty ? notes : null,
+    ));
+    
     notifyListeners();
     unawaited(
       CloudLogService.instance.logEvent(
@@ -944,6 +955,15 @@ class UserProvider extends ChangeNotifier {
             : 'Enforcer sighting nearby';
         final body = '${report.location} • ${miles.toStringAsFixed(1)} mi away';
         await NotificationService.instance.showLocal(title: title, body: body);
+        
+        // Log to parking history
+        unawaited(ParkingHistoryService.instance.logEnforcementAlert(
+          isTowTruck: report.type == SightingType.towTruck,
+          description: body,
+          location: report.location,
+          latitude: report.latitude,
+          longitude: report.longitude,
+        ));
       }
     } catch (_) {
       // Silent failure; best-effort.
@@ -1262,6 +1282,13 @@ class UserProvider extends ChangeNotifier {
           when: nightBeforeTime,
           id: 100000 + scheduleIndex * 100,
         );
+        // Log to parking history (only once, not for each reminder)
+        if (scheduleIndex == 0) {
+          unawaited(ParkingHistoryService.instance.logGarbageReminder(
+            collectionType: typeLabel,
+            collectionDate: pickupTime,
+          ));
+        }
       }
       
       // Morning of - use repeating reminders every 30 min until pickup time
