@@ -16,9 +16,9 @@ class SubscriptionService extends ChangeNotifier {
   // Test/Development key (works for all platforms during development)
   static const _revenueCatTestKey = 'test_JhJpIJnyYopCsUtcPVYZKarOQEO';
   
-  // Production keys - replace with actual keys from RevenueCat dashboard
-  static const _revenueCatApiKeyiOS = 'appl_YOUR_IOS_KEY_HERE';
-  static const _revenueCatApiKeyAndroid = 'goog_YOUR_ANDROID_KEY_HERE';
+  // Production keys from RevenueCat dashboard
+  static const _revenueCatApiKeyiOS = 'appl_nPogZtDlCliLIbcHVwxxguJacpq';
+  static const _revenueCatApiKeyAndroid = 'goog_YOUR_ANDROID_KEY_HERE'; // TODO: Add Android key when ready
   
   // Entitlement identifiers (must match RevenueCat dashboard)
   static const entitlementPro = 'MKE CitySmart Pro';

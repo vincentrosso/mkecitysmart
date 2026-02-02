@@ -57,7 +57,7 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set up error handlers for crash reporting BEFORE anything else
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -69,7 +69,7 @@ Future<void> main() async {
       fatal: true,
     );
   };
-  
+
   // Handle async errors that aren't caught by Flutter's error handling
   PlatformDispatcher.instance.onError = (error, stack) {
     AnalyticsService.instance.recordError(
@@ -80,7 +80,7 @@ Future<void> main() async {
     );
     return true; // Error handled
   };
-  
+
   // Start UI immediately; bootstrap runs asynchronously to avoid splash hangs.
   runApp(const _BootstrapApp());
 }
@@ -122,7 +122,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             'Firebase',
             initializeFirebaseIfAvailable,
             onSuccess: (ready, entry) {
-              entry.details = ready ? 'Initialization completed.' : 'Config missing.';
+              entry.details = ready
+                  ? 'Initialization completed.'
+                  : 'Config missing.';
             },
           )
           .timeout(const Duration(seconds: 12), onTimeout: () => false);
@@ -132,7 +134,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       if (firebaseReady) {
         try {
           await FirebaseAuth.instance.signInAnonymously();
-          print('Anonymous auth UID: ${FirebaseAuth.instance.currentUser?.uid}');
+          print(
+            'Anonymous auth UID: ${FirebaseAuth.instance.currentUser?.uid}',
+          );
         } catch (e, st) {
           print('Anonymous sign-in failed: $e');
           // Log to cloud if available; ignore failures here.
@@ -152,7 +156,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
                   entry.details = 'Analytics & Crashlytics ready.',
             )
             .timeout(const Duration(seconds: 5), onTimeout: () async {});
-        
+
         // Local emulator wiring disabled for prod builds.
         // if (kDebugMode) {
         //   FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5003);
@@ -168,20 +172,19 @@ class _BootstrapAppState extends State<_BootstrapApp> {
                   entry.details = 'Signed in (anonymous ok).',
             )
             .timeout(const Duration(seconds: 8), onTimeout: () async {});
-        
+
         // Set user ID for analytics once auth is ready
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid != null) {
           AnalyticsService.instance.setUserId(uid);
         }
-        
+
         // Initialize SavedPlacesService for location-based alerts
         await diagnostics
             .recordFuture<void>(
               'SavedPlaces',
               () => SavedPlacesService.instance.initialize(),
-              onSuccess: (_, entry) =>
-                  entry.details = 'Saved places loaded.',
+              onSuccess: (_, entry) => entry.details = 'Saved places loaded.',
             )
             .timeout(const Duration(seconds: 5), onTimeout: () async {});
       }
@@ -223,8 +226,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             .recordFuture<void>(
               'SubscriptionService',
               () => SubscriptionService.instance.initialize(),
-              onSuccess: (_, entry) =>
-                  entry.details = 'RevenueCat configured.',
+              onSuccess: (_, entry) => entry.details = 'RevenueCat configured.',
             )
             .timeout(const Duration(seconds: 5), onTimeout: () async {});
 
@@ -233,8 +235,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             .recordFuture<void>(
               'AdService',
               () => AdService.instance.initialize(testMode: kDebugMode),
-              onSuccess: (_, entry) =>
-                  entry.details = 'AdMob configured.',
+              onSuccess: (_, entry) => entry.details = 'AdMob configured.',
             )
             .timeout(const Duration(seconds: 5), onTimeout: () async {});
       }
@@ -242,7 +243,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await diagnostics
           .recordFuture<void>(
             'CloudLogService',
-            () => CloudLogService.instance.initialize(firebaseReady: firebaseReady),
+            () => CloudLogService.instance.initialize(
+              firebaseReady: firebaseReady,
+            ),
           )
           .timeout(const Duration(seconds: 8), onTimeout: () async {});
     } catch (e, st) {
@@ -258,7 +261,10 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             () async => UserRepository(),
             onSuccess: (_, entry) => entry.details = 'Repository ready.',
           )
-          .timeout(const Duration(seconds: 8), onTimeout: () => UserRepository());
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () => UserRepository(),
+          );
     } catch (_) {
       repo = UserRepository();
     }
@@ -275,9 +281,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
     if (_repository == null || _diagnostics == null) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -328,61 +332,62 @@ class MKEParkApp extends StatelessWidget {
             initialRoute: '/',
             onUnknownRoute: (settings) => MaterialPageRoute(
               builder: (context) => Scaffold(
-                body: Center(
-                  child: Text('Route not found: ${settings.name}'),
-                ),
+                body: Center(child: Text('Route not found: ${settings.name}')),
               ),
             ),
             routes: {
-          '/': (context) => const _InitialRouteDecider(),
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
-          '/landing': (context) => LandingScreen(),
-          '/auth': (context) => const AuthScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/auth-diagnostics': (context) => const AuthDiagnosticsScreen(),
-          '/parking': (context) => const ParkingScreen(),
-          '/permit': (context) => const PermitScreen(),
-          '/permit-workflow': (context) => const PermitWorkflowScreen(),
-          '/sweeping': (context) => const StreetSweepingScreen(),
-          '/history': (context) => HistoryScreen(),
-          '/history/receipts': (context) => const HistoryReceiptsScreen(),
-          '/branding': (context) => const BrandingPreviewPage(),
-          '/profile': (context) => const ProfileScreen(),
-          '/vehicles': (context) => const VehicleManagementScreen(),
-          '/preferences': (context) => const PreferencesScreen(),
-          '/alerts': (context) => const AlertsLandingScreen(),
-          '/charging': (context) => const ChargingMapScreen(),
-          '/report-sighting': (context) => const ReportSightingScreen(),
-          '/tickets': (context) => const TicketWorkflowScreen(),
-          '/ticket-tracker': (context) => const TicketTrackerScreen(),
-          '/subscriptions': (context) => const SubscriptionScreen(),
-          '/maintenance': (context) => const MaintenanceReportScreen(),
-          '/predictions': (context) => const ChargingMapScreen(),
-          '/garbage': (context) => const GarbageScheduleScreen(),
-          '/city-settings': (context) => const CitySettingsScreen(),
-          '/alternate-side-parking': (context) => const AlternateSideParkingScreen(),
-          '/alternate-parking': (context) => const AlternateSideParkingScreen(),
-          '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
-          '/parking-finder': (context) => const ParkingFinderScreen(),
-          '/saved-places': (context) => const SavedPlacesScreen(),
-          '/tow-helper': (context) => const TowHelperScreen(),
-          '/sponsors': (context) => const SponsorsScreen(),
-          '/referrals': (context) => const ReferralScreen(),
-          '/citysmart-dashboard': (context) => const DashboardScreen(),
-          '/citysmart-map': (context) => const MapScreen(),
-          '/citysmart-feed': (context) => const FeedScreen(),
-          '/feed': (context) => const FeedScreen(),
-          '/alert-detail': (context) {
-            final alertId = ModalRoute.of(context)?.settings.arguments as String?;
-            if (alertId == null) {
-              return const Scaffold(
-                body: Center(child: Text('Alert ID missing')),
-              );
-            }
-            return AlertDetailScreen(alertId: alertId);
-          },
-        },
+              '/': (context) => const _InitialRouteDecider(),
+              '/onboarding': (context) => const OnboardingScreen(),
+              '/dashboard': (context) => const DashboardScreen(),
+              '/landing': (context) => LandingScreen(),
+              '/auth': (context) => const AuthScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/auth-diagnostics': (context) => const AuthDiagnosticsScreen(),
+              '/parking': (context) => const ParkingScreen(),
+              '/permit': (context) => const PermitScreen(),
+              '/permit-workflow': (context) => const PermitWorkflowScreen(),
+              '/sweeping': (context) => const StreetSweepingScreen(),
+              '/history': (context) => HistoryScreen(),
+              '/history/receipts': (context) => const HistoryReceiptsScreen(),
+              '/branding': (context) => const BrandingPreviewPage(),
+              '/profile': (context) => const ProfileScreen(),
+              '/vehicles': (context) => const VehicleManagementScreen(),
+              '/preferences': (context) => const PreferencesScreen(),
+              '/alerts': (context) => const AlertsLandingScreen(),
+              '/charging': (context) => const ChargingMapScreen(),
+              '/report-sighting': (context) => const ReportSightingScreen(),
+              '/tickets': (context) => const TicketWorkflowScreen(),
+              '/ticket-tracker': (context) => const TicketTrackerScreen(),
+              '/subscriptions': (context) => const SubscriptionScreen(),
+              '/maintenance': (context) => const MaintenanceReportScreen(),
+              '/predictions': (context) => const ChargingMapScreen(),
+              '/garbage': (context) => const GarbageScheduleScreen(),
+              '/city-settings': (context) => const CitySettingsScreen(),
+              '/alternate-side-parking': (context) =>
+                  const AlternateSideParkingScreen(),
+              '/alternate-parking': (context) =>
+                  const AlternateSideParkingScreen(),
+              '/parking-heatmap': (context) => const ParkingHeatmapScreen(),
+              '/parking-finder': (context) => const ParkingFinderScreen(),
+              '/saved-places': (context) => const SavedPlacesScreen(),
+              '/tow-helper': (context) => const TowHelperScreen(),
+              '/sponsors': (context) => const SponsorsScreen(),
+              '/referrals': (context) => const ReferralScreen(),
+              '/citysmart-dashboard': (context) => const DashboardScreen(),
+              '/citysmart-map': (context) => const MapScreen(),
+              '/citysmart-feed': (context) => const FeedScreen(),
+              '/feed': (context) => const FeedScreen(),
+              '/alert-detail': (context) {
+                final alertId =
+                    ModalRoute.of(context)?.settings.arguments as String?;
+                if (alertId == null) {
+                  return const Scaffold(
+                    body: Center(child: Text('Alert ID missing')),
+                  );
+                }
+                return AlertDetailScreen(alertId: alertId);
+              },
+            },
           );
         },
       ),
