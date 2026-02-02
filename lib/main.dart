@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'services/analytics_service.dart';
 import 'services/ad_service.dart';
+import 'services/parking_history_service.dart';
 import 'services/saved_places_service.dart';
 import 'services/subscription_service.dart';
 
@@ -195,6 +196,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
                   entry.details = 'Permissions/token/handlers configured.',
             )
             .timeout(const Duration(seconds: 8), onTimeout: () async {});
+
+        // Initialize parking history service
+        await diagnostics
+            .recordFuture<void>(
+              'ParkingHistoryService',
+              () => ParkingHistoryService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'Parking history loaded.',
+            )
+            .timeout(const Duration(seconds: 3), onTimeout: () async {});
 
         // Initialize subscription service (RevenueCat)
         await diagnostics

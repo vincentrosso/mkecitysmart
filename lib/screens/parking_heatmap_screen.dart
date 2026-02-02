@@ -109,6 +109,8 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   Widget build(BuildContext context) {
     // Check if user has premium access to heatmaps
     final hasAccess = FeatureGate.hasAccess(context, PremiumFeature.heatmap);
+    final isTrialAccess = FeatureGate.isTrialAccess(context, PremiumFeature.heatmap);
+    final trialDaysRemaining = FeatureGate.getTrialDaysRemaining(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -142,6 +144,50 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
               ? const Center(child: CircularProgressIndicator())
               : Column(
                   children: [
+                    // Free trial banner
+                    if (isTrialAccess)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF5E8A45),
+                              const Color(0xFF7CA726),
+                            ],
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Free Trial: $trialDaysRemaining day${trialDaysRemaining == 1 ? '' : 's'} remaining',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pushNamed(context, '/subscription'),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              ),
+                              child: const Text(
+                                'Upgrade',
+                                style: TextStyle(
+                                  color: Color(0xFF5E8A45),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
                     // Risk badge at top
                     if (_locationRisk != null)
                       Container(

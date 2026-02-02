@@ -8,6 +8,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/permit.dart';
+import '../models/parking_event.dart';
 import '../models/payment_receipt.dart';
 import '../models/permit_eligibility.dart';
 import '../models/reservation.dart';
@@ -29,6 +30,7 @@ import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../services/parking_history_service.dart';
 import '../services/report_api_service.dart';
 import '../services/subscription_service.dart';
 import '../services/ticket_api_service.dart';
@@ -330,6 +332,7 @@ class UserProvider extends ChangeNotifier {
           permits: _seedPermits(ownerHint: name),
           reservations: _seedReservations(ownerHint: name),
           sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+          createdAt: DateTime.now(),
         );
         await _repository.saveProfile(offlineProfile);
         _profile = offlineProfile;
@@ -395,6 +398,7 @@ class UserProvider extends ChangeNotifier {
           permits: _seedPermits(),
           reservations: _seedReservations(),
           sweepingSchedules: _seedSweepingSchedules(),
+          createdAt: DateTime.now(),
         );
         await _repository.saveProfile(_profile!);
         _guestMode = false;
@@ -566,10 +570,14 @@ class UserProvider extends ChangeNotifier {
         error: 'Phone sign-in is not available on web.',
       );
     }
+    
+    debugPrint('[PhoneAuth] Starting verification for: $phoneNumber');
+    
     final completer = Completer<PhoneAuthStartResult>();
     await auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (credential) async {
+        debugPrint('[PhoneAuth] Auto-verification completed');
         try {
           final result = await auth.signInWithCredential(credential);
           final user = result.user;
@@ -586,6 +594,7 @@ class UserProvider extends ChangeNotifier {
           }
           _setLastAuthError(null);
         } catch (e) {
+          debugPrint('[PhoneAuth] Auto-verification sign-in error: $e');
           if (!completer.isCompleted) {
             completer.complete(
               PhoneAuthStartResult(error: 'Phone sign-in failed.'),
@@ -595,13 +604,15 @@ class UserProvider extends ChangeNotifier {
         }
       },
       verificationFailed: (e) {
+        debugPrint('[PhoneAuth] Verification failed: ${e.code} - ${e.message}');
         final message = _mapPhoneError(e);
         if (!completer.isCompleted) {
           completer.complete(PhoneAuthStartResult(error: message));
         }
         _setLastAuthError(message);
       },
-      codeSent: (verificationId, _) {
+      codeSent: (verificationId, resendToken) {
+        debugPrint('[PhoneAuth] SMS code sent, verificationId: $verificationId');
         if (!completer.isCompleted) {
           completer.complete(
             PhoneAuthStartResult(
@@ -612,17 +623,19 @@ class UserProvider extends ChangeNotifier {
         }
         _setLastAuthError(null);
       },
-      codeAutoRetrievalTimeout: (_) {
+      codeAutoRetrievalTimeout: (verificationId) {
+        debugPrint('[PhoneAuth] Auto-retrieval timeout for: $verificationId');
+        // Don't treat timeout as error if code was already sent
         if (!completer.isCompleted) {
           completer.complete(
-            const PhoneAuthStartResult(
-              error: 'Verification timed out. Try again.',
+            PhoneAuthStartResult(
+              requiresSmsCode: true,
+              verificationId: verificationId,
             ),
           );
         }
-        _setLastAuthError('Verification timed out. Try again.');
       },
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 120),
     );
     return completer.future;
   }
@@ -672,15 +685,30 @@ class UserProvider extends ChangeNotifier {
   }
 
   String _mapPhoneError(FirebaseAuthException e) {
+    debugPrint('[PhoneAuth] Error code: ${e.code}, message: ${e.message}');
     switch (e.code) {
       case 'invalid-phone-number':
-        return 'The phone number looks invalid.';
+        return 'The phone number looks invalid. Use format: +1XXXXXXXXXX';
       case 'too-many-requests':
-        return 'Too many attempts. Try again later.';
+        return 'Too many attempts. Please wait a few minutes and try again.';
       case 'session-expired':
         return 'Verification expired. Request a new code.';
+      case 'invalid-verification-code':
+        return 'Invalid code. Please check and try again.';
+      case 'quota-exceeded':
+        return 'SMS quota exceeded. Please try again tomorrow.';
+      case 'app-not-authorized':
+        return 'App not authorized for phone auth. Contact support.';
+      case 'captcha-check-failed':
+        return 'Security check failed. Please try again.';
+      case 'missing-phone-number':
+        return 'Please enter a phone number.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'operation-not-allowed':
+        return 'Phone sign-in is not enabled. Contact support.';
       default:
-        return 'Phone verification failed (${e.code}).';
+        return 'Phone verification failed (${e.code}). Please try again.';
     }
   }
 
@@ -872,6 +900,15 @@ class UserProvider extends ChangeNotifier {
     // Also show local notification if nearby (for immediate feedback)
     _maybeNotifyNearbySighting(report);
     
+    // Log to parking history
+    unawaited(ParkingHistoryService.instance.logSightingReported(
+      sightingType: type == SightingType.towTruck ? 'Tow Truck' : 'Parking Enforcer',
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+      notes: notes.isNotEmpty ? notes : null,
+    ));
+    
     notifyListeners();
     unawaited(
       CloudLogService.instance.logEvent(
@@ -918,6 +955,15 @@ class UserProvider extends ChangeNotifier {
             : 'Enforcer sighting nearby';
         final body = '${report.location} • ${miles.toStringAsFixed(1)} mi away';
         await NotificationService.instance.showLocal(title: title, body: body);
+        
+        // Log to parking history
+        unawaited(ParkingHistoryService.instance.logEnforcementAlert(
+          isTowTruck: report.type == SightingType.towTruck,
+          description: body,
+          location: report.location,
+          latitude: report.latitude,
+          longitude: report.longitude,
+        ));
       }
     } catch (_) {
       // Silent failure; best-effort.
@@ -1236,6 +1282,13 @@ class UserProvider extends ChangeNotifier {
           when: nightBeforeTime,
           id: 100000 + scheduleIndex * 100,
         );
+        // Log to parking history (only once, not for each reminder)
+        if (scheduleIndex == 0) {
+          unawaited(ParkingHistoryService.instance.logGarbageReminder(
+            collectionType: typeLabel,
+            collectionDate: pickupTime,
+          ));
+        }
       }
       
       // Morning of - use repeating reminders every 30 min until pickup time
@@ -1420,6 +1473,7 @@ class UserProvider extends ChangeNotifier {
         permits: _seedPermits(ownerHint: name),
         reservations: _seedReservations(ownerHint: name),
         sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+        createdAt: DateTime.now(),
       );
       await _repository.saveProfile(stored);
     }

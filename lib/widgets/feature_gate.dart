@@ -29,6 +29,11 @@ class FeatureGate extends StatelessWidget {
 
   /// Whether to show upgrade prompt when tapping locked feature
   final bool showUpgradePrompt;
+  
+  /// Features that have a 7-day free trial for new users
+  static const _freeTrialFeatures = {
+    PremiumFeature.heatmap,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +41,12 @@ class FeatureGate extends StatelessWidget {
       builder: (context, provider, _) {
         final plan = SubscriptionService.getPlanForTier(provider.tier);
         final hasAccess = plan.hasFeature(feature);
+        
+        // Check for free trial access
+        final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
+        final hasTrialAccess = isInFreeTrial && _freeTrialFeatures.contains(feature);
 
-        if (hasAccess) {
+        if (hasAccess || hasTrialAccess) {
           return child;
         }
 
@@ -54,7 +63,28 @@ class FeatureGate extends StatelessWidget {
   static bool hasAccess(BuildContext context, PremiumFeature feature) {
     final provider = context.read<UserProvider>();
     final plan = SubscriptionService.getPlanForTier(provider.tier);
-    return plan.hasFeature(feature);
+    final hasFeature = plan.hasFeature(feature);
+    
+    // Check for free trial access
+    final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
+    final hasTrialAccess = isInFreeTrial && _freeTrialFeatures.contains(feature);
+    
+    return hasFeature || hasTrialAccess;
+  }
+  
+  /// Check if user is accessing via free trial (not paid subscription)
+  static bool isTrialAccess(BuildContext context, PremiumFeature feature) {
+    final provider = context.read<UserProvider>();
+    final plan = SubscriptionService.getPlanForTier(provider.tier);
+    final hasPaidAccess = plan.hasFeature(feature);
+    final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
+    return !hasPaidAccess && isInFreeTrial && _freeTrialFeatures.contains(feature);
+  }
+  
+  /// Get remaining free trial days
+  static int getTrialDaysRemaining(BuildContext context) {
+    final provider = context.read<UserProvider>();
+    return provider.profile?.freeTrialDaysRemaining ?? 7;
   }
 
   /// Show paywall for a feature (static method)

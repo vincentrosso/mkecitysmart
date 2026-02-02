@@ -37,6 +37,7 @@ class UserProfile {
     this.languageCode = 'en',
     this.alertsDay,
     this.alertsToday = 0,
+    this.createdAt,
   });
 
   final String id;
@@ -60,6 +61,22 @@ class UserProfile {
   final List<StreetSweepingSchedule> sweepingSchedules;
   final DateTime? alertsDay;
   final int alertsToday;
+  final DateTime? createdAt;
+  
+  /// Check if user is within the 7-day free trial period
+  bool get isInFreeTrial {
+    if (createdAt == null) return true; // Assume in trial if no date
+    final trialEnd = createdAt!.add(const Duration(days: 7));
+    return DateTime.now().isBefore(trialEnd);
+  }
+  
+  /// Days remaining in free trial (0 if expired)
+  int get freeTrialDaysRemaining {
+    if (createdAt == null) return 7;
+    final trialEnd = createdAt!.add(const Duration(days: 7));
+    final remaining = trialEnd.difference(DateTime.now()).inDays;
+    return remaining > 0 ? remaining : 0;
+  }
 
   UserProfile copyWith({
     String? name,
@@ -82,6 +99,7 @@ class UserProfile {
     String? languageCode,
     DateTime? alertsDay,
     int? alertsToday,
+    DateTime? createdAt,
   }) {
     return UserProfile(
       id: id,
@@ -105,6 +123,7 @@ class UserProfile {
       sweepingSchedules: sweepingSchedules ?? this.sweepingSchedules,
       alertsDay: alertsDay ?? this.alertsDay,
       alertsToday: alertsToday ?? this.alertsToday,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -187,6 +206,9 @@ class UserProfile {
           ? DateTime.fromMillisecondsSinceEpoch(json['alertsDay'] as int)
           : null,
       alertsToday: json['alertsToday'] as int? ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
+          : null,
     );
   }
 
@@ -221,5 +243,6 @@ class UserProfile {
         .toList(),
     'alertsDay': alertsDay?.millisecondsSinceEpoch,
     'alertsToday': alertsToday,
+    'createdAt': createdAt?.millisecondsSinceEpoch,
   };
 }

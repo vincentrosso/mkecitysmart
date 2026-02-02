@@ -43,6 +43,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _showMessage(error);
       return;
     }
+    _showMessage('✓ Welcome back to MKE CitySmart!');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
@@ -50,6 +51,7 @@ class _AuthScreenState extends State<AuthScreen> {
     final provider = context.read<UserProvider>();
     await provider.continueAsGuest();
     if (!mounted) return;
+    _showMessage('Exploring in guest mode. Sign in anytime to save your data!');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
@@ -67,6 +69,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _showMessage(error);
       return;
     }
+    _showMessage('✓ Signed in with Google! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 
@@ -84,6 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _showMessage(error);
       return;
     }
+    _showMessage('✓ Signed in with Apple! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
 

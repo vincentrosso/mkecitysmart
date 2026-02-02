@@ -5,12 +5,14 @@ import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 
 import '../models/ticket.dart';
+import '../models/parking_event.dart';
 import '../providers/user_provider.dart';
 import 'location_service.dart';
 import 'notification_service.dart';
 import 'city_ticket_stats_service.dart';
 import 'ticket_risk_prediction_service.dart';
 import 'parking_risk_service.dart';
+import 'parking_history_service.dart';
 
 /// Lightweight in-app risk watcher. In background, this should be replaced by
 /// a push-based solution (FCM/APNs) driven by the backend.
@@ -92,6 +94,13 @@ class RiskAlertService {
           title: 'High tow/ticket risk',
           body: 'Recent enforcers or sweeps nearby. Check parking status.',
         );
+        // Log to parking history
+        unawaited(ParkingHistoryService.instance.logEvent(
+          type: ParkingEventType.towTruckSpotted,
+          title: 'High Tow Risk Alert',
+          description: 'Risk score: $score. Recent enforcers or sweeps detected nearby.',
+          metadata: {'riskScore': score},
+        ));
       }
     }
 
@@ -138,6 +147,13 @@ class RiskAlertService {
             title: 'Ticket risk nearby',
             body: msg,
           );
+          // Log to parking history
+          unawaited(ParkingHistoryService.instance.logCitationRiskAlert(
+            riskLevel: riskScore >= 0.85 ? 'High' : 'Elevated',
+            reason: msg,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          ));
         }
       }
     } on PermissionDeniedException {
@@ -193,6 +209,14 @@ class RiskAlertService {
           title: '⚠️ High Risk Parking Zone',
           body: message,
         );
+        
+        // Log to parking history
+        unawaited(ParkingHistoryService.instance.logCitationRiskAlert(
+          riskLevel: 'High (${risk.riskPercentage}%)',
+          reason: message,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        ));
         
         dev.log('Citation risk alert sent: ${risk.riskPercentage}% at hour ${now.hour}');
       }
