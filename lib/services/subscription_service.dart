@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 import '../models/subscription_plan.dart';
 
@@ -10,9 +12,22 @@ class SubscriptionService extends ChangeNotifier {
   SubscriptionService._();
   static final instance = SubscriptionService._();
 
-  // RevenueCat API keys - replace with actual keys from RevenueCat dashboard
+  // RevenueCat API keys
+  // Test/Development key (works for all platforms during development)
+  static const _revenueCatTestKey = 'test_JhJpIJnyYopCsUtcPVYZKarOQEO';
+  
+  // Production keys - replace with actual keys from RevenueCat dashboard
   static const _revenueCatApiKeyiOS = 'appl_YOUR_IOS_KEY_HERE';
   static const _revenueCatApiKeyAndroid = 'goog_YOUR_ANDROID_KEY_HERE';
+  
+  // Entitlement identifiers (must match RevenueCat dashboard)
+  static const entitlementPro = 'MKE CitySmart Pro';
+  static const entitlementPlus = 'MKE CitySmart Plus';
+  
+  // Product identifiers (must match App Store Connect / Google Play Console)
+  static const productMonthly = 'mke_citysmart_pro_monthly';
+  static const productYearly = 'mke_citysmart_pro_yearly';
+  static const productLifetime = 'mke_citysmart_pro_lifetime';
 
   bool _initialized = false;
   bool _isInitializing = false;
@@ -31,11 +46,15 @@ class SubscriptionService extends ChangeNotifier {
 
     final entitlements = _customerInfo!.entitlements.active;
 
-    if (entitlements.containsKey('pro') ||
+    // Check for Pro entitlement (highest tier)
+    if (entitlements.containsKey(entitlementPro) ||
+        entitlements.containsKey('pro') ||
         entitlements.containsKey('citysmart_pro')) {
       return SubscriptionTier.pro;
     }
-    if (entitlements.containsKey('plus') ||
+    // Check for Plus entitlement
+    if (entitlements.containsKey(entitlementPlus) ||
+        entitlements.containsKey('plus') ||
         entitlements.containsKey('citysmart_plus')) {
       return SubscriptionTier.plus;
     }
@@ -59,14 +78,26 @@ class SubscriptionService extends ChangeNotifier {
     _isInitializing = true;
 
     try {
-      // Configure SDK based on platform
-      final apiKey = defaultTargetPlatform == TargetPlatform.iOS ||
-              defaultTargetPlatform == TargetPlatform.macOS
-          ? _revenueCatApiKeyiOS
-          : _revenueCatApiKeyAndroid;
+      // Enable debug logs in development
+      if (kDebugMode) {
+        await Purchases.setLogLevel(LogLevel.debug);
+      }
 
-      // Skip initialization if using placeholder keys
-      if (apiKey.contains('YOUR_')) {
+      // Use test key in debug mode, production keys in release
+      String apiKey;
+      if (kDebugMode) {
+        // Use test key for development
+        apiKey = _revenueCatTestKey;
+      } else {
+        // Use platform-specific keys for production
+        apiKey = defaultTargetPlatform == TargetPlatform.iOS ||
+                defaultTargetPlatform == TargetPlatform.macOS
+            ? _revenueCatApiKeyiOS
+            : _revenueCatApiKeyAndroid;
+      }
+
+      // Skip initialization if using placeholder keys in production
+      if (!kDebugMode && apiKey.contains('YOUR_')) {
         debugPrint(
             'SubscriptionService: Using placeholder API key - skipping RevenueCat init');
         _initialized = true;
@@ -289,6 +320,143 @@ class SubscriptionService extends ChangeNotifier {
         );
     }
   }
+
+  // ============================================================
+  // RevenueCat Paywall UI Methods
+  // ============================================================
+
+  /// Present RevenueCat's native paywall UI
+  /// Returns true if user purchased or restored, false otherwise
+  Future<bool> presentPaywall({String? offeringIdentifier}) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    try {
+      Offering? offering;
+      if (offeringIdentifier != null) {
+        offering = _offerings?.getOffering(offeringIdentifier);
+      } else {
+        offering = _offerings?.current;
+      }
+
+      final result = await RevenueCatUI.presentPaywall(offering: offering);
+      
+      // Refresh customer info after paywall closes
+      await _refreshCustomerInfo();
+
+      return result == PaywallResult.purchased || 
+             result == PaywallResult.restored;
+    } on PlatformException catch (e) {
+      debugPrint('SubscriptionService: Paywall error - ${e.message}');
+      _lastError = e.message;
+      return false;
+    }
+  }
+
+  /// Present paywall only if user doesn't have the specified entitlement
+  /// Returns true if user has access (either already had or just purchased)
+  Future<bool> presentPaywallIfNeeded(String entitlementId) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    try {
+      final result = await RevenueCatUI.presentPaywallIfNeeded(
+        entitlementId,
+        offering: _offerings?.current,
+      );
+      
+      await _refreshCustomerInfo();
+      
+      // Return true if user now has access
+      return result == PaywallResult.purchased || 
+             result == PaywallResult.restored ||
+             result == PaywallResult.notPresented; // Already had entitlement
+    } on PlatformException catch (e) {
+      debugPrint('SubscriptionService: Paywall error - ${e.message}');
+      _lastError = e.message;
+      return false;
+    }
+  }
+
+  /// Present RevenueCat's Customer Center for managing subscriptions
+  Future<void> presentCustomerCenter() async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    try {
+      await RevenueCatUI.presentCustomerCenter();
+      // Refresh customer info after customer center closes
+      await _refreshCustomerInfo();
+    } on PlatformException catch (e) {
+      debugPrint('SubscriptionService: Customer Center error - ${e.message}');
+      _lastError = e.message;
+    }
+  }
+
+  /// Refresh customer info from RevenueCat
+  Future<void> _refreshCustomerInfo() async {
+    try {
+      _customerInfo = await Purchases.getCustomerInfo();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('SubscriptionService: Error refreshing customer info - $e');
+    }
+  }
+
+  /// Get expiration date for an entitlement
+  DateTime? getExpirationDate(String entitlementId) {
+    final entitlement = _customerInfo?.entitlements.active[entitlementId];
+    final expirationStr = entitlement?.expirationDate;
+    if (expirationStr == null) return null;
+    return DateTime.tryParse(expirationStr);
+  }
+
+  /// Check if subscription will auto-renew
+  bool willRenew(String entitlementId) {
+    final entitlement = _customerInfo?.entitlements.active[entitlementId];
+    return entitlement?.willRenew ?? false;
+  }
+
+  /// Check if user has a specific entitlement
+  bool hasEntitlement(String entitlementId) {
+    return _customerInfo?.entitlements.active.containsKey(entitlementId) ?? false;
+  }
+
+  /// Get the management URL for the user's subscription
+  String? get managementUrl => _customerInfo?.managementURL;
+
+  /// Set user attributes for analytics
+  Future<void> setUserAttributes({
+    String? email,
+    String? displayName,
+    String? phoneNumber,
+  }) async {
+    if (!_initialized) return;
+
+    try {
+      if (email != null) await Purchases.setEmail(email);
+      if (displayName != null) await Purchases.setDisplayName(displayName);
+      if (phoneNumber != null) await Purchases.setPhoneNumber(phoneNumber);
+    } catch (e) {
+      debugPrint('SubscriptionService: Error setting attributes - $e');
+    }
+  }
+
+  /// Get the monthly package from current offering
+  Package? get monthlyPackage => _offerings?.current?.monthly;
+
+  /// Get the annual package from current offering
+  Package? get annualPackage => _offerings?.current?.annual;
+
+  /// Get the lifetime package from current offering
+  Package? get lifetimePackage => _offerings?.current?.lifetime;
+
+  /// Get all available packages from current offering
+  List<Package> get availablePackages => 
+      _offerings?.current?.availablePackages ?? [];
 }
 
 /// Result of a purchase operation

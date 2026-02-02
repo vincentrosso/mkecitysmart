@@ -236,6 +236,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                // Manage Subscription button
+                OutlinedButton.icon(
+                  onPressed: _handleManageSubscription,
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Manage Subscription'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
               ],
 
               const SizedBox(height: 24),
@@ -249,7 +259,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  void _handlePlanSelect(BuildContext context, SubscriptionPlan plan) {
+  void _handlePlanSelect(BuildContext context, SubscriptionPlan plan) async {
     if (plan.tier == SubscriptionTier.free) {
       // Can't downgrade via this UI - would need to cancel in App Store/Play Store
       ScaffoldMessenger.of(context).showSnackBar(
@@ -262,8 +272,36 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       return;
     }
 
-    // Show paywall for upgrade
-    PaywallScreen.show(context, feature: PremiumFeature.adFree);
+    // Show RevenueCat's native paywall for upgrade
+    final purchased = await SubscriptionService.instance.presentPaywall();
+    
+    if (!mounted) return;
+    
+    if (purchased) {
+      // Update the user provider with new subscription tier
+      context.read<UserProvider>().updateSubscriptionTier(
+        SubscriptionService.instance.currentTier,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎉 Welcome to Premium!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  /// Open RevenueCat Customer Center for subscription management
+  Future<void> _handleManageSubscription() async {
+    await SubscriptionService.instance.presentCustomerCenter();
+    
+    if (!mounted) return;
+    
+    // Refresh subscription status after returning from customer center
+    context.read<UserProvider>().updateSubscriptionTier(
+      SubscriptionService.instance.currentTier,
+    );
   }
 
   Future<void> _handleRestore() async {

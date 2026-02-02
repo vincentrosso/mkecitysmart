@@ -65,6 +65,7 @@ dependencies:
   purchases_flutter: ^8.8.1
   google_mobile_ads: ^5.3.1
   share_plus: ^10.1.4
+  purchases_ui_flutter: ^8.11.0
 
 dev_dependencies:
   flutter_test:
