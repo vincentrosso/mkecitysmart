@@ -30,6 +30,7 @@ import '../services/cloud_log_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../services/report_api_service.dart';
+import '../services/subscription_service.dart';
 import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
 
@@ -1359,35 +1360,13 @@ class UserProvider extends ChangeNotifier {
   double _degToRad(double deg) => deg * (pi / 180);
 
   SubscriptionPlan _planForTier(SubscriptionTier tier) {
-    switch (tier) {
-      case SubscriptionTier.free:
-        return const SubscriptionPlan(
-          tier: SubscriptionTier.free,
-          maxAlertRadiusMiles: 3,
-          alertVolumePerDay: 3,
-          zeroProcessingFee: false,
-          prioritySupport: false,
-          monthlyPrice: 0,
-        );
-      case SubscriptionTier.plus:
-        return const SubscriptionPlan(
-          tier: SubscriptionTier.plus,
-          maxAlertRadiusMiles: 8,
-          alertVolumePerDay: 10,
-          zeroProcessingFee: true,
-          prioritySupport: false,
-          monthlyPrice: 6.99,
-        );
-      case SubscriptionTier.pro:
-        return const SubscriptionPlan(
-          tier: SubscriptionTier.pro,
-          maxAlertRadiusMiles: 15,
-          alertVolumePerDay: 25,
-          zeroProcessingFee: true,
-          prioritySupport: true,
-          monthlyPrice: 14.99,
-        );
-    }
+    // Delegate to the subscription service for consistent plan definitions
+    return SubscriptionService.getPlanForTier(tier);
+  }
+
+  /// Check if user has access to a specific premium feature
+  bool hasFeature(PremiumFeature feature) {
+    return subscriptionPlan.hasFeature(feature);
   }
 
   Future<String?> changePassword(String password) async {

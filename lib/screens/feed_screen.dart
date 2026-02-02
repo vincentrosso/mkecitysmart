@@ -2,10 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 
+import '../models/subscription_plan.dart';
+import '../providers/user_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/feed_filter_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
 
 class FeedScreen extends StatelessWidget {
@@ -179,27 +183,105 @@ class _FeedBodyState extends State<_FeedBody> {
                       onRefresh: () => _loadFeed(),
                       child: _docs.isEmpty
                           ? _EmptyFeedView(filters: _filters)
-                          : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                              itemCount: _docs.length + (_hasMore ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (index == _docs.length) {
-                                  return _LoadMoreButton(
-                                    loading: _loadingMore,
-                                    onTap: _loadMore,
-                                  );
-                                }
-                                
-                                return _SightingCard(
-                                  doc: _docs[index],
-                                  userPosition: _userPosition,
-                                  filterService: _filterService,
-                                );
-                              },
+                          : _FeedListView(
+                              docs: _docs,
+                              hasMore: _hasMore,
+                              loadingMore: _loadingMore,
+                              userPosition: _userPosition,
+                              filterService: _filterService,
+                              onLoadMore: _loadMore,
                             ),
                     ),
         ),
       ],
+    );
+  }
+}
+
+/// Feed list view with ad integration
+class _FeedListView extends StatelessWidget {
+  const _FeedListView({
+    required this.docs,
+    required this.hasMore,
+    required this.loadingMore,
+    required this.userPosition,
+    required this.filterService,
+    required this.onLoadMore,
+  });
+
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final bool hasMore;
+  final bool loadingMore;
+  final Position? userPosition;
+  final FeedFilterService filterService;
+  final VoidCallback onLoadMore;
+
+  // Show an ad every N items (for free users)
+  static const int _adInterval = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, provider, _) {
+        final showAds = provider.tier == SubscriptionTier.free;
+        
+        // Calculate total items including ads
+        final adCount = showAds ? (docs.length / _adInterval).floor() : 0;
+        final totalItems = docs.length + adCount + (hasMore ? 1 : 0);
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          itemCount: totalItems,
+          itemBuilder: (context, index) {
+            // Check if this is the load more button
+            final loadMoreIndex = docs.length + adCount;
+            if (index == loadMoreIndex && hasMore) {
+              return _LoadMoreButton(
+                loading: loadingMore,
+                onTap: onLoadMore,
+              );
+            }
+
+            // Calculate actual doc index accounting for ads
+            int docIndex;
+            bool isAdSlot;
+            
+            if (showAds) {
+              // Every (_adInterval + 1)th position after _adInterval items is an ad
+              final itemsBeforeIndex = index;
+              final adsBeforeIndex = (itemsBeforeIndex / (_adInterval + 1)).floor();
+              docIndex = index - adsBeforeIndex;
+              
+              // Check if this specific index is an ad slot
+              isAdSlot = index > 0 && 
+                  ((index + 1) % (_adInterval + 1) == 0) && 
+                  docIndex <= docs.length;
+            } else {
+              docIndex = index;
+              isAdSlot = false;
+            }
+
+            // Show ad at ad slots
+            if (isAdSlot) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: NativeAdCard(),
+              );
+            }
+
+            // Show regular sighting card
+            if (docIndex < docs.length) {
+              return _SightingCard(
+                doc: docs[docIndex],
+                userPosition: userPosition,
+                filterService: filterService,
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
     );
   }
 }

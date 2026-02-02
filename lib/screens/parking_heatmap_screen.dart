@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
+import '../models/subscription_plan.dart';
+import '../providers/user_provider.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
+import '../widgets/feature_gate.dart';
 import '../widgets/parking_risk_badge.dart';
 
 class ParkingHeatmapScreen extends StatefulWidget {
@@ -29,7 +33,19 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    // Check access before loading data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAccessAndLoad();
+    });
+  }
+
+  Future<void> _checkAccessAndLoad() async {
+    final hasAccess = FeatureGate.hasAccess(context, PremiumFeature.heatmap);
+    if (hasAccess) {
+      _load();
+    } else {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _load() async {
@@ -110,58 +126,68 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if user has premium access to heatmaps
+    final hasAccess = FeatureGate.hasAccess(context, PremiumFeature.heatmap);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Citation Risk Map'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _load,
-            tooltip: 'Refresh data',
-          ),
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: () {
-              _mapController.move(
-                LatLng(_centerLat, _centerLng),
-                12.0,
-              );
-            },
-            tooltip: 'My location',
-          ),
+          if (hasAccess) ...[
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _load,
+              tooltip: 'Refresh data',
+            ),
+            IconButton(
+              icon: const Icon(Icons.my_location),
+              onPressed: () {
+                _mapController.move(
+                  LatLng(_centerLat, _centerLng),
+                  12.0,
+                );
+              },
+              tooltip: 'My location',
+            ),
+          ],
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Risk badge at top
-                if (_locationRisk != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    color: Color(_locationRisk!.colorValue).withOpacity(0.1),
-                    child: ParkingRiskBadge(risk: _locationRisk!),
-                  ),
-                
-                // Map
-                Expanded(
-                  child: Stack(
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: LatLng(_centerLat, _centerLng),
-                          initialZoom: 11.5,
-                          minZoom: 9,
-                          maxZoom: 18,
-                          onTap: (_, __) {
-                            setState(() => _selectedZone = null);
-                          },
-                        ),
+      body: !hasAccess
+          ? FeatureGate(
+              feature: PremiumFeature.heatmap,
+              child: const SizedBox.shrink(), // Won't be shown
+            )
+          : _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    // Risk badge at top
+                    if (_locationRisk != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        color: Color(_locationRisk!.colorValue).withOpacity(0.1),
+                        child: ParkingRiskBadge(risk: _locationRisk!),
+                      ),
+                    
+                    // Map
+                    Expanded(
+                      child: Stack(
                         children: [
-                          // OpenStreetMap tile layer
-                          TileLayer(
+                          FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: LatLng(_centerLat, _centerLng),
+                              initialZoom: 11.5,
+                              minZoom: 9,
+                              maxZoom: 18,
+                              onTap: (_, __) {
+                                setState(() => _selectedZone = null);
+                              },
+                            ),
+                            children: [
+                              // OpenStreetMap tile layer
+                              TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.mkecitysmart.app',
                           ),

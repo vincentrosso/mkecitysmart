@@ -175,6 +175,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'Deals & Sponsors',
                     onTap: () => Navigator.pushNamed(context, '/sponsors'),
                   ),
+                  HomeTile(
+                    icon: Icons.card_giftcard,
+                    title: 'Invite Friends',
+                    subtitle: 'Earn free Premium',
+                    onTap: () => Navigator.pushNamed(context, '/referrals'),
+                  ),
                 ],
               ),
             ),

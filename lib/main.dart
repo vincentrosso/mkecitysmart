@@ -8,7 +8,9 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'services/analytics_service.dart';
+import 'services/ad_service.dart';
 import 'services/saved_places_service.dart';
+import 'services/subscription_service.dart';
 
 import 'citysmart/branding_preview.dart';
 import 'firebase_bootstrap.dart';
@@ -48,6 +50,7 @@ import 'screens/alert_detail_screen.dart';
 import 'screens/auth_diagnostics_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/parking_finder_screen.dart';
+import 'screens/referral_screen.dart';
 import 'screens/saved_places_screen.dart';
 import 'screens/tow_helper_screen.dart';
 import 'screens/sponsors_screen.dart';
@@ -195,6 +198,26 @@ class _BootstrapAppState extends State<_BootstrapApp> {
                   entry.details = 'Permissions/token/handlers configured.',
             )
             .timeout(const Duration(seconds: 8), onTimeout: () async {});
+
+        // Initialize subscription service (RevenueCat)
+        await diagnostics
+            .recordFuture<void>(
+              'SubscriptionService',
+              () => SubscriptionService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'RevenueCat configured.',
+            )
+            .timeout(const Duration(seconds: 5), onTimeout: () async {});
+
+        // Initialize ad service (Google Mobile Ads)
+        await diagnostics
+            .recordFuture<void>(
+              'AdService',
+              () => AdService.instance.initialize(testMode: kDebugMode),
+              onSuccess: (_, entry) =>
+                  entry.details = 'AdMob configured.',
+            )
+            .timeout(const Duration(seconds: 5), onTimeout: () async {});
       }
 
       await diagnostics
@@ -326,6 +349,7 @@ class MKEParkApp extends StatelessWidget {
           '/saved-places': (context) => const SavedPlacesScreen(),
           '/tow-helper': (context) => const TowHelperScreen(),
           '/sponsors': (context) => const SponsorsScreen(),
+          '/referrals': (context) => const ReferralScreen(),
           '/citysmart-dashboard': (context) => const DashboardScreen(),
           '/citysmart-map': (context) => const MapScreen(),
           '/citysmart-feed': (context) => const FeedScreen(),
