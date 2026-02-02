@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'services/analytics_service.dart';
 import 'services/ad_service.dart';
+import 'services/citation_hotspot_service.dart';
 import 'services/parking_history_service.dart';
 import 'services/saved_places_service.dart';
 import 'services/subscription_service.dart';
@@ -204,6 +205,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
               () => ParkingHistoryService.instance.initialize(),
               onSuccess: (_, entry) =>
                   entry.details = 'Parking history loaded.',
+            )
+            .timeout(const Duration(seconds: 3), onTimeout: () async {});
+
+        // Initialize citation hotspot data for risk predictions
+        await diagnostics
+            .recordFuture<void>(
+              'CitationHotspotService',
+              () => CitationHotspotService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'Citation patterns loaded.',
             )
             .timeout(const Duration(seconds: 3), onTimeout: () async {});
 

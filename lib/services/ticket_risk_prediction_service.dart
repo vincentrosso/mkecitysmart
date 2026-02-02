@@ -1,9 +1,14 @@
+import 'citation_hotspot_service.dart';
+
 class TicketRiskPredictionService {
+  final CitationHotspotService _hotspotService =
+      CitationHotspotService.instance;
+
   /// Predicts risk of getting a ticket (0-1).
   ///
+  /// Now powered by 466K real Milwaukee citation records!
   /// Factors:
-  /// - Day/time (rush hours heavier).
-  /// - Weekend vs weekday.
+  /// - Day/time from real citation data patterns
   /// - Event load (0-1).
   /// - Historical ticket density (0-1).
   /// - Location noise to vary nearby points.
@@ -37,16 +42,23 @@ class TicketRiskPredictionService {
     double monthlyFactor = 0.0,
     double cityHotspotDensity = 0.0,
   }) {
-    final hourFactor = _hourPenalty(when.hour);
-    final dayFactor = _dayPenalty(when.weekday);
-    final eventFactor = eventLoad.clamp(0, 1) * 0.25;
-    final historyFactor = historicalDensity.clamp(0, 1) * 0.25;
-    final monthFactor = monthlyFactor.clamp(0, 1) * 0.15;
-    final cityFactor = cityHotspotDensity.clamp(0, 1) * 0.15;
+    // Get real citation-based risk multiplier
+    final citationMultiplier = _hotspotService.getRiskMultiplier(
+      when.weekday % 7, // Convert to JS day (0=Sun)
+      when.hour,
+    );
+
+    // Normalize citation multiplier to 0-0.5 range (it's the main factor now)
+    final citationFactor = (citationMultiplier / 5.0).clamp(0.0, 0.5);
+
+    final eventFactor = eventLoad.clamp(0, 1) * 0.15;
+    final historyFactor = historicalDensity.clamp(0, 1) * 0.15;
+    final monthFactor = monthlyFactor.clamp(0, 1) * 0.10;
+    final cityFactor = cityHotspotDensity.clamp(0, 1) * 0.10;
     final noise = _locationNoise(latitude, longitude) * 0.05;
 
-    final score = hourFactor +
-        dayFactor +
+    final score =
+        citationFactor +
         eventFactor +
         historyFactor +
         monthFactor +
@@ -56,6 +68,11 @@ class TicketRiskPredictionService {
   }
 
   String riskMessage(double score) {
+    // Check if we're in night parking window
+    if (_hotspotService.isNightParkingWindow()) {
+      return '🚨 NIGHT PARKING ENFORCEMENT ACTIVE (2-6 AM). This is peak citation time!';
+    }
+
     if (score >= 0.85) {
       return 'Very high ticket risk right now. Move soon or verify signage.';
     } else if (score >= 0.7) {
@@ -66,21 +83,19 @@ class TicketRiskPredictionService {
     return 'Low ticket risk currently.';
   }
 
-  double _hourPenalty(int hour) {
-    // Rush hours and late-night enforcement.
-    if (hour >= 7 && hour <= 9) return 0.35; // morning rush
-    if (hour >= 16 && hour <= 19) return 0.35; // evening rush
-    if (hour >= 22 || hour <= 2) return 0.25; // late night sweeps
-    if (hour >= 11 && hour <= 13) return 0.2; // mid-day checks
-    return 0.15;
+  /// Get enforcement summary for display
+  String getEnforcementSummary() {
+    return _hotspotService.getEnforcementSummary();
   }
 
-  double _dayPenalty(int weekday) {
-    // Weekdays higher; weekends lower.
-    if (weekday == DateTime.saturday || weekday == DateTime.sunday) {
-      return 0.15;
-    }
-    return 0.25;
+  /// Get top violation types to warn about
+  List<String> getTopViolations() {
+    return _hotspotService.getTopViolations();
+  }
+
+  /// Get peak enforcement hours
+  List<Map<String, dynamic>> getPeakHours() {
+    return _hotspotService.getPeakHours();
   }
 
   double _locationNoise(double lat, double lng) {
