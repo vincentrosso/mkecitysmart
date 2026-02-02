@@ -1,5 +1,6 @@
-@Skip('Legacy test relies on firebase_auth_mocks + old UserRepository contract; revisit after auth refactor')
-
+@Skip(
+  'Legacy test relies on firebase_auth_mocks + old UserRepository contract; revisit after auth refactor',
+)
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as mock_auth;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -221,30 +222,36 @@ void main() {
       expect(eligible.waiverAmount, greaterThan(0));
     });
 
-    test('evaluatePermitEligibility blocks when unpaid tickets exceed limit',
-        () {
-      final result = userProvider.evaluatePermitEligibility(
-        type: PermitType.residential,
-        hasProofOfResidence: true,
-        unpaidTicketCount: 5,
-        isLowIncome: false,
-        isSenior: false,
-        ecoVehicle: false,
-      );
+    test(
+      'evaluatePermitEligibility blocks when unpaid tickets exceed limit',
+      () {
+        final result = userProvider.evaluatePermitEligibility(
+          type: PermitType.residential,
+          hasProofOfResidence: true,
+          unpaidTicketCount: 5,
+          isLowIncome: false,
+          isSenior: false,
+          ecoVehicle: false,
+        );
 
-      expect(result.eligible, isFalse);
-      expect(result.reason, contains('Resolve'));
-    });
+        expect(result.eligible, isFalse);
+        expect(result.reason, contains('Resolve'));
+      },
+    );
 
-    test('updateAdPreferences persists to repository when profile exists',
-        () async {
-      const newPrefs = AdPreferences(showInsuranceAds: true);
+    test(
+      'updateAdPreferences persists to repository when profile exists',
+      () async {
+        const newPrefs = AdPreferences(showInsuranceAds: true);
 
-      await userProvider.updateAdPreferences(newPrefs);
+        await userProvider.updateAdPreferences(newPrefs);
 
-      expect(fakeUserRepository.storedProfile?.adPreferences.showInsuranceAds,
-          isTrue);
-    });
+        expect(
+          fakeUserRepository.storedProfile?.adPreferences.showInsuranceAds,
+          isTrue,
+        );
+      },
+    );
 
     test('updateSubscriptionTier updates tier even without profile', () async {
       await firebaseAuth.signOut();
@@ -314,15 +321,17 @@ void main() {
       expect(error, contains('required'));
     });
 
-    test('towRiskIndex reflects sightings, tickets, and sweeping schedules',
-        () async {
-      await userProvider.reportSighting(
-        type: SightingType.towTruck,
-        location: 'Garage',
-      );
+    test(
+      'towRiskIndex reflects sightings, tickets, and sweeping schedules',
+      () async {
+        await userProvider.reportSighting(
+          type: SightingType.towTruck,
+          location: 'Garage',
+        );
 
-      expect(userProvider.towRiskIndex, greaterThan(0));
-    });
+        expect(userProvider.towRiskIndex, greaterThan(0));
+      },
+    );
 
     test('cityParkingSuggestions are derived from sweeping schedules', () {
       expect(userProvider.cityParkingSuggestions, isNotEmpty);
@@ -367,9 +376,9 @@ void main() {
     });
 
     test('subscriptionPlan reflects tier settings', () async {
-      await userProvider.updateSubscriptionTier(SubscriptionTier.plus);
+      await userProvider.updateSubscriptionTier(SubscriptionTier.pro);
 
-      expect(userProvider.subscriptionPlan.tier, SubscriptionTier.plus);
+      expect(userProvider.subscriptionPlan.tier, SubscriptionTier.pro);
       expect(userProvider.maxAlertRadiusMiles, greaterThan(3));
     });
 

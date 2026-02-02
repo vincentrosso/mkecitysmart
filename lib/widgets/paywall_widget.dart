@@ -9,11 +9,7 @@ import '../theme/app_theme.dart';
 
 /// A paywall widget that prompts users to upgrade when accessing premium features
 class PaywallScreen extends StatefulWidget {
-  const PaywallScreen({
-    super.key,
-    required this.feature,
-    this.onDismiss,
-  });
+  const PaywallScreen({super.key, required this.feature, this.onDismiss});
 
   /// The feature that triggered the paywall
   final PremiumFeature feature;
@@ -90,8 +86,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 Text(
                   'Unlock Premium Features',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -100,8 +96,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 Text(
                   'Choose the plan that works for you',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: kCitySmartText.withValues(alpha: 0.7),
-                      ),
+                    color: kCitySmartText.withValues(alpha: 0.7),
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -131,7 +127,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
                       _error!,
@@ -184,8 +182,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 Text(
                   'Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: kCitySmartText.withValues(alpha: 0.5),
-                      ),
+                    color: kCitySmartText.withValues(alpha: 0.5),
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -236,10 +234,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   Widget _buildOfferingCards(Offering offering) {
     final packages = offering.availablePackages;
-    final monthlyPackages =
-        packages.where((p) => p.packageType == PackageType.monthly).toList();
-    final yearlyPackages =
-        packages.where((p) => p.packageType == PackageType.annual).toList();
+    final monthlyPackages = packages
+        .where((p) => p.packageType == PackageType.monthly)
+        .toList();
+    final yearlyPackages = packages
+        .where((p) => p.packageType == PackageType.annual)
+        .toList();
 
     final displayPackages = _yearly ? yearlyPackages : monthlyPackages;
 
@@ -263,33 +263,25 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Widget _buildFallbackPlanCards() {
-    // Show static plan cards when RevenueCat isn't configured
-    final plans = [
-      SubscriptionService.getPlanForTier(SubscriptionTier.plus),
-      SubscriptionService.getPlanForTier(SubscriptionTier.pro),
-    ];
+    // Show static plan card when RevenueCat isn't configured
+    final plan = SubscriptionService.getPlanForTier(SubscriptionTier.pro);
+    final price = _yearly ? plan.yearlyPrice : plan.monthlyPrice;
+    final period = _yearly ? '/year' : '/month';
 
-    return Column(
-      children: plans.map((plan) {
-        final price = _yearly ? plan.yearlyPrice : plan.monthlyPrice;
-        final period = _yearly ? '/year' : '/month';
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _StaticPlanCard(
-            plan: plan,
-            price: price ?? plan.monthlyPrice,
-            period: period,
-            isRecommended: plan.tier == SubscriptionTier.plus,
-            onTap: () {
-              setState(() {
-                _error =
-                    'In-app purchases not configured. Please set up RevenueCat.';
-              });
-            },
-          ),
-        );
-      }).toList(),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _StaticPlanCard(
+        plan: plan,
+        price: price ?? plan.monthlyPrice,
+        period: period,
+        isRecommended: true,
+        onTap: () {
+          setState(() {
+            _error =
+                'In-app purchases not configured. Please set up RevenueCat.';
+          });
+        },
+      ),
     );
   }
 
@@ -304,8 +296,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
       _error = null;
     });
 
-    final result =
-        await SubscriptionService.instance.purchase(_selectedPackage!);
+    final result = await SubscriptionService.instance.purchase(
+      _selectedPackage!,
+    );
 
     if (!mounted) return;
 
@@ -315,8 +308,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
       // Update user provider with new tier
       if (mounted) {
         final userProvider = context.read<UserProvider>();
-        userProvider
-            .updateSubscriptionTier(SubscriptionService.instance.currentTier);
+        userProvider.updateSubscriptionTier(
+          SubscriptionService.instance.currentTier,
+        );
         Navigator.of(context).pop(true);
       }
     } else {
@@ -340,11 +334,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
       final isPremium = SubscriptionService.instance.isPremium;
       if (isPremium && mounted) {
         final userProvider = context.read<UserProvider>();
-        userProvider
-            .updateSubscriptionTier(SubscriptionService.instance.currentTier);
+        userProvider.updateSubscriptionTier(
+          SubscriptionService.instance.currentTier,
+        );
         Navigator.of(context).pop(true);
       } else {
-        setState(() => _error = result.message ?? 'No previous purchases found');
+        setState(
+          () => _error = result.message ?? 'No previous purchases found',
+        );
       }
     } else {
       setState(() => _error = result.error);
@@ -371,31 +368,25 @@ class _FeatureHighlight extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: kCitySmartYellow.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: kCitySmartYellow.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(
-            feature.icon,
-            size: 48,
-            color: kCitySmartYellow,
-          ),
+          Icon(feature.icon, size: 48, color: kCitySmartYellow),
           const SizedBox(height: 12),
           Text(
             feature.displayName,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             feature.description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: kCitySmartText.withValues(alpha: 0.8),
-                ),
+              color: kCitySmartText.withValues(alpha: 0.8),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
@@ -421,10 +412,7 @@ class _FeatureHighlight extends StatelessWidget {
 }
 
 class _BillingToggle extends StatelessWidget {
-  const _BillingToggle({
-    required this.isYearly,
-    required this.onChanged,
-  });
+  const _BillingToggle({required this.isYearly, required this.onChanged});
 
   final bool isYearly;
   final ValueChanged<bool> onChanged;
@@ -637,8 +625,10 @@ class _StaticPlanCard extends StatelessWidget {
                 if (isRecommended) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: kCitySmartYellow,
                       borderRadius: BorderRadius.circular(4),

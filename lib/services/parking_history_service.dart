@@ -64,8 +64,6 @@ class ParkingHistoryService {
     switch (tier) {
       case SubscriptionTier.free:
         return 7;
-      case SubscriptionTier.plus:
-        return 30;
       case SubscriptionTier.pro:
         return 365;
     }
@@ -116,7 +114,9 @@ class ParkingHistoryService {
     }
 
     await _saveToStorage();
-    debugPrint('[ParkingHistory] Logged event: ${event.type.name} - ${event.title}');
+    debugPrint(
+      '[ParkingHistory] Logged event: ${event.type.name} - ${event.title}',
+    );
 
     return event;
   }
@@ -148,7 +148,8 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.alternateSideReminder,
       title: 'Alternate Side Parking',
-      description: 'Park on the $side side today (${isOddDay ? "Odd" : "Even"} day addresses: $addressExamples)',
+      description:
+          'Park on the $side side today (${isOddDay ? "Odd" : "Even"} day addresses: $addressExamples)',
       metadata: {
         'isOddDay': isOddDay,
         'side': side,
@@ -166,7 +167,9 @@ class ParkingHistoryService {
     double? longitude,
   }) {
     return logEvent(
-      type: isTowTruck ? ParkingEventType.towTruckSpotted : ParkingEventType.enforcementSpotted,
+      type: isTowTruck
+          ? ParkingEventType.towTruckSpotted
+          : ParkingEventType.enforcementSpotted,
       title: isTowTruck ? 'Tow Truck Alert' : 'Enforcement Alert',
       description: description,
       location: location,
@@ -203,7 +206,8 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.permitRenewed,
       title: 'Permit Renewed',
-      description: '$permitType renewed. Valid until ${_formatDate(expirationDate)}',
+      description:
+          '$permitType renewed. Valid until ${_formatDate(expirationDate)}',
       vehicleId: vehicleId,
       metadata: {
         'permitType': permitType,
@@ -222,7 +226,8 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.permitExpiring,
       title: 'Permit Expiring Soon',
-      description: '$permitType expires in $daysRemaining day${daysRemaining == 1 ? "" : "s"} (${_formatDate(expirationDate)})',
+      description:
+          '$permitType expires in $daysRemaining day${daysRemaining == 1 ? "" : "s"} (${_formatDate(expirationDate)})',
       vehicleId: vehicleId,
       metadata: {
         'permitType': permitType,
@@ -265,13 +270,15 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.parkingStarted,
       title: 'Parking Started',
-      description: 'Parked at $location${estimatedDuration != null ? " for ~${estimatedDuration.inMinutes} min" : ""}',
+      description:
+          'Parked at $location${estimatedDuration != null ? " for ~${estimatedDuration.inMinutes} min" : ""}',
       location: location,
       latitude: latitude,
       longitude: longitude,
       vehicleId: vehicleId,
       metadata: {
-        if (estimatedDuration != null) 'estimatedMinutes': estimatedDuration.inMinutes,
+        if (estimatedDuration != null)
+          'estimatedMinutes': estimatedDuration.inMinutes,
       },
     );
   }
@@ -287,7 +294,8 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.parkingEnded,
       title: 'Parking Ended',
-      description: 'Left $location${totalDuration != null ? " after ${_formatDuration(totalDuration)}" : ""}',
+      description:
+          'Left $location${totalDuration != null ? " after ${_formatDuration(totalDuration)}" : ""}',
       location: location,
       latitude: latitude,
       longitude: longitude,
@@ -308,7 +316,8 @@ class ParkingHistoryService {
     return logEvent(
       type: ParkingEventType.meterExpiring,
       title: 'Meter Expiring Soon',
-      description: 'Your meter expires in $minutesRemaining minute${minutesRemaining == 1 ? "" : "s"}',
+      description:
+          'Your meter expires in $minutesRemaining minute${minutesRemaining == 1 ? "" : "s"}',
       location: location,
       latitude: latitude,
       longitude: longitude,
@@ -377,7 +386,9 @@ class ParkingHistoryService {
   /// Get statistics for a time period
   Map<String, dynamic> getStatistics({int days = 30}) {
     final cutoff = DateTime.now().subtract(Duration(days: days));
-    final recentEvents = _events.where((e) => e.timestamp.isAfter(cutoff)).toList();
+    final recentEvents = _events
+        .where((e) => e.timestamp.isAfter(cutoff))
+        .toList();
 
     final typeCount = <ParkingEventType, int>{};
     for (final event in recentEvents) {
@@ -403,7 +414,9 @@ class ParkingHistoryService {
         _events = jsonList
             .map((item) => ParkingEvent.fromJson(item as Map<String, dynamic>))
             .toList();
-        debugPrint('[ParkingHistory] Loaded ${_events.length} events from storage');
+        debugPrint(
+          '[ParkingHistory] Loaded ${_events.length} events from storage',
+        );
       }
     } catch (e) {
       debugPrint('[ParkingHistory] Error loading events: $e');
@@ -422,7 +435,20 @@ class ParkingHistoryService {
   }
 
   String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 

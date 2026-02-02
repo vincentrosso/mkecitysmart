@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _refreshEvents() {
     final userProvider = context.read<UserProvider>();
     final tier = userProvider.tier;
-    
+
     setState(() {
       _events = ParkingHistoryService.instance.getEventsForTier(tier);
       if (_filterType != null) {
@@ -47,7 +47,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final userProvider = context.watch<UserProvider>();
     final tier = userProvider.tier;
     final historyDays = _getHistoryDaysLabel(tier);
-    
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF203731),
@@ -55,7 +55,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           PopupMenuButton<ParkingEventType?>(
             icon: Icon(
-              _filterType != null ? Icons.filter_alt : Icons.filter_alt_outlined,
+              _filterType != null
+                  ? Icons.filter_alt
+                  : Icons.filter_alt_outlined,
               color: Colors.white,
             ),
             tooltip: 'Filter by type',
@@ -77,16 +79,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
               const PopupMenuDivider(),
-              ...ParkingEventType.values.map((type) => PopupMenuItem(
-                value: type,
-                child: Row(
-                  children: [
-                    Icon(_getEventIcon(type), size: 20, color: _getEventColor(type)),
-                    const SizedBox(width: 8),
-                    Text(type.displayName),
-                  ],
+              ...ParkingEventType.values.map(
+                (type) => PopupMenuItem(
+                  value: type,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getEventIcon(type),
+                        size: 20,
+                        color: _getEventColor(type),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(type.displayName),
+                    ],
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
           IconButton(
@@ -121,7 +129,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 if (tier.index < 2)
                   TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/subscription'),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/subscription'),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       minimumSize: Size.zero,
@@ -138,7 +147,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ],
             ),
           ),
-          
+
           // Filter chip if active
           if (_filterType != null)
             Padding(
@@ -157,25 +166,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
-          
+
           // Events list
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _events.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          _refreshEvents();
-                        },
-                        child: ListView.builder(
-                          itemCount: _events.length,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemBuilder: (context, index) {
-                            return _buildEventTile(_events[index]);
-                          },
-                        ),
-                      ),
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      _refreshEvents();
+                    },
+                    child: ListView.builder(
+                      itemCount: _events.length,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        return _buildEventTile(_events[index]);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -211,10 +220,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ? 'Try a different filter or wait for events'
                   : 'Events will appear here as you use the app',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
             ),
             if (_filterType != null) ...[
               const SizedBox(height: 16),
@@ -235,7 +241,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildEventTile(ParkingEvent event) {
     final isUrgent = event.type.isUrgent;
-    
+
     return Dismissible(
       key: Key(event.id),
       direction: DismissDirection.endToStart,
@@ -326,14 +332,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 const SizedBox(width: 4),
                 Text(
                   _formatTimestamp(event.timestamp),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
                 if (event.location != null) ...[
                   const SizedBox(width: 12),
-                  Icon(Icons.location_on, size: 12, color: Colors.grey.shade500),
+                  Icon(
+                    Icons.location_on,
+                    size: 12,
+                    color: Colors.grey.shade500,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -443,12 +450,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  event.description,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                Text(event.description, style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 16),
-                _buildDetailRow(Icons.access_time, _formatTimestamp(event.timestamp)),
+                _buildDetailRow(
+                  Icons.access_time,
+                  _formatTimestamp(event.timestamp),
+                ),
                 if (event.location != null)
                   _buildDetailRow(Icons.location_on, event.location!),
                 if (event.metadata.isNotEmpty) ...[
@@ -457,33 +464,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Additional Details',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
-                  ...event.metadata.entries.map((e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${_formatMetadataKey(e.key)}: ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
+                  ...event.metadata.entries.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_formatMetadataKey(e.key)}: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            e.value.toString(),
-                            style: const TextStyle(fontSize: 14),
+                          Expanded(
+                            child: Text(
+                              e.value.toString(),
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
                 ],
                 const SizedBox(height: 20),
               ],
@@ -501,12 +507,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade600),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -582,8 +583,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     switch (tier) {
       case SubscriptionTier.free:
         return '7 days';
-      case SubscriptionTier.plus:
-        return '30 days';
       case SubscriptionTier.pro:
         return '1 year';
     }
@@ -592,7 +591,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final diff = now.difference(timestamp);
-    
+
     if (diff.inMinutes < 1) {
       return 'Just now';
     } else if (diff.inMinutes < 60) {
@@ -604,7 +603,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } else if (diff.inDays < 7) {
       return '${diff.inDays} days ago';
     } else {
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return '${months[timestamp.month - 1]} ${timestamp.day}';
     }
   }
@@ -612,12 +624,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _formatMetadataKey(String key) {
     // Convert camelCase to Title Case
     return key
-        .replaceAllMapped(
-          RegExp(r'([A-Z])'),
-          (match) => ' ${match.group(1)}',
-        )
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
         .split(' ')
-        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : '',
+        )
         .join(' ')
         .trim();
   }

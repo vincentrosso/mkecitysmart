@@ -97,7 +97,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Choose which types of ads you see',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: kCitySmartText.withValues(alpha: 0.7),
                               ),
                         ),
@@ -156,10 +157,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.block,
-                        color: kCitySmartYellow,
-                      ),
+                      const Icon(Icons.block, color: kCitySmartYellow),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -274,15 +272,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     // Show RevenueCat's native paywall for upgrade
     final purchased = await SubscriptionService.instance.presentPaywall();
-    
+
     if (!mounted) return;
-    
+
     if (purchased) {
       // Update the user provider with new subscription tier
       context.read<UserProvider>().updateSubscriptionTier(
         SubscriptionService.instance.currentTier,
       );
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('🎉 Welcome to Premium!'),
@@ -295,9 +293,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   /// Open RevenueCat Customer Center for subscription management
   Future<void> _handleManageSubscription() async {
     await SubscriptionService.instance.presentCustomerCenter();
-    
+
     if (!mounted) return;
-    
+
     // Refresh subscription status after returning from customer center
     context.read<UserProvider>().updateSubscriptionTier(
       SubscriptionService.instance.currentTier,
@@ -349,10 +347,7 @@ class _CurrentPlanCard extends StatelessWidget {
                   kCitySmartYellow.withValues(alpha: 0.3),
                   kCitySmartGreen.withValues(alpha: 0.3),
                 ]
-              : [
-                  kCitySmartCard,
-                  kCitySmartCard,
-                ],
+              : [kCitySmartCard, kCitySmartCard],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -388,9 +383,9 @@ class _CurrentPlanCard extends StatelessWidget {
                   Text(
                     plan.label,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isPremium ? kCitySmartYellow : kCitySmartText,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: isPremium ? kCitySmartYellow : kCitySmartText,
+                    ),
                   ),
                 ],
               ),
@@ -423,7 +418,8 @@ class _CurrentPlanCard extends StatelessWidget {
             children: [
               _PlanChip(
                 icon: Icons.place,
-                label: '${plan.maxAlertRadiusMiles.toStringAsFixed(0)} mi radius',
+                label:
+                    '${plan.maxAlertRadiusMiles.toStringAsFixed(0)} mi radius',
               ),
               _PlanChip(
                 icon: Icons.notifications,
@@ -518,8 +514,8 @@ class _PlanCard extends StatelessWidget {
     final borderColor = selected
         ? kCitySmartYellow
         : isPro
-            ? kCitySmartYellow.withValues(alpha: 0.5)
-            : kCitySmartText.withValues(alpha: 0.2);
+        ? kCitySmartYellow.withValues(alpha: 0.5)
+        : kCitySmartText.withValues(alpha: 0.2);
 
     return Card(
       color: kCitySmartCard,
@@ -562,17 +558,15 @@ class _PlanCard extends StatelessWidget {
                     Icon(
                       plan.tier == SubscriptionTier.free
                           ? Icons.person_outline
-                          : plan.tier == SubscriptionTier.plus
-                              ? Icons.star_outline
-                              : Icons.workspace_premium,
+                          : Icons.workspace_premium,
                       color: selected ? kCitySmartYellow : kCitySmartText,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       plan.label,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: selected ? kCitySmartYellow : kCitySmartText,
-                          ),
+                        color: selected ? kCitySmartYellow : kCitySmartText,
+                      ),
                     ),
                     const Spacer(),
                     Column(
@@ -612,35 +606,42 @@ class _PlanCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 12),
                 // Feature list
-                ...plan.features.take(5).map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: selected ? kCitySmartYellow : Colors.green,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              feature,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: kCitySmartText.withValues(alpha: 0.9),
+                ...plan.features
+                    .take(5)
+                    .map(
+                      (feature) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: selected ? kCitySmartYellow : Colors.green,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                feature,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: kCitySmartText.withValues(alpha: 0.9),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )),
+                    ),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: selected ? null : onSelect,
                   style: FilledButton.styleFrom(
-                    backgroundColor:
-                        selected ? kCitySmartText.withValues(alpha: 0.3) : kCitySmartYellow,
-                    foregroundColor: selected ? kCitySmartText : kCitySmartGreen,
+                    backgroundColor: selected
+                        ? kCitySmartText.withValues(alpha: 0.3)
+                        : kCitySmartYellow,
+                    foregroundColor: selected
+                        ? kCitySmartText
+                        : kCitySmartGreen,
                     minimumSize: const Size.fromHeight(44),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -650,8 +651,8 @@ class _PlanCard extends StatelessWidget {
                     selected
                         ? 'Current Plan'
                         : plan.tier == SubscriptionTier.free
-                            ? 'Downgrade'
-                            : 'Upgrade to ${plan.label}',
+                        ? 'Downgrade'
+                        : 'Upgrade to ${plan.label}',
                   ),
                 ),
               ],
@@ -778,10 +779,7 @@ class _FeatureRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(
-              feature,
-              style: const TextStyle(fontSize: 13),
-            ),
+            child: Text(feature, style: const TextStyle(fontSize: 13)),
           ),
           Expanded(
             flex: 2,
@@ -827,6 +825,5 @@ class _FeatureRow extends StatelessWidget {
 // Use the centralized plans from SubscriptionService
 final _plans = [
   SubscriptionService.getPlanForTier(SubscriptionTier.free),
-  SubscriptionService.getPlanForTier(SubscriptionTier.plus),
   SubscriptionService.getPlanForTier(SubscriptionTier.pro),
 ];

@@ -15,19 +15,18 @@ class SubscriptionService extends ChangeNotifier {
   // RevenueCat API keys
   // Test/Development key (works for all platforms during development)
   static const _revenueCatTestKey = 'test_JhJpIJnyYopCsUtcPVYZKarOQEO';
-  
+
   // Production keys from RevenueCat dashboard
   static const _revenueCatApiKeyiOS = 'appl_nPogZtDlCliLIbcHVwxxguJacpq';
-  static const _revenueCatApiKeyAndroid = 'goog_YOUR_ANDROID_KEY_HERE'; // TODO: Add Android key when ready
-  
-  // Entitlement identifiers (must match RevenueCat dashboard)
-  static const entitlementPro = 'MKE CitySmart Pro';
-  static const entitlementPlus = 'MKE CitySmart Plus';
-  
+  static const _revenueCatApiKeyAndroid =
+      'goog_YOUR_ANDROID_KEY_HERE'; // TODO: Add Android key when ready
+
+  // Entitlement identifier (must match RevenueCat dashboard)
+  static const entitlementPro = 'pro';
+
   // Product identifiers (must match App Store Connect / Google Play Console)
-  static const productMonthly = 'mke_citysmart_pro_monthly';
-  static const productYearly = 'mke_citysmart_pro_yearly';
-  static const productLifetime = 'mke_citysmart_pro_lifetime';
+  static const productMonthly = 'citysmart_pro_monthly';
+  static const productYearly = 'citysmart_pro_yearly';
 
   bool _initialized = false;
   bool _isInitializing = false;
@@ -46,26 +45,18 @@ class SubscriptionService extends ChangeNotifier {
 
     final entitlements = _customerInfo!.entitlements.active;
 
-    // Check for Pro entitlement (highest tier)
+    // Check for Pro entitlement
     if (entitlements.containsKey(entitlementPro) ||
         entitlements.containsKey('pro') ||
         entitlements.containsKey('citysmart_pro')) {
       return SubscriptionTier.pro;
-    }
-    // Check for Plus entitlement
-    if (entitlements.containsKey(entitlementPlus) ||
-        entitlements.containsKey('plus') ||
-        entitlements.containsKey('citysmart_plus')) {
-      return SubscriptionTier.plus;
     }
 
     return SubscriptionTier.free;
   }
 
   /// Whether user has an active paid subscription
-  bool get isPremium =>
-      currentTier == SubscriptionTier.plus ||
-      currentTier == SubscriptionTier.pro;
+  bool get isPremium => currentTier == SubscriptionTier.pro;
 
   /// Check if user has access to a specific feature
   bool hasFeature(PremiumFeature feature) {
@@ -90,7 +81,8 @@ class SubscriptionService extends ChangeNotifier {
         apiKey = _revenueCatTestKey;
       } else {
         // Use platform-specific keys for production
-        apiKey = defaultTargetPlatform == TargetPlatform.iOS ||
+        apiKey =
+            defaultTargetPlatform == TargetPlatform.iOS ||
                 defaultTargetPlatform == TargetPlatform.macOS
             ? _revenueCatApiKeyiOS
             : _revenueCatApiKeyAndroid;
@@ -99,7 +91,8 @@ class SubscriptionService extends ChangeNotifier {
       // Skip initialization if using placeholder keys in production
       if (!kDebugMode && apiKey.contains('YOUR_')) {
         debugPrint(
-            'SubscriptionService: Using placeholder API key - skipping RevenueCat init');
+          'SubscriptionService: Using placeholder API key - skipping RevenueCat init',
+        );
         _initialized = true;
         _isInitializing = false;
         return;
@@ -175,10 +168,7 @@ class SubscriptionService extends ChangeNotifier {
       _customerInfo = result;
       notifyListeners();
 
-      return PurchaseResult(
-        success: true,
-        customerInfo: result,
-      );
+      return PurchaseResult(success: true, customerInfo: result);
     } on PurchasesErrorCode catch (e) {
       String errorMessage;
       switch (e) {
@@ -271,29 +261,6 @@ class SubscriptionService extends ChangeNotifier {
             'Basic parking info',
           ],
         );
-      case SubscriptionTier.plus:
-        return const SubscriptionPlan(
-          tier: SubscriptionTier.plus,
-          maxAlertRadiusMiles: 8,
-          alertVolumePerDay: 15,
-          zeroProcessingFee: true,
-          prioritySupport: false,
-          monthlyPrice: 3.99,
-          yearlyPrice: 29.99,
-          adFree: true,
-          heatmapAccess: true,
-          smartAlerts: true,
-          historyDays: 30,
-          features: [
-            '8-mile alert radius',
-            '15 alerts per day',
-            '30 days of history',
-            'Citation heatmaps',
-            'Smart alerts',
-            'Ad-free experience',
-            'Zero processing fees',
-          ],
-        );
       case SubscriptionTier.pro:
         return const SubscriptionPlan(
           tier: SubscriptionTier.pro,
@@ -301,8 +268,8 @@ class SubscriptionService extends ChangeNotifier {
           alertVolumePerDay: -1, // Unlimited
           zeroProcessingFee: true,
           prioritySupport: true,
-          monthlyPrice: 6.99,
-          yearlyPrice: 49.99,
+          monthlyPrice: 4.99,
+          yearlyPrice: 39.99,
           adFree: true,
           heatmapAccess: true,
           smartAlerts: true,
@@ -341,12 +308,12 @@ class SubscriptionService extends ChangeNotifier {
       }
 
       final result = await RevenueCatUI.presentPaywall(offering: offering);
-      
+
       // Refresh customer info after paywall closes
       await _refreshCustomerInfo();
 
-      return result == PaywallResult.purchased || 
-             result == PaywallResult.restored;
+      return result == PaywallResult.purchased ||
+          result == PaywallResult.restored;
     } on PlatformException catch (e) {
       debugPrint('SubscriptionService: Paywall error - ${e.message}');
       _lastError = e.message;
@@ -366,13 +333,13 @@ class SubscriptionService extends ChangeNotifier {
         entitlementId,
         offering: _offerings?.current,
       );
-      
+
       await _refreshCustomerInfo();
-      
+
       // Return true if user now has access
-      return result == PaywallResult.purchased || 
-             result == PaywallResult.restored ||
-             result == PaywallResult.notPresented; // Already had entitlement
+      return result == PaywallResult.purchased ||
+          result == PaywallResult.restored ||
+          result == PaywallResult.notPresented; // Already had entitlement
     } on PlatformException catch (e) {
       debugPrint('SubscriptionService: Paywall error - ${e.message}');
       _lastError = e.message;
@@ -422,7 +389,8 @@ class SubscriptionService extends ChangeNotifier {
 
   /// Check if user has a specific entitlement
   bool hasEntitlement(String entitlementId) {
-    return _customerInfo?.entitlements.active.containsKey(entitlementId) ?? false;
+    return _customerInfo?.entitlements.active.containsKey(entitlementId) ??
+        false;
   }
 
   /// Get the management URL for the user's subscription
@@ -455,7 +423,7 @@ class SubscriptionService extends ChangeNotifier {
   Package? get lifetimePackage => _offerings?.current?.lifetime;
 
   /// Get all available packages from current offering
-  List<Package> get availablePackages => 
+  List<Package> get availablePackages =>
       _offerings?.current?.availablePackages ?? [];
 }
 

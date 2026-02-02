@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 
-enum SubscriptionTier { free, plus, pro }
+/// Subscription tiers - simplified to Free and Pro
+enum SubscriptionTier { free, pro }
+
+// Keep 'plus' as alias for backward compatibility
+extension SubscriptionTierCompat on SubscriptionTier {
+  static SubscriptionTier get plus => SubscriptionTier.pro;
+}
 
 class SubscriptionPlan {
   const SubscriptionPlan({
@@ -35,8 +41,6 @@ class SubscriptionPlan {
     switch (tier) {
       case SubscriptionTier.free:
         return 'Free';
-      case SubscriptionTier.plus:
-        return 'Plus';
       case SubscriptionTier.pro:
         return 'Pro';
     }
@@ -46,8 +50,6 @@ class SubscriptionPlan {
     switch (tier) {
       case SubscriptionTier.free:
         return '';
-      case SubscriptionTier.plus:
-        return 'citysmart_plus_monthly';
       case SubscriptionTier.pro:
         return 'citysmart_pro_monthly';
     }
@@ -57,8 +59,6 @@ class SubscriptionPlan {
     switch (tier) {
       case SubscriptionTier.free:
         return '';
-      case SubscriptionTier.plus:
-        return 'citysmart_plus_yearly';
       case SubscriptionTier.pro:
         return 'citysmart_pro_yearly';
     }
@@ -157,17 +157,17 @@ extension PremiumFeatureExt on PremiumFeature {
   SubscriptionTier get minimumTier {
     switch (this) {
       case PremiumFeature.heatmap:
-        return SubscriptionTier.plus;
+        return SubscriptionTier.pro;
       case PremiumFeature.smartAlerts:
-        return SubscriptionTier.plus;
+        return SubscriptionTier.pro;
       case PremiumFeature.adFree:
-        return SubscriptionTier.plus;
+        return SubscriptionTier.pro;
       case PremiumFeature.extendedHistory:
-        return SubscriptionTier.plus;
+        return SubscriptionTier.pro;
       case PremiumFeature.prioritySupport:
         return SubscriptionTier.pro;
       case PremiumFeature.expandedRadius:
-        return SubscriptionTier.plus;
+        return SubscriptionTier.pro;
       case PremiumFeature.unlimitedAlerts:
         return SubscriptionTier.pro;
     }
