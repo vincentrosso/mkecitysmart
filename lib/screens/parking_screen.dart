@@ -284,16 +284,3 @@ class _ParkingSpot {
     return meters / 1609.34;
   }
 }
-
-int _addressNumber(String? address) {
-  if (address == null) return 0;
-  final match = RegExp(r'(\d+)').firstMatch(address);
-  if (match == null) return 0;
-  return int.tryParse(match.group(0) ?? '0') ?? 0;
-}
-
-int _addressFromPosition(Position position) {
-  final val = (position.latitude.abs() * 10000).round() +
-      (position.longitude.abs() * 10000).round();
-  return val % 10000 == 0 ? 101 : val % 10000;
-}

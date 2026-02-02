@@ -1,13 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../providers/user_provider.dart';
 import '../services/referral_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/citysmart_scaffold.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});

@@ -124,9 +124,7 @@ class AuthDiagnosticsScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () async {
                   try {
-                    // Get current location for the nearby warning test
-                    final locationDiag = pushDiag.lastLocationDiagnostics;
-                    // Default to Milwaukee coordinates if location not available
+                    // Default to Milwaukee coordinates for nearby warning test
                     const defaultLat = 43.0389;
                     const defaultLng = -87.9065;
                     

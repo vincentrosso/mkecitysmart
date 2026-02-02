@@ -404,16 +404,12 @@ class _RiskBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color;
-    Color bgColor;
     if (score >= 70) {
       color = const Color(0xFFF56565);
-      bgColor = const Color(0xFFFFF5F5);
     } else if (score >= 40) {
       color = const Color(0xFFED8936);
-      bgColor = const Color(0xFFFFFAF0);
     } else {
       color = const Color(0xFF48BB78);
-      bgColor = const Color(0xFFF0FFF4);
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

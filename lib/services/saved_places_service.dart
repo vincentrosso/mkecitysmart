@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_place.dart';
 import 'analytics_service.dart';
-import 'cache_service.dart';
 
 /// Service for managing saved places (home, work, favorites)
 /// 
@@ -31,7 +30,6 @@ class SavedPlacesService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CacheService _cache = CacheService();
   
   static const String _collection = 'savedPlaces';
   static const String _localKey = 'saved_places_cache';

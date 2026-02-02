@@ -8,7 +8,6 @@ import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/feed_filter_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
 

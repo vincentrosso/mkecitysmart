@@ -10,7 +10,6 @@ import '../models/parking_prediction.dart';
 import '../providers/user_provider.dart';
 import '../services/api_client.dart';
 import '../services/prediction_api_service.dart';
-import '../widgets/openchargemap_embed.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../services/location_service.dart';
 import '../services/open_charge_map_service.dart';
@@ -35,20 +34,15 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   EVStation? _selected;
   List<ParkingPrediction> _predictions = const [];
   bool _loadingPredictions = false;
-  bool _includeEvents = true;
-  bool _includeWeather = true;
-  _PredictionMode _mode = _PredictionMode.heatmap;
+  final bool _includeEvents = true;
+  final bool _includeWeather = true;
+  final _PredictionMode _mode = _PredictionMode.heatmap;
   WeatherSummary? _weatherSummary;
   List<WeatherAlert> _weatherAlerts = const [];
   double _currentLat = 43.0389;
   double _currentLng = -87.9065;
   bool _showSightings = true;
   bool _showFilters = false;
-
-  bool get _hasFastStation =>
-      _stations.any((s) => s.hasFastCharging && s.maxPowerKw >= 50);
-  bool get _hasAvailabilityVariance =>
-      _stations.any((s) => !s.hasAvailability);
 
   List<EVStation> _filterStations() {
     return _stations.where((station) {
@@ -475,21 +469,6 @@ Color _scoreColor(double score) {
   return Colors.redAccent;
 }
 
-class _HeatLegend extends StatelessWidget {
-  const _HeatLegend({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      backgroundColor: color.withValues(alpha: 0.15),
-      label: Text(label, style: TextStyle(color: color)),
-    );
-  }
-}
-
 class _LegendItem extends StatelessWidget {
   const _LegendItem({required this.color, required this.label});
 
@@ -711,15 +690,5 @@ extension on _ChargingMapScreenState {
         const SnackBar(content: Text('Could not open maps app.')),
       );
     }
-  }
-
-  Future<void> _openExternalMap() async {
-    final uri = Uri.parse('https://map.openchargemap.io/?mode=embedded');
-    await launchUrl(
-      uri,
-      mode: kIsWeb
-          ? LaunchMode.platformDefault
-          : LaunchMode.externalApplication,
-    );
   }
 }

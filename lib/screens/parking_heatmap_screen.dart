@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 
 import '../models/subscription_plan.dart';
-import '../providers/user_provider.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
 import '../widgets/feature_gate.dart';
@@ -104,23 +102,6 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
         return const Color(0xFFFF9800); // Brighter Orange
       case RiskLevel.low:
         return const Color(0xFF4CAF50); // Brighter Green
-    }
-  }
-
-  // Get contrasting text color for risk badges
-  Color _getRiskTextColor(RiskLevel level) {
-    return Colors.white;
-  }
-
-  // Get background color for risk toggles (more visible)
-  Color _getRiskBackgroundColor(RiskLevel level) {
-    switch (level) {
-      case RiskLevel.high:
-        return const Color(0xFFFFCDD2); // Light red background
-      case RiskLevel.medium:
-        return const Color(0xFFFFE0B2); // Light orange background
-      case RiskLevel.low:
-        return const Color(0xFFC8E6C9); // Light green background
     }
   }
 
@@ -562,13 +543,6 @@ class _ZoneDetailCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatNumber(int n) {
-    if (n >= 1000) {
-      return '\${(n / 1000).toStringAsFixed(1)}K';
-    }
-    return n.toString();
   }
 
   String _getRiskAdvice() {

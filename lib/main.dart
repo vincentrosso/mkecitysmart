@@ -4,8 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'services/analytics_service.dart';
 import 'services/ad_service.dart';
@@ -37,7 +35,6 @@ import 'screens/history_receipts_screen.dart';
 import 'screens/maintenance_report_screen.dart';
 import 'screens/garbage_schedule_screen.dart';
 import 'screens/city_settings_screen.dart';
-import 'screens/local_alerts_screen.dart';
 import 'services/notification_service.dart';
 import 'services/user_repository.dart';
 import 'screens/alternate_side_parking_screen.dart';

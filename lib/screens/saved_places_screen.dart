@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 
 import '../models/saved_place.dart';
 import '../services/analytics_service.dart';
@@ -37,7 +36,6 @@ class _SavedPlacesBody extends StatefulWidget {
 
 class _SavedPlacesBodyState extends State<_SavedPlacesBody> {
   final SavedPlacesService _service = SavedPlacesService.instance;
-  List<SavedPlace> _places = [];
   bool _loading = true;
 
   @override
@@ -45,22 +43,12 @@ class _SavedPlacesBodyState extends State<_SavedPlacesBody> {
     super.initState();
     AnalyticsService.instance.logScreenView('SavedPlacesScreen');
     _loadPlaces();
-    
-    // Listen to changes
-    _service.placesStream.listen((places) {
-      if (mounted) {
-        setState(() => _places = places);
-      }
-    });
   }
 
   Future<void> _loadPlaces() async {
     setState(() => _loading = true);
     await _service.initialize();
-    setState(() {
-      _places = _service.places;
-      _loading = false;
-    });
+    setState(() => _loading = false);
   }
 
   @override

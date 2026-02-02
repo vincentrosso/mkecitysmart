@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -119,8 +117,6 @@ class FeedFilterService {
   
   // Cache for recent results to reduce Firestore reads
   final Map<String, FeedResult> _cache = {};
-  static const int _maxCacheSize = 10;
-  static const Duration _cacheTtl = Duration(minutes: 2);
   
   // Track last user position to avoid redundant location requests
   Position? _lastPosition;
