@@ -13,7 +13,7 @@ class AdService {
   AdService._();
   static final instance = AdService._();
 
-  // AdMob App IDs - replace with actual IDs from AdMob console
+  // AdMob App ID: ca-app-pub-2009498889741048~9019853313
   // Test IDs for development
   static const _testBannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
   static const _testInterstitialAdUnitId =
@@ -21,13 +21,13 @@ class AdService {
   static const _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
   static const _testNativeAdUnitId = 'ca-app-pub-3940256099942544/2247696110';
 
-  // Production IDs - replace these with your actual AdMob ad unit IDs
-  static const _prodBannerAdUnitId = 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+  // Production IDs - MKE CitySmart AdMob
+  static const _prodBannerAdUnitId = 'ca-app-pub-2009498889741048/5020898555';
   static const _prodInterstitialAdUnitId =
-      'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+      'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create interstitial in AdMob
   static const _prodRewardedAdUnitId =
-      'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
-  static const _prodNativeAdUnitId = 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+      'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create rewarded in AdMob
+  static const _prodNativeAdUnitId = 'ca-app-pub-2009498889741048/3072178018'; // Feed Screen native ad
 
   // Frequency caps
   static const int _maxInterstitialsPerHour = 3;
