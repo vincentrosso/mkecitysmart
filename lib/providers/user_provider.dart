@@ -330,6 +330,7 @@ class UserProvider extends ChangeNotifier {
           permits: _seedPermits(ownerHint: name),
           reservations: _seedReservations(ownerHint: name),
           sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+          createdAt: DateTime.now(),
         );
         await _repository.saveProfile(offlineProfile);
         _profile = offlineProfile;
@@ -395,6 +396,7 @@ class UserProvider extends ChangeNotifier {
           permits: _seedPermits(),
           reservations: _seedReservations(),
           sweepingSchedules: _seedSweepingSchedules(),
+          createdAt: DateTime.now(),
         );
         await _repository.saveProfile(_profile!);
         _guestMode = false;
@@ -1444,6 +1446,7 @@ class UserProvider extends ChangeNotifier {
         permits: _seedPermits(ownerHint: name),
         reservations: _seedReservations(ownerHint: name),
         sweepingSchedules: _seedSweepingSchedules(ownerHint: name),
+        createdAt: DateTime.now(),
       );
       await _repository.saveProfile(stored);
     }

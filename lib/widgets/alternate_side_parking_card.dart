@@ -145,13 +145,22 @@ class AlternateSideParkingCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: instructions.isOddDay 
-                  ? const Color(0xFFE0C164)  // Theme yellow for odd
-                  : const Color(0xFF4FC3F7), // Bright cyan for even
+                  ? const Color(0xFFED8936)  // Theme warning orange for odd days
+                  : const Color(0xFF4299E1), // Theme info blue for even days
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white.withOpacity(0.3),
                 width: 2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: (instructions.isOddDay 
+                      ? const Color(0xFFED8936) 
+                      : const Color(0xFF4299E1)).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Center(
               child: Text(
@@ -205,8 +214,8 @@ class AlternateSideParkingCard extends StatelessWidget {
           Icon(
             instructions.isOddDay ? Icons.looks_one : Icons.looks_two,
             color: instructions.isOddDay 
-                ? const Color(0xFFE0C164) // Theme yellow
-                : const Color(0xFF4FC3F7), // Bright cyan
+                ? const Color(0xFFED8936) // Theme warning orange
+                : const Color(0xFF4299E1), // Theme info blue
             size: 32,
           ),
         ],
@@ -287,14 +296,14 @@ class AlternateSideParkingCard extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   color: isOdd 
-                      ? const Color(0xFFE0C164).withOpacity(0.2) 
-                      : const Color(0xFF4FC3F7).withOpacity(0.2),
+                      ? const Color(0xFFED8936).withOpacity(0.15) 
+                      : const Color(0xFF4299E1).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isOdd 
-                        ? const Color(0xFFE0C164) 
-                        : const Color(0xFF4FC3F7),
-                    width: 1,
+                        ? const Color(0xFFED8936) 
+                        : const Color(0xFF4299E1),
+                    width: 1.5,
                   ),
                 ),
                 child: Center(
@@ -302,8 +311,8 @@ class AlternateSideParkingCard extends StatelessWidget {
                     '${instructions.dayOfMonth}',
                     style: TextStyle(
                       color: isOdd 
-                          ? const Color(0xFFE0C164) 
-                          : const Color(0xFF4FC3F7),
+                          ? const Color(0xFFED8936) 
+                          : const Color(0xFF4299E1),
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -359,13 +368,22 @@ class AlternateSideParkingTile extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: today.isOddDay 
-                      ? const Color(0xFFE0C164) 
-                      : const Color(0xFF4FC3F7),
+                      ? const Color(0xFFED8936) 
+                      : const Color(0xFF4299E1),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white.withOpacity(0.3),
                     width: 2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (today.isOddDay 
+                          ? const Color(0xFFED8936) 
+                          : const Color(0xFF4299E1)).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(
