@@ -129,6 +129,7 @@ class ParkingRiskService {
     double latitude,
     double longitude,
   ) async {
+    debugPrint('ParkingRiskService: Getting risk for $latitude, $longitude');
     try {
       final callable = _functions.httpsCallable('getRiskForLocation');
       final result = await callable.call({
@@ -137,14 +138,23 @@ class ParkingRiskService {
       });
 
       final data = result.data as Map<String, dynamic>?;
+      debugPrint('ParkingRiskService: Response data: $data');
       if (data == null || data['success'] != true) {
-        debugPrint('ParkingRiskService: getRiskForLocation failed');
+        debugPrint(
+          'ParkingRiskService: getRiskForLocation failed - success=${data?['success']}',
+        );
         return null;
       }
 
-      return LocationRisk.fromMap(data);
+      final risk = LocationRisk.fromMap(data);
+      debugPrint(
+        'ParkingRiskService: Risk level=${risk.riskLevel.name}, score=${risk.riskScore}',
+      );
+      return risk;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('ParkingRiskService: getRiskForLocation error: ${e.message}');
+      debugPrint(
+        'ParkingRiskService: getRiskForLocation error: ${e.code} - ${e.message}',
+      );
       return null;
     } catch (e) {
       debugPrint('ParkingRiskService: getRiskForLocation exception: $e');
@@ -160,11 +170,17 @@ class ParkingRiskService {
     double? maxLng,
     bool forceRefresh = false,
   }) async {
+    debugPrint(
+      'ParkingRiskService: getRiskZones called, forceRefresh=$forceRefresh',
+    );
     // Return cached data if available and not expired
     if (!forceRefresh &&
         _cachedZones != null &&
         _cacheTime != null &&
         DateTime.now().difference(_cacheTime!) < _cacheDuration) {
+      debugPrint(
+        'ParkingRiskService: Returning ${_cachedZones!.length} cached zones',
+      );
       return _cachedZones!;
     }
 
@@ -177,11 +193,17 @@ class ParkingRiskService {
       if (minLng != null) params['minLng'] = minLng;
       if (maxLng != null) params['maxLng'] = maxLng;
 
+      debugPrint(
+        'ParkingRiskService: Calling getRiskZones Cloud Function with params: $params',
+      );
       final result = await callable.call(params);
 
       final data = result.data as Map<String, dynamic>?;
+      debugPrint(
+        'ParkingRiskService: getRiskZones response - success=${data?['success']}, count=${data?['count']}',
+      );
       if (data == null || data['success'] != true) {
-        debugPrint('ParkingRiskService: getRiskZones failed');
+        debugPrint('ParkingRiskService: getRiskZones failed - data: $data');
         return _cachedZones ?? [];
       }
 
@@ -191,13 +213,17 @@ class ParkingRiskService {
               .toList() ??
           [];
 
+      debugPrint('ParkingRiskService: Loaded ${zones.length} risk zones');
+
       // Update cache
       _cachedZones = zones;
       _cacheTime = DateTime.now();
 
       return zones;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('ParkingRiskService: getRiskZones error: ${e.message}');
+      debugPrint(
+        'ParkingRiskService: getRiskZones error: ${e.code} - ${e.message}',
+      );
       return _cachedZones ?? [];
     } catch (e) {
       debugPrint('ParkingRiskService: getRiskZones exception: $e');

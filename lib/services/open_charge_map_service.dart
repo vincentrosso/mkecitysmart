@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -34,24 +35,38 @@ class OpenChargeMapService {
     );
 
     debugPrint('OpenChargeMap: Fetching stations near $lat,$lng');
+    debugPrint('OpenChargeMap: URL: $uri');
 
-    final resp = await _client.get(
-      uri,
-      headers: {'Accept': 'application/json', 'X-API-Key': _ocmApiKey},
-    );
+    try {
+      final resp = await _client
+          .get(
+            uri,
+            headers: {'Accept': 'application/json', 'X-API-Key': _ocmApiKey},
+          )
+          .timeout(const Duration(seconds: 15));
 
-    debugPrint('OpenChargeMap: Response status ${resp.statusCode}');
+      debugPrint('OpenChargeMap: Response status ${resp.statusCode}');
 
-    if (resp.statusCode != 200) {
-      final preview =
-          resp.body.length > 200 ? resp.body.substring(0, 200) : resp.body;
-      debugPrint('OpenChargeMap: Error body $preview');
-      throw Exception('OCM status ${resp.statusCode}');
+      if (resp.statusCode != 200) {
+        final preview = resp.body.length > 200
+            ? resp.body.substring(0, 200)
+            : resp.body;
+        debugPrint('OpenChargeMap: Error body $preview');
+        throw Exception('OCM status ${resp.statusCode}');
+      }
+
+      final data = jsonDecode(resp.body) as List<dynamic>;
+      debugPrint('OpenChargeMap: Found ${data.length} raw stations');
+      final stations = data
+          .map((e) => _mapStation(e))
+          .whereType<EVStation>()
+          .toList();
+      debugPrint('OpenChargeMap: Parsed ${stations.length} stations');
+      return stations;
+    } catch (e) {
+      debugPrint('OpenChargeMap: Exception during fetch: $e');
+      rethrow;
     }
-
-    final data = jsonDecode(resp.body) as List<dynamic>;
-    debugPrint('OpenChargeMap: Found ${data.length} stations');
-    return data.map((e) => _mapStation(e)).whereType<EVStation>().toList();
   }
 
   EVStation? _mapStation(dynamic json) {

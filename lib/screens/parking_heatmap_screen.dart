@@ -63,7 +63,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
         lng = loc.longitude;
       }
     } catch (e) {
-      debugPrint('Location unavailable: \$e');
+      debugPrint('Location unavailable: $e');
     }
 
     if (!mounted) return;
@@ -284,7 +284,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        '\${zone.riskScore}',
+                                        '${zone.riskScore}',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -552,6 +552,13 @@ class _ZoneDetailCard extends StatelessWidget {
     }
   }
 
+  String _formatNumber(int n) {
+    if (n >= 1000) {
+      return '${(n / 1000).toStringAsFixed(1)}k';
+    }
+    return n.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -585,7 +592,7 @@ class _ZoneDetailCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '\${zone.riskScore}% citation probability',
+                    '${zone.riskScore}% citation probability',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -606,7 +613,7 @@ class _ZoneDetailCard extends StatelessWidget {
                 const Icon(Icons.receipt_long, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                  '\${_formatNumber(zone.totalCitations)} citations recorded',
+                  '${_formatNumber(zone.totalCitations)} citations recorded',
                   style: const TextStyle(fontSize: 14),
                 ),
               ],
@@ -617,7 +624,7 @@ class _ZoneDetailCard extends StatelessWidget {
                 const Icon(Icons.location_on, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                  'Zone: \${zone.geohash}',
+                  'Zone: ${zone.geohash}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

@@ -26,23 +26,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadRiskData() async {
+    // Default to downtown Milwaukee if location unavailable
+    double lat = 43.0389;
+    double lng = -87.9065;
+
     try {
       final loc = await LocationService().getCurrentPosition();
-      if (loc != null && mounted) {
-        final risk = await ParkingRiskService.instance.getRiskForLocation(
-          loc.latitude,
-          loc.longitude,
-        );
-        if (mounted) {
-          setState(() {
-            _locationRisk = risk;
-            _loadingRisk = false;
-          });
-        }
+      if (loc != null) {
+        lat = loc.latitude;
+        lng = loc.longitude;
+        debugPrint('Dashboard: Using device location: $lat, $lng');
       } else {
-        if (mounted) setState(() => _loadingRisk = false);
+        debugPrint('Dashboard: Location unavailable, using default Milwaukee');
       }
     } catch (e) {
+      debugPrint('Dashboard: Location error: $e, using default Milwaukee');
+    }
+
+    try {
+      final risk = await ParkingRiskService.instance.getRiskForLocation(
+        lat,
+        lng,
+      );
+      if (mounted) {
+        setState(() {
+          _locationRisk = risk;
+          _loadingRisk = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Dashboard: Risk load error: $e');
       if (mounted) setState(() => _loadingRisk = false);
     }
   }
