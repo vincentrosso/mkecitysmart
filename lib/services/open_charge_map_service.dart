@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/ev_station.dart';
@@ -10,7 +11,8 @@ const String _ocmApiKey = String.fromEnvironment(
 );
 
 class OpenChargeMapService {
-  OpenChargeMapService({http.Client? client}) : _client = client ?? http.Client();
+  OpenChargeMapService({http.Client? client})
+    : _client = client ?? http.Client();
 
   final http.Client _client;
 
@@ -31,16 +33,24 @@ class OpenChargeMapService {
       '&key=$_ocmApiKey',
     );
 
-    final resp = await _client.get(uri, headers: {
-      'Accept': 'application/json',
-      'X-API-Key': _ocmApiKey,
-    });
+    debugPrint('OpenChargeMap: Fetching stations near $lat,$lng');
+
+    final resp = await _client.get(
+      uri,
+      headers: {'Accept': 'application/json', 'X-API-Key': _ocmApiKey},
+    );
+
+    debugPrint('OpenChargeMap: Response status ${resp.statusCode}');
 
     if (resp.statusCode != 200) {
+      final preview =
+          resp.body.length > 200 ? resp.body.substring(0, 200) : resp.body;
+      debugPrint('OpenChargeMap: Error body $preview');
       throw Exception('OCM status ${resp.statusCode}');
     }
 
     final data = jsonDecode(resp.body) as List<dynamic>;
+    debugPrint('OpenChargeMap: Found ${data.length} stations');
     return data.map((e) => _mapStation(e)).whereType<EVStation>().toList();
   }
 
