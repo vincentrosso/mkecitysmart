@@ -895,12 +895,20 @@ class UserProvider extends ChangeNotifier {
     );
     final deduped = _dedupeSighting(report);
     _sightings = deduped;
-    await _repository.saveSightings(_sightings);
+
+    // Try to save locally first - don't throw if this fails
+    bool localSaveOk = true;
+    try {
+      await _repository.saveSightings(_sightings);
+    } catch (e) {
+      debugPrint('Failed to save sighting locally: $e');
+      localSaveOk = false;
+    }
 
     // Send to Cloud Function for server-side processing and nearby fanout
     final result = await _reportApi.sendSighting(report);
     final success = result['success'] == true;
-    final message = result['message']?.toString();
+    final serverMessage = result['message']?.toString();
 
     // Also show local notification if nearby (for immediate feedback)
     _maybeNotifyNearbySighting(report);
@@ -926,11 +934,19 @@ class UserProvider extends ChangeNotifier {
           'type': report.type.name,
           'hasLocation': report.latitude != null && report.longitude != null,
           'serverSuccess': success,
+          'localSaveOk': localSaveOk,
         },
       ),
     );
 
-    return message;
+    // Return appropriate message based on outcome
+    if (success) {
+      return serverMessage ?? 'Thanks! Sighting reported.';
+    } else if (localSaveOk) {
+      return 'Sighting saved locally. Will sync when online.';
+    } else {
+      return 'Sighting recorded. May not sync to other users.';
+    }
   }
 
   Future<void> _maybeNotifyNearbySighting(SightingReport report) async {

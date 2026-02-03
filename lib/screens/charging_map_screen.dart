@@ -387,8 +387,8 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
         lat = pos.latitude;
         lng = pos.longitude;
       }
-    } catch (_) {
-      // ignore and use defaults
+    } catch (e) {
+      debugPrint('EV: Location error: $e');
     }
     _currentLat = lat;
     _currentLng = lng;
@@ -400,15 +400,24 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
         distanceKm: 15,
       );
       if (!mounted) return;
+      if (stations.isEmpty) {
+        debugPrint('EV: API returned empty list, showing mock data');
+      } else {
+        debugPrint('EV: Loaded ${stations.length} stations from API');
+      }
       setState(() {
         _stations = stations.isEmpty ? mockEvStations : stations;
         _loadingStations = false;
+        if (stations.isEmpty) {
+          _stationError = 'No nearby stations found. Showing sample locations.';
+        }
       });
       _loadWeather();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('EV: API error: $e');
       if (!mounted) return;
       setState(() {
-        _stationError = 'Could not load live charging stations.';
+        _stationError = 'Could not load live stations. Showing samples.';
         _stations = mockEvStations;
         _loadingStations = false;
       });

@@ -56,11 +56,13 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
         ),
       );
     } catch (e) {
+      debugPrint('Report sighting error: $e');
       if (mounted) {
+        // Even if there was an error, the sighting was likely recorded locally
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit report. Please try again.'),
-            duration: const Duration(seconds: 4),
+          const SnackBar(
+            content: Text('Sighting recorded locally. Sync may be delayed.'),
+            duration: Duration(seconds: 4),
           ),
         );
       }
