@@ -34,18 +34,14 @@ ThemeData buildCitySmartTheme() {
       color: kCitySmartCard,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: kCitySmartYellow,
         foregroundColor: kCitySmartGreen,
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -56,9 +52,7 @@ ThemeData buildCitySmartTheme() {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: kCitySmartYellow,
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontWeight: FontWeight.w500),
       ),
     ),
     textTheme: base.textTheme.copyWith(
@@ -94,10 +88,7 @@ ThemeData buildCitySmartTheme() {
       selectedItemColor: kCitySmartYellow,
       unselectedItemColor: kCitySmartMuted,
       type: BottomNavigationBarType.fixed,
-      selectedLabelStyle: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
+      selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
       unselectedLabelStyle: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w400,

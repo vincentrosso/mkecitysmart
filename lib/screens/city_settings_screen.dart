@@ -44,10 +44,12 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
     final provider = context.read<UserProvider>();
     _cityId = provider.cityId;
     _languageCode = provider.languageCode;
-    
+
     // Ensure selected city matches one of the available cities
     // Default to 'milwaukee' if the current cityId isn't in the list
-    final cityIds = _milwaukeeCountyCities.map((c) => c['id'] as String).toList();
+    final cityIds = _milwaukeeCountyCities
+        .map((c) => c['id'] as String)
+        .toList();
     if (cityIds.contains(_cityId)) {
       _selectedCity = _cityId;
     } else {
