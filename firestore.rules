@@ -94,6 +94,28 @@ service cloud.firestore {
         && (resource.data.uid == request.auth.uid || request.auth.token.admin == true);
     }
 
+    // Saved places (home, work, favorites) - user-owned data
+    match /savedPlaces/{placeId} {
+      // Users can read only their own saved places
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      // Users can create saved places for themselves
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['userId', 'name', 'type', 'latitude', 'longitude']);
+
+      // Users can update/delete only their own saved places
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Citation risk zones - read-only for app users (populated by backend)
+    match /citation_risk_zones/{zoneId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read: if false;

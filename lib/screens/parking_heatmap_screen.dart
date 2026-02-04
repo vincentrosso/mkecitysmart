@@ -27,6 +27,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   bool _loading = true;
   String? _error;
   RiskZone? _selectedZone;
+  bool _riskBannerDismissed = false;
 
   @override
   void initState() {
@@ -200,13 +201,28 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                     ),
                   ),
 
-                // Risk badge at top
-                if (_locationRisk != null)
+                // Risk badge at top with dismiss button
+                if (_locationRisk != null && !_riskBannerDismissed)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    color: Color(_locationRisk!.colorValue).withOpacity(0.1),
-                    child: ParkingRiskBadge(risk: _locationRisk!),
+                    color: Color(
+                      _locationRisk!.colorValue,
+                    ).withValues(alpha: 0.1),
+                    child: Row(
+                      children: [
+                        Expanded(child: ParkingRiskBadge(risk: _locationRisk!)),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () =>
+                              setState(() => _riskBannerDismissed = true),
+                          tooltip: 'Dismiss',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: Colors.grey.shade600,
+                        ),
+                      ],
+                    ),
                   ),
 
                 // Map
