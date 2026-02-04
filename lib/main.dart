@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -328,16 +329,31 @@ class MKEParkApp extends StatelessWidget {
             title: 'MKE CitySmart',
             theme: buildCitySmartTheme(),
             locale: Locale(provider.languageCode),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             supportedLocales: const [
               Locale('en'),
               Locale('es'),
-              Locale('hmn'),
               Locale('ar'),
               Locale('fr'),
               Locale('zh'),
               Locale('hi'),
               Locale('el'),
             ],
+            // Fall back to English for unsupported locales (e.g., Hmong)
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (locale == null) return const Locale('en');
+              for (final supported in supportedLocales) {
+                if (supported.languageCode == locale.languageCode) {
+                  return supported;
+                }
+              }
+              // Fall back to English for unsupported locales
+              return const Locale('en');
+            },
             initialRoute: '/',
             onUnknownRoute: (settings) => MaterialPageRoute(
               builder: (context) => Scaffold(

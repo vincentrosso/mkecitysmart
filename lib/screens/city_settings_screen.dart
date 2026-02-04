@@ -38,12 +38,20 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
     {'name': 'West Milwaukee', 'id': 'west_milwaukee', 'isMain': false},
   ];
 
+  // Supported languages with Flutter Material localization support
+  static const _supportedLanguages = ['en', 'es', 'ar', 'fr', 'zh', 'hi', 'el'];
+
   @override
   void initState() {
     super.initState();
     final provider = context.read<UserProvider>();
     _cityId = provider.cityId;
-    _languageCode = provider.languageCode;
+
+    // Ensure language code is valid, default to 'en' if not supported
+    final storedLang = provider.languageCode;
+    _languageCode = _supportedLanguages.contains(storedLang)
+        ? storedLang
+        : 'en';
 
     // Ensure selected city matches one of the available cities
     // Default to 'milwaukee' if the current cityId isn't in the list
@@ -171,9 +179,11 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
                   DropdownMenuItem(value: 'es', child: Text('Español')),
-                  DropdownMenuItem(value: 'hmn', child: Text('Hmoob')),
                   DropdownMenuItem(value: 'ar', child: Text('العربية')),
                   DropdownMenuItem(value: 'fr', child: Text('Français')),
+                  DropdownMenuItem(value: 'zh', child: Text('中文')),
+                  DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
+                  DropdownMenuItem(value: 'el', child: Text('Ελληνικά')),
                 ],
                 onChanged: (value) =>
                     setState(() => _languageCode = value ?? 'en'),
