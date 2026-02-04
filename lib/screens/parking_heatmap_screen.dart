@@ -272,7 +272,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                           initialZoom: 11.5,
                           minZoom: 9,
                           maxZoom: 18,
-                          onTap: (_, __) {
+                          onTap: (tapPosition, point) {
                             setState(() => _selectedZone = null);
                           },
                         ),
@@ -296,7 +296,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                 point: LatLng(zone.lat, zone.lng),
                                 radius: radius,
                                 useRadiusInMeter: true,
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 borderColor: color,
                                 borderStrokeWidth: 2,
                               );
@@ -327,7 +327,9 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                       boxShadow: isSelected
                                           ? [
                                               BoxShadow(
-                                                color: color.withOpacity(0.5),
+                                                color: color.withValues(
+                                                  alpha: 0.5,
+                                                ),
                                                 blurRadius: 8,
                                                 spreadRadius: 2,
                                               ),
@@ -375,7 +377,9 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.green.withOpacity(0.5),
+                                          color: Colors.green.withValues(
+                                            alpha: 0.5,
+                                          ),
                                           blurRadius: isFirst ? 12 : 6,
                                           spreadRadius: isFirst ? 3 : 1,
                                         ),
@@ -419,7 +423,9 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.blue.withOpacity(0.3),
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -443,7 +449,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -499,7 +505,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -635,7 +641,7 @@ class _LegendItem extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 blurRadius: 4,
                 spreadRadius: 1,
               ),

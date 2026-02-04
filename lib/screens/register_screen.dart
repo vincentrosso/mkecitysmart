@@ -111,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _showMessage('✓ Phone auto-verified! Welcome to MKE CitySmart.');
     Navigator.pushReplacementNamed(context, '/dashboard');
   }
-  
+
   Future<String?> _promptForSmsCode(String phoneNumber) async {
     final controller = TextEditingController();
     final result = await showDialog<String>(
@@ -126,10 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               Text(
                 'We sent a 6-digit code to $phoneNumber',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -157,10 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 12),
               Text(
                 'Didn\'t receive the code? Check your spam folder or try again in a few minutes.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
           ),
@@ -189,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _formatPhoneNumber(String phone) {
     // Remove all non-digit characters
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
-    
+
     // If already has country code (11 digits starting with 1 for US)
     if (digits.length == 11 && digits.startsWith('1')) {
       return '+$digits';
@@ -229,10 +223,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
               Text(
                 'US numbers only. We\'ll send a verification code.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -312,31 +303,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _registerNameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Full name'),
-                    validator: (value) =>
-                        value != null && value.isNotEmpty
-                            ? null
-                            : 'Introduce yourself with a name',
+                    decoration: const InputDecoration(labelText: 'Full name'),
+                    validator: (value) => value != null && value.isNotEmpty
+                        ? null
+                        : 'Introduce yourself with a name',
                   ),
                   TextFormField(
                     controller: _registerEmailController,
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) =>
-                        value != null && value.contains('@')
-                            ? null
-                            : 'Enter a valid email',
+                    validator: (value) => value != null && value.contains('@')
+                        ? null
+                        : 'Enter a valid email',
                   ),
                   TextFormField(
                     controller: _registerPasswordController,
-                    decoration:
-                        const InputDecoration(labelText: 'Password'),
+                    decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
-                    validator: (value) =>
-                        value != null && value.length >= 6
-                            ? null
-                            : 'Password must be 6+ characters',
+                    validator: (value) => value != null && value.length >= 6
+                        ? null
+                        : 'Password must be 6+ characters',
                   ),
                 ],
               ),
@@ -345,8 +331,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 16),
           Card(
             child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               leading: const Icon(Icons.phone_iphone),
               title: const Text('Verify with phone'),
               subtitle: const Text('Get a text code to create your account'),
@@ -358,8 +346,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child:
-                              CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Send code'),
                 ),
@@ -373,9 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: _registering || _socialLoading
-                ? null
-                : _handleGoogle,
+            onPressed: _registering || _socialLoading ? null : _handleGoogle,
             icon: const Icon(Icons.login),
             label: const Text('Google'),
           ),
@@ -383,8 +368,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               (defaultTargetPlatform == TargetPlatform.iOS ||
                   defaultTargetPlatform == TargetPlatform.macOS))
             OutlinedButton.icon(
-              onPressed:
-                  _registering || _socialLoading ? null : _handleApple,
+              onPressed: _registering || _socialLoading ? null : _handleApple,
               icon: const Icon(Icons.apple),
               label: const Text('Sign in with Apple'),
             ),

@@ -1,11 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Place type for saved locations
-enum PlaceType {
-  home,
-  work,
-  favorite,
-}
+enum PlaceType { home, work, favorite }
 
 /// A saved place with location and metadata
 /// Designed for scalability - supports future extensions like:
@@ -183,9 +179,7 @@ class SavedPlace {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SavedPlace &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is SavedPlace && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

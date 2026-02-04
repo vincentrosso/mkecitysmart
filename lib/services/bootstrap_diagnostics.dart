@@ -74,13 +74,7 @@ class BootstrapDiagnostics {
   }
 }
 
-enum BootstrapStatus {
-  success,
-  failed,
-  warning,
-  skipped,
-  info,
-}
+enum BootstrapStatus { success, failed, warning, skipped, info }
 
 class BootstrapEntry {
   BootstrapEntry({

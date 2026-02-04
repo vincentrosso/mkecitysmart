@@ -282,7 +282,7 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4FC3F7).withOpacity(0.2),
+                    color: const Color(0xFF4FC3F7).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -321,9 +321,9 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -812,15 +812,18 @@ class _AddTicketFormState extends State<_AddTicketForm> {
   }
 
   Future<void> _takePhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
     final photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       setState(() => _photoFile = File(photo.path));
       // TODO: Use OCR to extract ticket details from photo
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Photo captured! Enter details manually.'),
-        ),
-      );
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Photo captured! Enter details manually.'),
+          ),
+        );
+      }
     }
   }
 
@@ -1037,7 +1040,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
             // Vehicle selection - dropdown or manual entry
             if (vehicles.isNotEmpty && !_useManualPlate) ...[
               DropdownButtonFormField<String>(
-                value: _selectedVehicleId,
+                initialValue: _selectedVehicleId,
                 decoration: const InputDecoration(
                   labelText: 'Vehicle *',
                   prefixIcon: Icon(Icons.directions_car),
@@ -1103,7 +1106,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
 
             // Violation type dropdown with real Milwaukee data
             DropdownButtonFormField<String>(
-              value: _selectedViolation,
+              initialValue: _selectedViolation,
               decoration: const InputDecoration(
                 labelText: 'Violation type *',
                 prefixIcon: Icon(Icons.warning_amber),
@@ -1422,13 +1425,13 @@ class _ReminderOption extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: enabled
-                ? kCitySmartGreen.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
+                ? kCitySmartGreen.withValues(alpha: 0.1)
+                : Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: enabled
-                  ? kCitySmartGreen.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.2),
+                  ? kCitySmartGreen.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -1437,8 +1440,8 @@ class _ReminderOption extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: enabled
-                      ? const Color(0xFF4FC3F7).withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.2),
+                      ? const Color(0xFF4FC3F7).withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

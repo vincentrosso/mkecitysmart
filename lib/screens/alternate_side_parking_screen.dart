@@ -9,7 +9,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = AlternateSideParkingService.instance;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alternate Side Parking'),
@@ -25,23 +25,20 @@ class AlternateSideParkingScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Main card with today and upcoming days
-          const AlternateSideParkingCard(
-            showUpcoming: true,
-            upcomingDays: 14,
-          ),
-          
+          const AlternateSideParkingCard(showUpcoming: true, upcomingDays: 14),
+
           const SizedBox(height: 24),
-          
+
           // How it works section
           _buildHowItWorksCard(context),
-          
+
           const SizedBox(height: 16),
-          
+
           // Tips section
           _buildTipsCard(context),
-          
+
           const SizedBox(height: 16),
-          
+
           // Notification settings
           _buildNotificationCard(context, service),
         ],
@@ -63,7 +60,9 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -74,9 +73,9 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'How It Works',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -119,7 +118,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -139,10 +138,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
           ),
@@ -165,7 +161,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
+                    color: Colors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -176,17 +172,23 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'Parking Tips',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildTipItem('Look at house numbers to identify which side is odd/even'),
+            _buildTipItem(
+              'Look at house numbers to identify which side is odd/even',
+            ),
             _buildTipItem('Set a reminder to move your car before midnight'),
-            _buildTipItem('Check for posted signs - some streets may have exceptions'),
-            _buildTipItem('Enable notifications in this app for daily reminders'),
+            _buildTipItem(
+              'Check for posted signs - some streets may have exceptions',
+            ),
+            _buildTipItem(
+              'Enable notifications in this app for daily reminders',
+            ),
           ],
         ),
       ),
@@ -224,7 +226,10 @@ class AlternateSideParkingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard(BuildContext context, AlternateSideParkingService service) {
+  Widget _buildNotificationCard(
+    BuildContext context,
+    AlternateSideParkingService service,
+  ) {
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -238,7 +243,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -249,19 +254,16 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'Notifications',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
               'Get reminders to help you remember which side to park on:',
-              style: TextStyle(
-                color: Colors.grey[700],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[700], fontSize: 14),
             ),
             const SizedBox(height: 16),
             _buildNotificationOption(
@@ -397,7 +399,10 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange[700]),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange[700],
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

@@ -69,7 +69,11 @@ class CloudLogService {
   void _hookFlutterErrors() {
     _originalFlutterErrorHandler = FlutterError.onError;
     FlutterError.onError = (details) {
-      recordError('flutter_error', details.exception, details.stack ?? StackTrace.current);
+      recordError(
+        'flutter_error',
+        details.exception,
+        details.stack ?? StackTrace.current,
+      );
       _originalFlutterErrorHandler?.call(details);
     };
     PlatformDispatcher.instance.onError = (error, stack) {

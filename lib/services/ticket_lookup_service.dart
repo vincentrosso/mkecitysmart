@@ -16,9 +16,7 @@ class TicketLookupService {
   final http.Client _client;
 
   Map<String, String> _headers() {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (authToken != null && authToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $authToken';
     }
@@ -29,8 +27,9 @@ class TicketLookupService {
     required String plate,
     required String state,
   }) async {
-    final uri = Uri.parse('$baseUrl/tickets')
-        .replace(queryParameters: {'plate': plate, 'state': state});
+    final uri = Uri.parse(
+      '$baseUrl/tickets',
+    ).replace(queryParameters: {'plate': plate, 'state': state});
     final resp = await _client.get(uri, headers: _headers());
     if (resp.statusCode != 200) {
       throw Exception('Lookup failed: ${resp.statusCode}');

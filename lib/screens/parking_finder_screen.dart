@@ -336,7 +336,8 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
             options: MapOptions(
               initialCenter: _currentLocation,
               initialZoom: 13.5,
-              onTap: (_, __) => setState(() => _selectedSpot = null),
+              onTap: (tapPosition, point) =>
+                  setState(() => _selectedSpot = null),
             ),
             children: [
               TileLayer(

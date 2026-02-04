@@ -35,7 +35,8 @@ class SightingReport {
   }
 
   factory SightingReport.fromJson(Map<String, dynamic> json) {
-    final typeName = json['type'] as String? ?? SightingType.parkingEnforcer.name;
+    final typeName =
+        json['type'] as String? ?? SightingType.parkingEnforcer.name;
     return SightingReport(
       id: json['id'] as String? ?? '',
       type: SightingType.values.firstWhere(
@@ -46,7 +47,8 @@ class SightingReport {
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       notes: json['notes'] as String? ?? '',
-      reportedAt: DateTime.tryParse(json['reportedAt'] as String? ?? '') ??
+      reportedAt:
+          DateTime.tryParse(json['reportedAt'] as String? ?? '') ??
           DateTime.now(),
       occurrences: json['occurrences'] as int? ?? 1,
     );

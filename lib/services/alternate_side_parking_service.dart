@@ -1,10 +1,11 @@
 /// Alternate Side Parking Service
-/// 
+///
 /// Determines which side of the street to park on based on odd/even day rules.
 /// Many cities use this system for street cleaning and snow removal.
 class AlternateSideParkingService {
   AlternateSideParkingService._();
-  static final AlternateSideParkingService instance = AlternateSideParkingService._();
+  static final AlternateSideParkingService instance =
+      AlternateSideParkingService._();
 
   /// Public factory so existing call sites that use `AlternateSideParkingService()`
   /// continue to work and receive the singleton instance.
@@ -14,7 +15,7 @@ class AlternateSideParkingService {
   ParkingInstructions getParkingInstructions(DateTime date) {
     final dayOfMonth = date.day;
     final isOddDay = dayOfMonth % 2 == 1;
-    
+
     return ParkingInstructions(
       date: date,
       dayOfMonth: dayOfMonth,
@@ -23,8 +24,6 @@ class AlternateSideParkingService {
       nextSwitchDate: _getNextSwitchDate(date),
     );
   }
-
-
 
   /// Get parking instructions for today
   ParkingInstructions getTodayInstructions() {
@@ -59,34 +58,36 @@ class AlternateSideParkingService {
   List<ParkingInstructions> getUpcomingInstructions(int days) {
     final instructions = <ParkingInstructions>[];
     final now = DateTime.now();
-    
+
     for (int i = 0; i < days; i++) {
       final date = now.add(Duration(days: i));
       instructions.add(getParkingInstructions(date));
     }
-    
+
     return instructions;
   }
 
   /// Get a human-readable parking reminder
   String getParkingReminder({DateTime? forDate, bool includeTime = false}) {
-    final instructions = forDate != null 
+    final instructions = forDate != null
         ? getParkingInstructions(forDate)
         : getTodayInstructions();
-    
+
     final side = instructions.parkingSide == ParkingSide.odd ? 'odd' : 'even';
     final dayName = _getDayName(instructions.date);
     final dateStr = _formatDate(instructions.date);
-    
+
     if (includeTime) {
-      final timeUntilSwitch = instructions.nextSwitchDate.difference(DateTime.now());
+      final timeUntilSwitch = instructions.nextSwitchDate.difference(
+        DateTime.now(),
+      );
       final hours = timeUntilSwitch.inHours;
       final minutes = timeUntilSwitch.inMinutes % 60;
-      
+
       return 'Park on the $side-numbered side today ($dayName, $dateStr). '
-             'Switch in ${hours}h ${minutes}m.';
+          'Switch in ${hours}h ${minutes}m.';
     }
-    
+
     return 'Park on the $side-numbered side today ($dayName, ${instructions.dayOfMonth})';
   }
 
@@ -100,8 +101,18 @@ class AlternateSideParkingService {
   /// Format date for display
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -118,7 +129,7 @@ class AlternateSideParkingService {
     final instructions = forDate != null
         ? getParkingInstructions(forDate)
         : getTodayInstructions();
-    
+
     return vehicleSide == instructions.parkingSide;
   }
 
@@ -130,29 +141,32 @@ class AlternateSideParkingService {
     final instructions = forDate != null
         ? getParkingInstructions(forDate)
         : getTodayInstructions();
-    
+
     switch (type) {
       case NotificationType.morningReminder:
         return NotificationMessage(
           title: '🅿️ Parking Reminder',
-          body: 'Today is ${instructions.isOddDay ? "odd" : "even"}. '
-                'Park on the ${instructions.isOddDay ? "odd" : "even"}-numbered side.',
+          body:
+              'Today is ${instructions.isOddDay ? "odd" : "even"}. '
+              'Park on the ${instructions.isOddDay ? "odd" : "even"}-numbered side.',
           priority: NotificationPriority.normal,
         );
-      
+
       case NotificationType.eveningWarning:
         final tomorrow = getTomorrowInstructions();
         return NotificationMessage(
           title: '⚠️ Parking Side Changes Tonight',
-          body: 'Move your car before midnight! '
-                'Tomorrow (${tomorrow.dayOfMonth}) park on the ${tomorrow.isOddDay ? "odd" : "even"} side.',
+          body:
+              'Move your car before midnight! '
+              'Tomorrow (${tomorrow.dayOfMonth}) park on the ${tomorrow.isOddDay ? "odd" : "even"} side.',
           priority: NotificationPriority.high,
         );
-      
+
       case NotificationType.midnightAlert:
         return NotificationMessage(
           title: '🚨 Switch Parking Side Now!',
-          body: 'It\'s past midnight. Park on the ${instructions.isOddDay ? "odd" : "even"}-numbered side (day ${instructions.dayOfMonth}).',
+          body:
+              'It\'s past midnight. Park on the ${instructions.isOddDay ? "odd" : "even"}-numbered side (day ${instructions.dayOfMonth}).',
           priority: NotificationPriority.urgent,
         );
     }
@@ -161,8 +175,8 @@ class AlternateSideParkingService {
 
 /// Parking side enum
 enum ParkingSide {
-  odd,   // Odd-numbered addresses (1, 3, 5, 7, etc.)
-  even,  // Even-numbered addresses (2, 4, 6, 8, etc.)
+  odd, // Odd-numbered addresses (1, 3, 5, 7, etc.)
+  even, // Even-numbered addresses (2, 4, 6, 8, etc.)
 }
 
 /// Parking instructions for a specific date
@@ -185,9 +199,8 @@ class ParkingInstructions {
   String get sideLabel => isOddDay ? 'Odd' : 'Even';
 
   /// Get side number examples
-  String get sideExamples => isOddDay 
-      ? '1, 3, 5, 7, 9...' 
-      : '2, 4, 6, 8, 10...';
+  String get sideExamples =>
+      isOddDay ? '1, 3, 5, 7, 9...' : '2, 4, 6, 8, 10...';
 
   /// Get time until next switch
   Duration get timeUntilSwitch => nextSwitchDate.difference(DateTime.now());
@@ -220,9 +233,9 @@ class ParkingInstructions {
 
 /// Notification type for alternate side parking
 enum NotificationType {
-  morningReminder,   // Daily morning reminder
-  eveningWarning,    // Evening before switch
-  midnightAlert,     // Right after midnight when side changes
+  morningReminder, // Daily morning reminder
+  eveningWarning, // Evening before switch
+  midnightAlert, // Right after midnight when side changes
 }
 
 /// Notification message
@@ -246,8 +259,4 @@ class AlternateSideStatus {
 }
 
 /// Notification priority
-enum NotificationPriority {
-  normal,
-  high,
-  urgent,
-}
+enum NotificationPriority { normal, high, urgent }

@@ -6,9 +6,7 @@ class LocalAlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Local Alerts'),
-      ),
+      appBar: AppBar(title: const Text('Local Alerts')),
       body: const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),

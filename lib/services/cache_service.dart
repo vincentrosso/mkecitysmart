@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// A scalable caching service for storing JSON-serializable data locally.
 /// Uses SharedPreferences for simple key-value storage with TTL support.
-/// 
+///
 /// Designed for:
 /// - Feed results caching to reduce Firestore reads
 /// - User preferences caching
@@ -17,13 +17,13 @@ class CacheService {
   CacheService._internal();
 
   SharedPreferences? _prefs;
-  
+
   /// Cache key prefixes for organization
   static const String _feedPrefix = 'feed_cache_';
   static const String _userPrefix = 'user_cache_';
   static const String _apiPrefix = 'api_cache_';
   static const String _metaPrefix = 'meta_';
-  
+
   /// Default cache durations
   static const Duration feedCacheDuration = Duration(minutes: 5);
   static const Duration userCacheDuration = Duration(hours: 1);
@@ -51,13 +51,13 @@ class CacheService {
       final prefs = await _preferences;
       final json = jsonEncode(toJson(value));
       await prefs.setString(key, json);
-      
+
       // Store expiration time if TTL is set
       if (ttl != null) {
         final expiresAt = DateTime.now().add(ttl).millisecondsSinceEpoch;
         await prefs.setInt('${_metaPrefix}exp_$key', expiresAt);
       }
-      
+
       if (kDebugMode) {
         debugPrint('[CacheService] Stored: $key (${json.length} bytes)');
       }
@@ -77,20 +77,21 @@ class CacheService {
   }) async {
     try {
       final prefs = await _preferences;
-      
+
       // Check expiration
       final expiresAt = prefs.getInt('${_metaPrefix}exp_$key');
-      if (expiresAt != null && DateTime.now().millisecondsSinceEpoch > expiresAt) {
+      if (expiresAt != null &&
+          DateTime.now().millisecondsSinceEpoch > expiresAt) {
         if (kDebugMode) {
           debugPrint('[CacheService] Expired: $key');
         }
         await remove(key);
         return null;
       }
-      
+
       final json = prefs.getString(key);
       if (json == null) return null;
-      
+
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       if (kDebugMode) {
         debugPrint('[CacheService] Retrieved: $key');
@@ -116,14 +117,16 @@ class CacheService {
       final jsonList = value.map((item) => toJson(item)).toList();
       final json = jsonEncode(jsonList);
       await prefs.setString(key, json);
-      
+
       if (ttl != null) {
         final expiresAt = DateTime.now().add(ttl).millisecondsSinceEpoch;
         await prefs.setInt('${_metaPrefix}exp_$key', expiresAt);
       }
-      
+
       if (kDebugMode) {
-        debugPrint('[CacheService] Stored list: $key (${value.length} items, ${json.length} bytes)');
+        debugPrint(
+          '[CacheService] Stored list: $key (${value.length} items, ${json.length} bytes)',
+        );
       }
       return true;
     } catch (e) {
@@ -141,27 +144,30 @@ class CacheService {
   }) async {
     try {
       final prefs = await _preferences;
-      
+
       // Check expiration
       final expiresAt = prefs.getInt('${_metaPrefix}exp_$key');
-      if (expiresAt != null && DateTime.now().millisecondsSinceEpoch > expiresAt) {
+      if (expiresAt != null &&
+          DateTime.now().millisecondsSinceEpoch > expiresAt) {
         if (kDebugMode) {
           debugPrint('[CacheService] Expired list: $key');
         }
         await remove(key);
         return null;
       }
-      
+
       final json = prefs.getString(key);
       if (json == null) return null;
-      
+
       final decoded = jsonDecode(json) as List<dynamic>;
       final result = decoded
           .map((item) => fromJson(item as Map<String, dynamic>))
           .toList();
-      
+
       if (kDebugMode) {
-        debugPrint('[CacheService] Retrieved list: $key (${result.length} items)');
+        debugPrint(
+          '[CacheService] Retrieved list: $key (${result.length} items)',
+        );
       }
       return result;
     } catch (e) {
@@ -177,7 +183,7 @@ class CacheService {
     try {
       final prefs = await _preferences;
       await prefs.setString(key, value);
-      
+
       if (ttl != null) {
         final expiresAt = DateTime.now().add(ttl).millisecondsSinceEpoch;
         await prefs.setInt('${_metaPrefix}exp_$key', expiresAt);
@@ -192,14 +198,15 @@ class CacheService {
   Future<String?> getString(String key) async {
     try {
       final prefs = await _preferences;
-      
+
       // Check expiration
       final expiresAt = prefs.getInt('${_metaPrefix}exp_$key');
-      if (expiresAt != null && DateTime.now().millisecondsSinceEpoch > expiresAt) {
+      if (expiresAt != null &&
+          DateTime.now().millisecondsSinceEpoch > expiresAt) {
         await remove(key);
         return null;
       }
-      
+
       return prefs.getString(key);
     } catch (e) {
       return null;
@@ -228,7 +235,9 @@ class CacheService {
         await prefs.remove('${_metaPrefix}exp_$key');
       }
       if (kDebugMode) {
-        debugPrint('[CacheService] Cleared ${keys.length} items with prefix: $prefix');
+        debugPrint(
+          '[CacheService] Cleared ${keys.length} items with prefix: $prefix',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -272,12 +281,12 @@ class CacheService {
     try {
       final prefs = await _preferences;
       final keys = prefs.getKeys();
-      
+
       int feedCount = 0;
       int userCount = 0;
       int apiCount = 0;
       int otherCount = 0;
-      
+
       for (final key in keys) {
         if (key.startsWith(_feedPrefix)) {
           feedCount++;
@@ -289,7 +298,7 @@ class CacheService {
           otherCount++;
         }
       }
-      
+
       return {
         'total': keys.length,
         'feed': feedCount,
@@ -303,16 +312,16 @@ class CacheService {
   }
 
   // Convenience methods for common cache keys
-  
+
   /// Cache key for feed results with filters
   static String feedKey(String filterHash) => '$_feedPrefix$filterHash';
-  
+
   /// Cache key for user profile
   static String userProfileKey(String uid) => '${_userPrefix}profile_$uid';
-  
+
   /// Cache key for saved places
   static String savedPlacesKey(String uid) => '${_userPrefix}places_$uid';
-  
+
   /// Cache key for API responses
   static String apiKey(String endpoint) => '$_apiPrefix$endpoint';
 }

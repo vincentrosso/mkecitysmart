@@ -69,6 +69,9 @@ dependencies:
   share_plus: ^10.1.4
   purchases_ui_flutter: ^8.11.0
 
+  path_provider: any
+  path: any
+  web: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -88,6 +91,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+  firebase_auth_platform_interface: any
 flutter:
 
   # The following line ensures that the Material Icons font is

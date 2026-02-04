@@ -15,9 +15,7 @@ class HistoryReceiptsScreen extends StatelessWidget {
         final receipts = provider.receipts;
         final tickets = provider.tickets;
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Receipts & Tickets'),
-          ),
+          appBar: AppBar(title: const Text('Receipts & Tickets')),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -30,7 +28,9 @@ class HistoryReceiptsScreen extends StatelessWidget {
                 const Card(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No receipts yet. Complete a permit or ticket flow.'),
+                    child: Text(
+                      'No receipts yet. Complete a permit or ticket flow.',
+                    ),
                   ),
                 )
               else
@@ -102,7 +102,9 @@ class _TicketTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.confirmation_number, color: statusColor),
         title: Text(ticket.id),
-        subtitle: Text('${ticket.reason} • \$${ticket.amount.toStringAsFixed(0)}'),
+        subtitle: Text(
+          '${ticket.reason} • \$${ticket.amount.toStringAsFixed(0)}',
+        ),
         trailing: Text(ticket.status.name.toUpperCase()),
       ),
     );

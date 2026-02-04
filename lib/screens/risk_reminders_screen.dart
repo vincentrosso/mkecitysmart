@@ -42,8 +42,9 @@ class RiskRemindersScreen extends StatelessWidget {
               Card(
                 child: SwitchListTile(
                   title: const Text('Parking enforcer alerts'),
-                  subtitle:
-                      const Text('Notify when enforcer sightings are nearby'),
+                  subtitle: const Text(
+                    'Notify when enforcer sightings are nearby',
+                  ),
                   value: prefs.parkingNotifications,
                   onChanged: (v) =>
                       provider.updatePreferences(parkingNotifications: v),
@@ -54,8 +55,7 @@ class RiskRemindersScreen extends StatelessWidget {
                   title: const Text('Tow alerts'),
                   subtitle: const Text('Notify when tow sightings are nearby'),
                   value: prefs.towAlerts,
-                  onChanged: (v) =>
-                      provider.updatePreferences(towAlerts: v),
+                  onChanged: (v) => provider.updatePreferences(towAlerts: v),
                 ),
               ),
               Card(
@@ -80,7 +80,9 @@ class RiskRemindersScreen extends StatelessWidget {
                           const Text(
                             'Alert radius (miles)',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           Text(
                             '${prefs.geoRadiusMiles} mi',
@@ -142,21 +144,18 @@ class RiskRemindersScreen extends StatelessWidget {
                         spacing: 8,
                         children: [
                           OutlinedButton(
-                            onPressed: () => provider.muteAlerts(
-                              const Duration(hours: 1),
-                            ),
+                            onPressed: () =>
+                                provider.muteAlerts(const Duration(hours: 1)),
                             child: const Text('Mute 1h'),
                           ),
                           OutlinedButton(
-                            onPressed: () => provider.muteAlerts(
-                              const Duration(hours: 4),
-                            ),
+                            onPressed: () =>
+                                provider.muteAlerts(const Duration(hours: 4)),
                             child: const Text('Mute 4h'),
                           ),
                           OutlinedButton(
-                            onPressed: () => provider.muteAlerts(
-                              const Duration(hours: 8),
-                            ),
+                            onPressed: () =>
+                                provider.muteAlerts(const Duration(hours: 8)),
                             child: const Text('Mute 8h'),
                           ),
                           if (mutedUntil != null)
@@ -176,21 +175,23 @@ class RiskRemindersScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              ...provider.sightings.take(5).map(
-                (s) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    s.type == SightingType.towTruck
-                        ? Icons.local_shipping_outlined
-                        : Icons.shield_moon_outlined,
-                    color: s.type == SightingType.towTruck
-                        ? Colors.redAccent
-                        : Colors.blueGrey,
+              ...provider.sightings
+                  .take(5)
+                  .map(
+                    (s) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        s.type == SightingType.towTruck
+                            ? Icons.local_shipping_outlined
+                            : Icons.shield_moon_outlined,
+                        color: s.type == SightingType.towTruck
+                            ? Colors.redAccent
+                            : Colors.blueGrey,
+                      ),
+                      title: Text(s.location),
+                      subtitle: Text(_formatAgo(s.reportedAt)),
+                    ),
                   ),
-                  title: Text(s.location),
-                  subtitle: Text(_formatAgo(s.reportedAt)),
-                ),
-              ),
               const SizedBox(height: 16),
               const Text(
                 'Alerts use your current location and radius. '

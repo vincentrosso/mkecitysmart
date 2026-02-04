@@ -5,11 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'location_service.dart';
 
 /// Sighting types for filtering
-enum SightingTypeFilter {
-  all,
-  towTruck,
-  parkingEnforcer,
-}
+enum SightingTypeFilter { all, towTruck, parkingEnforcer }
 
 /// Filter options for the sightings feed
 /// Designed for scalability - supports future filter additions
@@ -52,7 +48,13 @@ class FeedFilters {
   }
 
   /// Preset filter options - easily extensible
-  static const List<double?> radiusOptions = [1.0, 5.0, 10.0, 25.0, null]; // null = city-wide
+  static const List<double?> radiusOptions = [
+    1.0,
+    5.0,
+    10.0,
+    25.0,
+    null,
+  ]; // null = city-wide
   static const List<Duration?> timeOptions = [
     Duration(hours: 1),
     Duration(hours: 2),
@@ -88,7 +90,8 @@ class FeedFilters {
   }
 
   /// Create a cache key for this filter combination
-  String get cacheKey => '${radiusMiles}_${timeWindow?.inMinutes}_${typeFilter.name}_$excludeReported';
+  String get cacheKey =>
+      '${radiusMiles}_${timeWindow?.inMinutes}_${typeFilter.name}_$excludeReported';
 }
 
 /// Result wrapper for feed queries with metadata
@@ -114,15 +117,15 @@ class FeedResult {
 /// Singleton pattern for efficient resource usage at scale
 class FeedFilterService {
   final LocationService _locationService = LocationService();
-  
+
   // Cache for recent results to reduce Firestore reads
   final Map<String, FeedResult> _cache = {};
-  
+
   // Track last user position to avoid redundant location requests
   Position? _lastPosition;
   DateTime? _lastPositionTime;
   static const Duration _positionCacheDuration = Duration(seconds: 30);
-  
+
   static final FeedFilterService _instance = FeedFilterService._internal();
   factory FeedFilterService() => _instance;
   FeedFilterService._internal();
@@ -137,12 +140,13 @@ class FeedFilterService {
 
   /// Get cached user position or fetch new one
   Future<Position?> _getCachedPosition() async {
-    if (_lastPosition != null && 
+    if (_lastPosition != null &&
         _lastPositionTime != null &&
-        DateTime.now().difference(_lastPositionTime!) < _positionCacheDuration) {
+        DateTime.now().difference(_lastPositionTime!) <
+            _positionCacheDuration) {
       return _lastPosition;
     }
-    
+
     try {
       _lastPosition = await _locationService.getCurrentPosition();
       _lastPositionTime = DateTime.now();
@@ -157,9 +161,7 @@ class FeedFilterService {
 
   /// Build the Firestore query with filters
   /// Optimized for index usage and scalability
-  Query<Map<String, dynamic>> buildQuery({
-    required FeedFilters filters,
-  }) {
+  Query<Map<String, dynamic>> buildQuery({required FeedFilters filters}) {
     Query<Map<String, dynamic>> query = FirebaseFirestore.instance
         .collection('alerts')
         .where('status', isEqualTo: 'active')
@@ -168,7 +170,10 @@ class FeedFilterService {
     // Apply time window filter if set (uses composite index)
     if (filters.timeWindow != null) {
       final cutoff = DateTime.now().subtract(filters.timeWindow!);
-      query = query.where('createdAt', isGreaterThan: Timestamp.fromDate(cutoff));
+      query = query.where(
+        'createdAt',
+        isGreaterThan: Timestamp.fromDate(cutoff),
+      );
     }
 
     // Apply pagination
@@ -215,7 +220,9 @@ class FeedFilterService {
     if (position == null) {
       // Can't filter by radius without position
       if (kDebugMode) {
-        debugPrint('[FeedFilterService] No position available, returning unfiltered');
+        debugPrint(
+          '[FeedFilterService] No position available, returning unfiltered',
+        );
       }
       final filtered = _applyTypeFilter(docs, filters);
       return FeedResult(
@@ -227,13 +234,13 @@ class FeedFilterService {
 
     // Filter docs by distance and type
     final filtered = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    
+
     for (final doc in docs) {
       // Apply type filter first (faster)
       if (!_matchesTypeFilter(doc, filters.typeFilter)) {
         continue;
       }
-      
+
       // Apply report filter
       if (filters.excludeReported) {
         final reports = doc.data()['reports'] as int? ?? 0;
@@ -243,7 +250,7 @@ class FeedFilterService {
       final data = doc.data();
       final lat = data['latitude'] as double?;
       final lng = data['longitude'] as double?;
-      
+
       if (lat == null || lng == null) {
         // Skip docs without location when radius filtering
         continue;
@@ -275,7 +282,8 @@ class FeedFilterService {
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
     FeedFilters filters,
   ) {
-    if (filters.typeFilter == SightingTypeFilter.all && !filters.excludeReported) {
+    if (filters.typeFilter == SightingTypeFilter.all &&
+        !filters.excludeReported) {
       return docs;
     }
 
@@ -297,7 +305,7 @@ class FeedFilterService {
     SightingTypeFilter filter,
   ) {
     if (filter == SightingTypeFilter.all) return true;
-    
+
     final type = (doc.data()['type'] ?? '').toString().toLowerCase();
     switch (filter) {
       case SightingTypeFilter.towTruck:
@@ -329,13 +337,14 @@ class FeedFilterService {
   String formatRelativeTime(DateTime time) {
     final now = DateTime.now();
     final difference = now.difference(time);
-    
+
     if (difference.isNegative) return 'Just now';
     if (difference.inSeconds < 60) return 'Just now';
     if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
     if (difference.inHours < 24) return '${difference.inHours}h ago';
     if (difference.inDays < 7) return '${difference.inDays}d ago';
-    if (difference.inDays < 30) return '${(difference.inDays / 7).floor()}w ago';
+    if (difference.inDays < 30)
+      return '${(difference.inDays / 7).floor()}w ago';
     return '${(difference.inDays / 30).floor()}mo ago';
   }
 
@@ -354,9 +363,9 @@ class FeedFilterService {
     // Geohash precision determines the size of the search area
     // Higher precision = smaller area = more accurate but more queries
     if (radiusMiles <= 0.5) return 7; // ~0.15km cells
-    if (radiusMiles <= 1) return 6;   // ~1.2km cells
-    if (radiusMiles <= 5) return 5;   // ~4.9km cells
-    if (radiusMiles <= 10) return 4;  // ~20km cells
+    if (radiusMiles <= 1) return 6; // ~1.2km cells
+    if (radiusMiles <= 5) return 5; // ~4.9km cells
+    if (radiusMiles <= 10) return 4; // ~20km cells
     return 4;
   }
 }

@@ -16,7 +16,9 @@ class MainDrawer extends StatelessWidget {
         final profile = provider.profile;
         final userName = profile?.name ?? 'Guest';
         final userEmail = profile?.email ?? '';
-        final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'G';
+        final userInitial = userName.isNotEmpty
+            ? userName[0].toUpperCase()
+            : 'G';
 
         return Drawer(
           child: SafeArea(
@@ -32,11 +34,15 @@ class MainDrawer extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 28,
-                            backgroundColor: isLoggedIn ? kCitySmartYellow : kCitySmartMuted,
+                            backgroundColor: isLoggedIn
+                                ? kCitySmartYellow
+                                : kCitySmartMuted,
                             child: Text(
                               userInitial,
                               style: TextStyle(
-                                color: isLoggedIn ? kCitySmartGreen : Colors.white,
+                                color: isLoggedIn
+                                    ? kCitySmartGreen
+                                    : Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 22,
                               ),
@@ -124,14 +130,20 @@ class MainDrawer extends StatelessWidget {
                 if (isLoggedIn)
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.redAccent),
-                    title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent)),
+                    title: const Text(
+                      'Sign Out',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                     onTap: () async {
                       Navigator.pop(context);
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           backgroundColor: kCitySmartCard,
-                          title: const Text('Sign out?', style: TextStyle(color: kCitySmartText)),
+                          title: const Text(
+                            'Sign out?',
+                            style: TextStyle(color: kCitySmartText),
+                          ),
                           content: const Text(
                             'You can sign back in anytime.',
                             style: TextStyle(color: kCitySmartMuted),
@@ -143,7 +155,9 @@ class MainDrawer extends StatelessWidget {
                             ),
                             FilledButton(
                               onPressed: () => Navigator.pop(ctx, true),
-                              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                              ),
                               child: const Text('Sign Out'),
                             ),
                           ],
@@ -152,7 +166,11 @@ class MainDrawer extends StatelessWidget {
                       if (confirmed == true && context.mounted) {
                         await provider.logout();
                         if (context.mounted) {
-                          Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/',
+                            (r) => false,
+                          );
                         }
                       }
                     },

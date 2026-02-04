@@ -11,13 +11,19 @@ List<GarbageSchedule> sampleSchedules(String address) {
     GarbageSchedule(
       routeId: 'R1',
       address: address,
-      pickupDate: nextWeekday(now, DateTime.monday).add(const Duration(hours: 6)),
+      pickupDate: nextWeekday(
+        now,
+        DateTime.monday,
+      ).add(const Duration(hours: 6)),
       type: PickupType.garbage,
     ),
     GarbageSchedule(
       routeId: 'R2',
       address: address,
-      pickupDate: nextWeekday(now, DateTime.thursday).add(const Duration(hours: 6)),
+      pickupDate: nextWeekday(
+        now,
+        DateTime.thursday,
+      ).add(const Duration(hours: 6)),
       type: PickupType.recycling,
     ),
   ];

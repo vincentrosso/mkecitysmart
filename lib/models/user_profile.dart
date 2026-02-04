@@ -62,14 +62,14 @@ class UserProfile {
   final DateTime? alertsDay;
   final int alertsToday;
   final DateTime? createdAt;
-  
+
   /// Check if user is within the 7-day free trial period
   bool get isInFreeTrial {
     if (createdAt == null) return true; // Assume in trial if no date
     final trialEnd = createdAt!.add(const Duration(days: 7));
     return DateTime.now().isBefore(trialEnd);
   }
-  
+
   /// Days remaining in free trial (0 if expired)
   int get freeTrialDaysRemaining {
     if (createdAt == null) return 7;

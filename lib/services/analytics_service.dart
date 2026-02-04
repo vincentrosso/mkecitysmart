@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 /// Scalable analytics service for tracking user behavior and app performance.
 /// Wraps Firebase Analytics and Crashlytics with a clean API.
-/// 
+///
 /// Designed for:
 /// - Event tracking (screen views, actions, conversions)
 /// - User property management
@@ -23,18 +23,18 @@ class AnalyticsService {
   /// Initialize analytics services
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     try {
       _analytics = FirebaseAnalytics.instance;
       _crashlytics = FirebaseCrashlytics.instance;
-      
+
       // Enable crashlytics collection (disabled in debug for cleaner logs)
       if (!kDebugMode) {
         await _crashlytics?.setCrashlyticsCollectionEnabled(true);
       } else {
         await _crashlytics?.setCrashlyticsCollectionEnabled(false);
       }
-      
+
       _initialized = true;
       debugPrint('[AnalyticsService] Initialized');
     } catch (e) {
@@ -85,11 +85,14 @@ class AnalyticsService {
     required bool hasLocation,
     required bool hasPhoto,
   }) async {
-    await logEvent('sighting_posted', parameters: {
-      'sighting_type': type,
-      'has_location': hasLocation.toString(),
-      'has_photo': hasPhoto.toString(),
-    });
+    await logEvent(
+      'sighting_posted',
+      parameters: {
+        'sighting_type': type,
+        'has_location': hasLocation.toString(),
+        'has_photo': hasPhoto.toString(),
+      },
+    );
   }
 
   /// Log when user views the feed
@@ -98,61 +101,64 @@ class AnalyticsService {
     required String timeFilter,
     required int resultCount,
   }) async {
-    await logEvent('feed_viewed', parameters: {
-      'radius_filter': radiusFilter,
-      'time_filter': timeFilter,
-      'result_count': resultCount,
-    });
+    await logEvent(
+      'feed_viewed',
+      parameters: {
+        'radius_filter': radiusFilter,
+        'time_filter': timeFilter,
+        'result_count': resultCount,
+      },
+    );
   }
 
   /// Log when user taps a sighting card
   Future<void> logSightingTapped(String sightingId, String type) async {
-    await logEvent('sighting_tapped', parameters: {
-      'sighting_id': sightingId,
-      'sighting_type': type,
-    });
+    await logEvent(
+      'sighting_tapped',
+      parameters: {'sighting_id': sightingId, 'sighting_type': type},
+    );
   }
 
   /// Log when user reports a sighting
   Future<void> logSightingReported(String sightingId) async {
-    await logEvent('sighting_reported', parameters: {
-      'sighting_id': sightingId,
-    });
+    await logEvent(
+      'sighting_reported',
+      parameters: {'sighting_id': sightingId},
+    );
   }
 
   /// Log when user views the parking heatmap
   Future<void> logHeatmapViewed({required int zoneCount}) async {
-    await logEvent('heatmap_viewed', parameters: {
-      'zone_count': zoneCount,
-    });
+    await logEvent('heatmap_viewed', parameters: {'zone_count': zoneCount});
   }
 
   /// Log when user uses parking finder
   Future<void> logParkingFinderUsed(String locationType) async {
-    await logEvent('parking_finder_used', parameters: {
-      'location_type': locationType,
-    });
+    await logEvent(
+      'parking_finder_used',
+      parameters: {'location_type': locationType},
+    );
   }
 
   /// Log when user gets directions
   Future<void> logDirectionsRequested(String destination) async {
-    await logEvent('directions_requested', parameters: {
-      'destination': destination,
-    });
+    await logEvent(
+      'directions_requested',
+      parameters: {'destination': destination},
+    );
   }
 
   /// Log when user adds a ticket to tracker
   Future<void> logTicketAdded({required bool hasPhoto}) async {
-    await logEvent('ticket_added', parameters: {
-      'has_photo': hasPhoto.toString(),
-    });
+    await logEvent(
+      'ticket_added',
+      parameters: {'has_photo': hasPhoto.toString()},
+    );
   }
 
   /// Log when user marks ticket as paid
   Future<void> logTicketPaid(double amount) async {
-    await logEvent('ticket_paid', parameters: {
-      'amount': amount,
-    });
+    await logEvent('ticket_paid', parameters: {'amount': amount});
   }
 
   /// Log authentication events
@@ -177,9 +183,10 @@ class AnalyticsService {
 
   /// Log notification permission granted
   Future<void> logNotificationPermission(bool granted) async {
-    await logEvent('notification_permission', parameters: {
-      'granted': granted.toString(),
-    });
+    await logEvent(
+      'notification_permission',
+      parameters: {'granted': granted.toString()},
+    );
   }
 
   /// Log filter changes (for understanding user preferences)
@@ -188,11 +195,14 @@ class AnalyticsService {
     required String oldValue,
     required String newValue,
   }) async {
-    await logEvent('filter_changed', parameters: {
-      'filter_type': filterType,
-      'old_value': oldValue,
-      'new_value': newValue,
-    });
+    await logEvent(
+      'filter_changed',
+      parameters: {
+        'filter_type': filterType,
+        'old_value': oldValue,
+        'new_value': newValue,
+      },
+    );
   }
 
   // ==================== User Properties ====================
@@ -297,11 +307,14 @@ class AnalyticsService {
 
   /// Log the duration of an operation
   Future<void> logTiming(String operationName, Duration duration) async {
-    await logEvent('timing_$operationName', parameters: {
-      'duration_ms': duration.inMilliseconds,
-    });
+    await logEvent(
+      'timing_$operationName',
+      parameters: {'duration_ms': duration.inMilliseconds},
+    );
     if (kDebugMode) {
-      debugPrint('[Analytics] Timer $operationName: ${duration.inMilliseconds}ms');
+      debugPrint(
+        '[Analytics] Timer $operationName: ${duration.inMilliseconds}ms',
+      );
     }
   }
 
@@ -319,7 +332,11 @@ class AnalyticsService {
     } catch (e, stack) {
       stopwatch.stop();
       await logTiming(operationName, stopwatch.elapsed);
-      await recordError(e, stackTrace: stack, reason: 'measureAsync: $operationName');
+      await recordError(
+        e,
+        stackTrace: stack,
+        reason: 'measureAsync: $operationName',
+      );
       rethrow;
     }
   }

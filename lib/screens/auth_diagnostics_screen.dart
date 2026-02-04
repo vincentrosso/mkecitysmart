@@ -53,15 +53,41 @@ class AuthDiagnosticsScreen extends StatelessWidget {
 
           const Divider(height: 32),
           _kv('Push permission', permLabel(perm)),
-          _kv('FCM token', PushDiagnosticsService.redactToken(pushDiag.lastFcmToken)),
-          _kv('FCM token time', pushDiag.lastFcmTokenTime?.toIso8601String() ?? '(none)'),
-          _kv('Device register last', pushDiag.lastRegisterAttemptTime?.toIso8601String() ?? '(none)'),
-          _kv('Device register OK', pushDiag.lastRegisterSuccess == null ? '(none)' : (pushDiag.lastRegisterSuccess! ? 'yes' : 'no')),
-          _kv('Register error', pushDiag.lastRegisterError?.toString() ?? '(none)'),
+          _kv(
+            'FCM token',
+            PushDiagnosticsService.redactToken(pushDiag.lastFcmToken),
+          ),
+          _kv(
+            'FCM token time',
+            pushDiag.lastFcmTokenTime?.toIso8601String() ?? '(none)',
+          ),
+          _kv(
+            'Device register last',
+            pushDiag.lastRegisterAttemptTime?.toIso8601String() ?? '(none)',
+          ),
+          _kv(
+            'Device register OK',
+            pushDiag.lastRegisterSuccess == null
+                ? '(none)'
+                : (pushDiag.lastRegisterSuccess! ? 'yes' : 'no'),
+          ),
+          _kv(
+            'Register error',
+            pushDiag.lastRegisterError?.toString() ?? '(none)',
+          ),
           _kv('Location service', locationValue('locationServiceEnabled')),
-          _kv('Location permission before', locationValue('locationPermissionBefore')),
-          _kv('Location permission after', locationValue('locationPermissionAfter')),
-          _kv('Location error', locationValue('locationError', fallback: '(none)')),
+          _kv(
+            'Location permission before',
+            locationValue('locationPermissionBefore'),
+          ),
+          _kv(
+            'Location permission after',
+            locationValue('locationPermissionAfter'),
+          ),
+          _kv(
+            'Location error',
+            locationValue('locationError', fallback: '(none)'),
+          ),
 
           const SizedBox(height: 12),
           Wrap(
@@ -92,7 +118,9 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('testPushToSelf OK'),
-                        content: SingleChildScrollView(child: Text(resp.toString())),
+                        content: SingleChildScrollView(
+                          child: Text(resp.toString()),
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
@@ -107,7 +135,9 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('testPushToSelf failed'),
-                        content: SingleChildScrollView(child: Text(e.toString())),
+                        content: SingleChildScrollView(
+                          child: Text(e.toString()),
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
@@ -127,11 +157,12 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                     // Default to Milwaukee coordinates for nearby warning test
                     const defaultLat = 43.0389;
                     const defaultLng = -87.9065;
-                    
+
                     final resp = await pushDiag.simulateNearbyWarning(
                       latitude: defaultLat,
                       longitude: defaultLng,
-                      radiusMiles: 10, // Wide radius to ensure we catch registered devices
+                      radiusMiles:
+                          10, // Wide radius to ensure we catch registered devices
                     );
                     if (!context.mounted) return;
                     showDialog<void>(
@@ -158,7 +189,9 @@ class AuthDiagnosticsScreen extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('Nearby Warning Failed'),
-                        content: SingleChildScrollView(child: Text(e.toString())),
+                        content: SingleChildScrollView(
+                          child: Text(e.toString()),
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
@@ -229,10 +262,7 @@ class AuthDiagnosticsScreen extends StatelessWidget {
         children: [
           SizedBox(
             width: 140,
-            child: Text(
-              k,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: Text(k, style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
           Expanded(child: Text(v)),
         ],

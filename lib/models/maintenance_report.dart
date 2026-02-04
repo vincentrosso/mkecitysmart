@@ -35,20 +35,21 @@ class MaintenanceReport {
   final DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'category': category.name,
-        'description': description,
-        'location': location,
-        'latitude': latitude,
-        'longitude': longitude,
-        'photoPath': photoPath,
-        'department': department,
-        'status': status,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'category': category.name,
+    'description': description,
+    'location': location,
+    'latitude': latitude,
+    'longitude': longitude,
+    'photoPath': photoPath,
+    'department': department,
+    'status': status,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory MaintenanceReport.fromJson(Map<String, dynamic> json) {
-    final categoryName = json['category'] as String? ?? MaintenanceCategory.pothole.name;
+    final categoryName =
+        json['category'] as String? ?? MaintenanceCategory.pothole.name;
     return MaintenanceReport(
       id: json['id'] as String? ?? '',
       category: MaintenanceCategory.values.firstWhere(
@@ -62,7 +63,8 @@ class MaintenanceReport {
       photoPath: json['photoPath'] as String?,
       department: json['department'] as String? ?? 'General Services',
       status: json['status'] as String? ?? 'Submitted',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }

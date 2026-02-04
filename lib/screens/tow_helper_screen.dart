@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
 
 /// Tow Helper Screen - Guidance for vehicle recovery
-/// 
+///
 /// Features:
 /// - Step-by-step tow recovery guide
 /// - Milwaukee tow lot contact info
@@ -72,7 +72,7 @@ class _TowHelperBodyState extends State<_TowHelperBody> {
             ],
           ),
         ),
-        
+
         // Content
         Expanded(
           child: _selectedTab == 0
@@ -179,55 +179,60 @@ class _RecoveryGuideTab extends StatelessWidget {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Step-by-step guide
         _StepCard(
           step: 1,
           title: 'Confirm Tow Status',
-          description: 'Call the Milwaukee Police non-emergency line to confirm your vehicle was towed and find out which lot it was taken to.',
+          description:
+              'Call the Milwaukee Police non-emergency line to confirm your vehicle was towed and find out which lot it was taken to.',
           actionLabel: 'Call Police',
           actionIcon: Icons.phone,
           onAction: () => _launchPhone(context, '414-933-4444'),
         ),
-        
+
         _StepCard(
           step: 2,
           title: 'Gather Required Documents',
-          description: 'You\'ll need:\n• Valid driver\'s license\n• Vehicle registration\n• Proof of insurance\n• Payment (cash, credit, or debit)',
+          description:
+              'You\'ll need:\n• Valid driver\'s license\n• Vehicle registration\n• Proof of insurance\n• Payment (cash, credit, or debit)',
           actionLabel: null,
           onAction: null,
         ),
-        
+
         _StepCard(
           step: 3,
           title: 'Visit the Tow Lot',
-          description: 'Go to the tow lot during business hours. The main Milwaukee tow lot is open Monday-Friday 7am-10pm.',
+          description:
+              'Go to the tow lot during business hours. The main Milwaukee tow lot is open Monday-Friday 7am-10pm.',
           actionLabel: 'Get Directions',
           actionIcon: Icons.map,
           onAction: () => _launchMaps(context, _milwaukeeTowLots.first),
         ),
-        
+
         _StepCard(
           step: 4,
           title: 'Pay the Fees',
-          description: 'Fees typically include:\n• Tow fee: \$145-\$275\n• Storage: \$25-\$40/day\n• Admin fee: \$15-\$25\n\nFees increase after 24 hours!',
+          description:
+              'Fees typically include:\n• Tow fee: \$145-\$275\n• Storage: \$25-\$40/day\n• Admin fee: \$15-\$25\n\nFees increase after 24 hours!',
           actionLabel: 'See Fee Details',
           actionIcon: Icons.attach_money,
           onAction: () => _showFeeSheet(context),
         ),
-        
+
         _StepCard(
           step: 5,
           title: 'Retrieve Your Vehicle',
-          description: 'After payment, you\'ll receive a release form. Show this to the lot attendant to get your vehicle.',
+          description:
+              'After payment, you\'ll receive a release form. Show this to the lot attendant to get your vehicle.',
           actionLabel: null,
           onAction: null,
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Tips section
         const Text(
           'Tips to Avoid Future Tows',
@@ -238,7 +243,7 @@ class _RecoveryGuideTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         _TipCard(
           icon: Icons.notifications_active,
           title: 'Enable Parking Alerts',
@@ -259,7 +264,7 @@ class _RecoveryGuideTab extends StatelessWidget {
           title: 'Save Your Locations',
           description: 'Mark home and work to get relevant parking alerts.',
         ),
-        
+
         const SizedBox(height: 80),
       ],
     );
@@ -267,7 +272,7 @@ class _RecoveryGuideTab extends StatelessWidget {
 
   static void _showFeeSheet(BuildContext context) {
     AnalyticsService.instance.logEvent('tow_fee_details_viewed');
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: kCitySmartGreen,
@@ -425,7 +430,10 @@ class _StepCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       description,
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                     if (actionLabel != null && onAction != null) ...[
                       const SizedBox(height: 12),
@@ -437,7 +445,9 @@ class _StepCard extends StatelessWidget {
                           label: Text(actionLabel!),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: kCitySmartYellow,
-                            side: BorderSide(color: kCitySmartYellow.withValues(alpha: 0.5)),
+                            side: BorderSide(
+                              color: kCitySmartYellow.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
                       ),
@@ -525,11 +535,11 @@ class _TowLotsTab extends StatelessWidget {
           style: TextStyle(color: Colors.white54, fontSize: 13),
         ),
         const SizedBox(height: 16),
-        
+
         ..._milwaukeeTowLots.map((lot) => _TowLotCard(lot: lot)),
-        
+
         const SizedBox(height: 24),
-        
+
         // Emergency contacts
         const Text(
           'Emergency Contacts',
@@ -540,7 +550,7 @@ class _TowLotsTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         _ContactCard(
           name: 'Milwaukee Police (Non-Emergency)',
           phone: '414-933-4444',
@@ -556,7 +566,7 @@ class _TowLotsTab extends StatelessWidget {
           phone: '414-286-2489',
           description: 'Questions about parking tickets and regulations',
         ),
-        
+
         const SizedBox(height: 80),
       ],
     );
@@ -598,43 +608,52 @@ class _TowLotCard extends StatelessWidget {
                 ),
                 if (lot.isPrimary)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: kCitySmartYellow.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
                       'Primary',
-                      style: TextStyle(color: kCitySmartYellow, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: kCitySmartYellow,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
-            
+
             // Address
             _InfoRow(Icons.location_on_outlined, lot.address),
-            
+
             // Hours
             _InfoRow(Icons.access_time, lot.hours),
-            
+
             // Phone
-            if (lot.phone != null)
-              _InfoRow(Icons.phone, lot.phone!),
-            
+            if (lot.phone != null) _InfoRow(Icons.phone, lot.phone!),
+
             const SizedBox(height: 12),
-            
+
             // Actions
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _launchPhone(context, lot.phone ?? '414-933-4444'),
+                    onPressed: () =>
+                        _launchPhone(context, lot.phone ?? '414-933-4444'),
                     icon: const Icon(Icons.phone, size: 16),
                     label: const Text('Call'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: kCitySmartYellow,
-                      side: BorderSide(color: kCitySmartYellow.withValues(alpha: 0.5)),
+                      side: BorderSide(
+                        color: kCitySmartYellow.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 ),
@@ -706,10 +725,19 @@ class _ContactCard extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.phone, color: kCitySmartYellow),
         title: Text(name, style: const TextStyle(color: Colors.white)),
-        subtitle: Text(description, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        subtitle: Text(
+          description,
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        ),
         trailing: TextButton(
           onPressed: () => _launchPhone(context, phone),
-          child: Text(phone, style: const TextStyle(color: kCitySmartYellow, fontWeight: FontWeight.bold)),
+          child: Text(
+            phone,
+            style: const TextStyle(
+              color: kCitySmartYellow,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
@@ -780,10 +808,11 @@ Future<void> _launchPhone(BuildContext context, String phone) async {
   // Clean phone number
   final cleaned = phone.replaceAll(RegExp(r'[^0-9]'), '');
   final uri = Uri.parse('tel:$cleaned');
-  
-  AnalyticsService.instance.logEvent('tow_phone_call', parameters: {
-    'phone': phone,
-  });
+
+  AnalyticsService.instance.logEvent(
+    'tow_phone_call',
+    parameters: {'phone': phone},
+  );
 
   try {
     if (await canLaunchUrl(uri)) {
@@ -792,17 +821,17 @@ Future<void> _launchPhone(BuildContext context, String phone) async {
       // Copy to clipboard instead
       await Clipboard.setData(ClipboardData(text: phone));
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Phone number copied: $phone')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Phone number copied: $phone')));
       }
     }
   } catch (e) {
     await Clipboard.setData(ClipboardData(text: phone));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Phone number copied: $phone')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Phone number copied: $phone')));
     }
   }
 }
@@ -815,10 +844,11 @@ Future<void> _launchMaps(BuildContext context, _TowLot lot) async {
   final appleUri = Uri.parse(
     'https://maps.apple.com/?daddr=${lot.lat},${lot.lon}&dirflg=d',
   );
-  
-  AnalyticsService.instance.logEvent('tow_directions', parameters: {
-    'lot_name': lot.name,
-  });
+
+  AnalyticsService.instance.logEvent(
+    'tow_directions',
+    parameters: {'lot_name': lot.name},
+  );
 
   try {
     if (await canLaunchUrl(googleUri)) {
@@ -837,9 +867,9 @@ Future<void> _launchMaps(BuildContext context, _TowLot lot) async {
   } catch (e) {
     await Clipboard.setData(ClipboardData(text: lot.address));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Address copied: ${lot.address}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Address copied: ${lot.address}')));
     }
   }
 }

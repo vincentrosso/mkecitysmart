@@ -138,6 +138,7 @@ class _SavedPlacesBodyState extends State<_SavedPlacesBody> {
         existing: existing,
         onSave:
             (name, nickname, lat, lon, address, radius, notifications) async {
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(ctx);
 
               if (existing != null) {
@@ -165,7 +166,7 @@ class _SavedPlacesBodyState extends State<_SavedPlacesBody> {
               }
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text(
                       existing != null ? 'Place updated' : 'Place saved',
@@ -199,10 +200,11 @@ class _SavedPlacesBodyState extends State<_SavedPlacesBody> {
           ),
           TextButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(ctx);
               await _service.deletePlace(place.id);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text('${place.displayName} removed'),
                     backgroundColor: Colors.orange.shade700,

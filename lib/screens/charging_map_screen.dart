@@ -197,7 +197,8 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                   options: MapOptions(
                     initialCenter: center,
                     initialZoom: 12.5,
-                    onTap: (_, __) => setState(() => _selected = null),
+                    onTap: (tapPosition, point) =>
+                        setState(() => _selected = null),
                   ),
                   children: [
                     TileLayer(

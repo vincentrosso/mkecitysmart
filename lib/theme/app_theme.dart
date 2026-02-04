@@ -108,7 +108,7 @@ ThemeData buildCitySmartTheme() {
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return kCitySmartYellow.withOpacity(0.5);
+          return kCitySmartYellow.withValues(alpha: 0.5);
         }
         return Colors.grey.shade700;
       }),

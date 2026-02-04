@@ -79,10 +79,10 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0).withOpacity(0.1),
+                  color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF1565C0).withOpacity(0.3),
+                    color: const Color(0xFF1565C0).withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(

@@ -277,16 +277,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     if (purchased) {
       // Update the user provider with new subscription tier
-      context.read<UserProvider>().updateSubscriptionTier(
-        SubscriptionService.instance.currentTier,
-      );
+      if (context.mounted) {
+        context.read<UserProvider>().updateSubscriptionTier(
+          SubscriptionService.instance.currentTier,
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Welcome to Premium!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 Welcome to Premium!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
 

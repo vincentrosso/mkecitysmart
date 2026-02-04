@@ -115,8 +115,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   (defaultTargetPlatform == TargetPlatform.iOS ||
                       defaultTargetPlatform == TargetPlatform.macOS))
                 OutlinedButton.icon(
-                  onPressed:
-                      _loggingIn || _socialLoading ? null : _handleApple,
+                  onPressed: _loggingIn || _socialLoading ? null : _handleApple,
                   icon: const Icon(Icons.apple),
                   label: const Text('Continue with Apple'),
                 ),
@@ -170,10 +169,8 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 8),
               TextButton.icon(
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  '/auth-diagnostics',
-                ),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/auth-diagnostics'),
                 icon: const Icon(Icons.info_outline),
                 label: const Text('Auth diagnostics'),
               ),

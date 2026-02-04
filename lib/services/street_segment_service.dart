@@ -34,17 +34,19 @@ class StreetSegmentService {
     required double lat,
     required double lng,
   }) async {
-    final uri = Uri.parse('$baseUrl/query').replace(queryParameters: {
-      'f': 'json',
-      'geometry': '$lng,$lat',
-      'geometryType': 'esriGeometryPoint',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'outFields':
-          'StreetName,StreetType,SegmentType,FromLeftAddress,ToLeftAddress,FromRightAddress,ToRightAddress',
-      'returnGeometry': 'false',
-      'outSR': '4326',
-      'resultRecordCount': '1',
-    });
+    final uri = Uri.parse('$baseUrl/query').replace(
+      queryParameters: {
+        'f': 'json',
+        'geometry': '$lng,$lat',
+        'geometryType': 'esriGeometryPoint',
+        'spatialRel': 'esriSpatialRelIntersects',
+        'outFields':
+            'StreetName,StreetType,SegmentType,FromLeftAddress,ToLeftAddress,FromRightAddress,ToRightAddress',
+        'returnGeometry': 'false',
+        'outSR': '4326',
+        'resultRecordCount': '1',
+      },
+    );
     final resp = await _client.get(uri).timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200) return null;
     final data = jsonDecode(resp.body) as Map<String, dynamic>;

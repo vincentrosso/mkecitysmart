@@ -119,7 +119,7 @@ class _Typography extends StatelessWidget {
       SizedBox(height: 6),
       Text(
         'Body — Poppins Regular 16. Clean, modern, legible.',
-      style: TextStyle(fontFamily: 'Poppins', fontSize: 16),
+        style: TextStyle(fontFamily: 'Poppins', fontSize: 16),
       ),
     ],
   );
@@ -212,7 +212,10 @@ class _InputCard extends StatelessWidget {
         children: [
           Text(
             'Address',
-            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+            ),
           ),
           SizedBox(height: 6),
           TextField(
@@ -371,11 +374,7 @@ class _Tile extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _Tile({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _Tile({required this.icon, required this.label, required this.color});
   @override
   Widget build(BuildContext context) => Container(
     width: 150,

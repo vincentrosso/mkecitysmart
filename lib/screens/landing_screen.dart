@@ -47,17 +47,16 @@ class LandingScreen extends StatelessWidget {
 
         final vehicles = profile?.vehicles ?? const [];
         final name = profile?.name.split(' ').first ?? 'Guest';
-        final address =
-            profile?.address?.isNotEmpty == true
-                ? profile!.address!
-                : isGuest
-                ? 'Exploring in guest mode. Sign in to personalize alerts.'
-                : 'Set your address for hyper-local alerts.';
+        final address = profile?.address?.isNotEmpty == true
+            ? profile!.address!
+            : isGuest
+            ? 'Exploring in guest mode. Sign in to personalize alerts.'
+            : 'Set your address for hyper-local alerts.';
         final alertsLabel = isGuest
             ? 'Preview'
             : (profile?.preferences.parkingNotifications ?? false
-                ? 'Enabled'
-                : 'Muted');
+                  ? 'Enabled'
+                  : 'Muted');
         return Scaffold(
           appBar: AppBar(
             title: const Text('Dashboard'),
@@ -96,15 +95,12 @@ class LandingScreen extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF5E8A45),
-                      Color(0xFF7CA726),
-                    ],
+                    colors: [Color(0xFF5E8A45), Color(0xFF7CA726)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF5E8A45).withOpacity(0.3),
+                      color: const Color(0xFF5E8A45).withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -132,7 +128,7 @@ class LandingScreen extends StatelessWidget {
                               Text(
                                 address,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 14,
                                   height: 1.4,
                                 ),
@@ -150,7 +146,7 @@ class LandingScreen extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -177,10 +173,10 @@ class LandingScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Alternate Side Parking Card
               const AlternateSideParkingTile(),
-              
+
               const SizedBox(height: 16),
               Wrap(
                 spacing: 12,
@@ -196,7 +192,8 @@ class LandingScreen extends StatelessWidget {
                     icon: Icons.badge,
                     label: 'Permit workflow',
                     value: 'Eligibility',
-                    onTap: () => Navigator.pushNamed(context, '/permit-workflow'),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/permit-workflow'),
                   ),
                   _OverviewTile(
                     icon: Icons.insights,
@@ -349,7 +346,7 @@ class _OverviewTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -364,11 +361,7 @@ class _OverviewTile extends StatelessWidget {
                   color: const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF5E8A45),
-                  size: 24,
-                ),
+                child: Icon(icon, color: const Color(0xFF5E8A45), size: 24),
               ),
               const SizedBox(height: 16),
               Text(
@@ -418,7 +411,7 @@ class _RiskBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -433,10 +426,7 @@ class _RiskBadge extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Text(

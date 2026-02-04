@@ -27,8 +27,7 @@ class ParkingPredictionService {
 
   final _riskService = ParkingRiskService.instance;
 
-  /// Cache for risk zones
-  List<RiskZone>? _cachedZones;
+  /// Cache for location risk
   LocationRisk? _cachedLocationRisk;
 
   /// Predict parking safety score (0-1) for a location using real citation data.
@@ -113,7 +112,6 @@ class ParkingPredictionService {
 
     // Get all risk zones
     final zones = await _riskService.getRiskZones();
-    _cachedZones = zones;
 
     if (zones.isEmpty) {
       debugPrint('ParkingPredictionService: No risk zones available');

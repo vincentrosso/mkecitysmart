@@ -471,7 +471,7 @@ class _InitialRouteDeciderState extends State<_InitialRouteDecider> {
                 'assets/brand/citysmart_icon_rounded.png',
                 width: 80,
                 height: 80,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, error, stackTrace) => const Icon(
                   Icons.location_city,
                   size: 80,
                   color: Color(0xFFE0C164),

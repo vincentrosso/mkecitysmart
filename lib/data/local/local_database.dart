@@ -66,7 +66,7 @@ class DbPendingMutations extends Table {
 @DriftDatabase(tables: [DbUserProfiles, DbVehicles, DbPendingMutations])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase({QueryExecutor? executor})
-      : super(executor ?? _openConnection());
+    : super(executor ?? _openConnection());
 
   factory LocalDatabase.test() {
     return LocalDatabase(executor: NativeDatabase.memory());
@@ -77,9 +77,12 @@ class LocalDatabase extends _$LocalDatabase {
 
   Future<void> clearProfile(String userId) async {
     await transaction(() async {
-      await (delete(dbUserProfiles)..where((row) => row.id.equals(userId))).go();
-      await (delete(dbVehicles)..where((row) => row.profileId.equals(userId)))
-          .go();
+      await (delete(
+        dbUserProfiles,
+      )..where((row) => row.id.equals(userId))).go();
+      await (delete(
+        dbVehicles,
+      )..where((row) => row.profileId.equals(userId))).go();
     });
   }
 
@@ -113,8 +116,9 @@ class LocalDatabase extends _$LocalDatabase {
         ),
       );
 
-      await (delete(dbVehicles)..where((v) => v.profileId.equals(profile.id)))
-          .go();
+      await (delete(
+        dbVehicles,
+      )..where((v) => v.profileId.equals(profile.id))).go();
       if (profile.vehicles.isNotEmpty) {
         await batch((b) {
           b.insertAllOnConflictUpdate(
@@ -139,18 +143,20 @@ class LocalDatabase extends _$LocalDatabase {
   }
 
   Future<models.UserProfile?> fetchProfile(String userId) async {
-    final row = await (select(dbUserProfiles)
-          ..where((tbl) => tbl.id.equals(userId))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (select(dbUserProfiles)
+              ..where((tbl) => tbl.id.equals(userId))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return null;
 
-    final profileVehicles = await (select(dbVehicles)
-          ..where((v) => v.profileId.equals(userId)))
-        .get();
+    final profileVehicles = await (select(
+      dbVehicles,
+    )..where((v) => v.profileId.equals(userId))).get();
 
-    final preferences =
-        UserPreferences.fromJson(jsonDecode(row.preferencesJson));
+    final preferences = UserPreferences.fromJson(
+      jsonDecode(row.preferencesJson),
+    );
     final adPrefs = AdPreferences.fromJson(jsonDecode(row.adPreferencesJson));
     final rulePackJson = jsonDecode(row.rulePackJson) as Map<String, dynamic>;
     final rulePack = CityRulePack(
@@ -158,10 +164,8 @@ class LocalDatabase extends _$LocalDatabase {
       displayName: rulePackJson['displayName'] as String? ?? 'Default City',
       maxVehicles: rulePackJson['maxVehicles'] as int? ?? 5,
       defaultAlertRadius: rulePackJson['defaultAlertRadius'] as int? ?? 5,
-      quotaRequestsPerHour:
-          rulePackJson['quotaRequestsPerHour'] as int? ?? 100,
-      rateLimitPerMinute:
-          rulePackJson['rateLimitPerMinute'] as int? ?? 30,
+      quotaRequestsPerHour: rulePackJson['quotaRequestsPerHour'] as int? ?? 100,
+      rateLimitPerMinute: rulePackJson['rateLimitPerMinute'] as int? ?? 30,
     );
 
     return models.UserProfile(
