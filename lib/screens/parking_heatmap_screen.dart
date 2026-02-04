@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
@@ -560,14 +561,17 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                         ),
 
                       // Safest spots results card
-                      if (_showSafestSpots && _safestSpots.isNotEmpty && _selectedZone == null)
+                      if (_showSafestSpots &&
+                          _safestSpots.isNotEmpty &&
+                          _selectedZone == null)
                         Positioned(
                           left: 12,
                           right: 12,
                           bottom: 50,
                           child: _SafestSpotsCard(
                             spots: _safestSpots,
-                            onClose: () => setState(() => _showSafestSpots = false),
+                            onClose: () =>
+                                setState(() => _showSafestSpots = false),
                             onSpotTap: (spot) {
                               _mapController.move(
                                 LatLng(spot.latitude, spot.longitude),
@@ -777,7 +781,7 @@ class _ZoneDetailCard extends StatelessWidget {
 }
 
 /// Card showing safest parking spots found by prediction service
-class _SafestSpotsCard extends StatelessWidget {
+class _SafestSpotsCard extends StatefulWidget {
   const _SafestSpotsCard({
     required this.spots,
     required this.onClose,
@@ -789,9 +793,76 @@ class _SafestSpotsCard extends StatelessWidget {
   final void Function(SafeParkingSpot) onSpotTap;
 
   @override
-  Widget build(BuildContext context) {
-    final safest = spots.first;
+  State<_SafestSpotsCard> createState() => _SafestSpotsCardState();
+}
 
+class _SafestSpotsCardState extends State<_SafestSpotsCard> {
+  bool _minimized = false;
+
+  Future<void> _navigateToSpot(SafeParkingSpot spot) async {
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+    
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final safest = widget.spots.first;
+
+    // Minimized view - just a small bar
+    if (_minimized) {
+      return Card(
+        elevation: 4,
+        child: InkWell(
+          onTap: () => setState(() => _minimized = false),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.verified, color: Color(0xFF4CAF50), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Safest: ${(safest.safetyScore * 100).round()}% safe',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.expand_less, color: Colors.grey),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: widget.onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Full view
     return Card(
       elevation: 4,
       child: Padding(
@@ -828,9 +899,19 @@ class _SafestSpotsCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
+                // Minimize button
+                IconButton(
+                  icon: const Icon(Icons.expand_more, size: 20),
+                  onPressed: () => setState(() => _minimized = true),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Minimize',
+                ),
+                const SizedBox(width: 8),
+                // Close button
                 IconButton(
                   icon: const Icon(Icons.close, size: 20),
-                  onPressed: onClose,
+                  onPressed: widget.onClose,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -840,7 +921,7 @@ class _SafestSpotsCard extends StatelessWidget {
 
             // Top recommendation
             InkWell(
-              onTap: () => onSpotTap(safest),
+              onTap: () => widget.onSpotTap(safest),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -881,17 +962,34 @@ class _SafestSpotsCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(
-                      Icons.navigation,
-                      color: Color(0xFF4CAF50),
+                    IconButton(
+                      icon: const Icon(Icons.directions_walk, color: Color(0xFF4CAF50)),
+                      onPressed: () => _navigateToSpot(safest),
+                      tooltip: 'Navigate',
                     ),
                   ],
                 ),
               ),
             ),
+            
+            // Navigate button
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToSpot(safest),
+                icon: const Icon(Icons.directions_walk),
+                label: const Text('Navigate to Safe Spot'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
 
             // Other spots
-            if (spots.length > 1) ...[
+            if (widget.spots.length > 1) ...[
               const SizedBox(height: 12),
               Text(
                 'Other safe options:',
@@ -902,47 +1000,61 @@ class _SafestSpotsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              ...spots.skip(1).take(3).map((spot) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: InkWell(
-                      onTap: () => onSpotTap(spot),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF81C784),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${spots.indexOf(spot) + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+              ...widget.spots
+                  .skip(1)
+                  .take(3)
+                  .map(
+                    (spot) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: InkWell(
+                        onTap: () => widget.onSpotTap(spot),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF81C784),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${widget.spots.indexOf(spot) + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${(spot.safetyScore * 100).round()}% safe',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          const Spacer(),
-                          Text(
-                            spot.distanceLabel,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                            const SizedBox(width: 10),
+                            Text(
+                              '${(spot.safetyScore * 100).round()}% safe',
+                              style: const TextStyle(fontSize: 13),
                             ),
-                          ),
-                        ],
+                            const Spacer(),
+                            Text(
+                              spot.distanceLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => _navigateToSpot(spot),
+                              child: const Icon(
+                                Icons.directions_walk,
+                                size: 18,
+                                color: Color(0xFF81C784),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  )),
+                  ),
             ],
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/user_provider.dart';
 import '../services/alternate_side_parking_service.dart';
@@ -391,16 +392,36 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
             // Safest spots nearby
             if (_safestSpots.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text(
-                'Safest spots nearby:',
-                style: TextStyle(
-                  color: kCitySmartText,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Safest spots nearby:',
+                    style: TextStyle(
+                      color: kCitySmartText,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Tap to navigate',
+                    style: TextStyle(
+                      color: kCitySmartMuted.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
-              ...(_safestSpots.map((spot) => _SafeSpotTile(spot: spot))),
+              // Highlight the safest spot with a prominent navigate button
+              _TopSafeSpotCard(spot: _safestSpots.first),
+              const SizedBox(height: 4),
+              // Show remaining spots
+              if (_safestSpots.length > 1)
+                ...(_safestSpots
+                    .skip(1)
+                    .map((spot) => _SafeSpotTile(spot: spot))),
             ],
 
             // Refresh button if results shown
@@ -430,27 +451,176 @@ class _SafeSpotTile extends StatelessWidget {
   const _SafeSpotTile({required this.spot});
   final SafeParkingSpot spot;
 
+  Future<void> _navigateToSpot(BuildContext context) async {
+    // Open in Apple Maps (iOS) or Google Maps with directions
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+
+    // Try Apple Maps first, fall back to Google Maps
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback to Google Maps
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _navigateToSpot(context),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A2E28),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Text(spot.label, style: const TextStyle(fontSize: 14)),
+            const Spacer(),
+            Text(
+              spot.distanceLabel,
+              style: const TextStyle(color: kCitySmartMuted, fontSize: 12),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${spot.walkingMinutes} min walk',
+              style: const TextStyle(color: kCitySmartText, fontSize: 12),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.directions_walk,
+              color: kCitySmartYellow,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Prominent card for the #1 safest spot with big navigate button
+class _TopSafeSpotCard extends StatelessWidget {
+  const _TopSafeSpotCard({required this.spot});
+  final SafeParkingSpot spot;
+
+  Future<void> _navigateToSpot(BuildContext context) async {
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2E28),
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF2E7D32).withValues(alpha: 0.3),
+            const Color(0xFF1B5E20).withValues(alpha: 0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.5),
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Text(spot.label, style: const TextStyle(fontSize: 14)),
-          const Spacer(),
-          Text(
-            spot.distanceLabel,
-            style: const TextStyle(color: kCitySmartMuted, fontSize: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4CAF50),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.verified,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'SAFEST SPOT',
+                      style: TextStyle(
+                        color: Color(0xFF81C784),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${(spot.safetyScore * 100).round()}% safe • ${spot.distanceLabel}',
+                      style: const TextStyle(
+                        color: kCitySmartText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${spot.walkingMinutes} min',
+                style: const TextStyle(color: kCitySmartMuted, fontSize: 12),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${spot.walkingMinutes} min walk',
-            style: const TextStyle(color: kCitySmartText, fontSize: 12),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _navigateToSpot(context),
+              icon: const Icon(Icons.directions_walk),
+              label: const Text('Navigate to Safe Spot'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
         ],
       ),
