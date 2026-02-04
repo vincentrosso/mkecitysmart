@@ -344,6 +344,18 @@ class UserProvider extends ChangeNotifier {
         return null;
       }
       await _ensureProfileForUser(user, fallbackName: name, phone: phone);
+
+      // Send email verification
+      if (!user.emailVerified) {
+        try {
+          await user.sendEmailVerification();
+          debugPrint('[Auth] Verification email sent to ${user.email}');
+        } catch (e) {
+          debugPrint('[Auth] Failed to send verification email: $e');
+          // Don't fail registration if email sending fails
+        }
+      }
+
       unawaited(
         CloudLogService.instance.logEvent(
           'user_register',
@@ -374,6 +386,48 @@ class UserProvider extends ChangeNotifier {
       const msg = 'Unable to create account right now.';
       _setLastAuthError(msg);
       return msg;
+    }
+  }
+
+  /// Whether the current user's email is verified.
+  bool get isEmailVerified {
+    final user = _auth?.currentUser;
+    if (user == null) return false;
+    return user.emailVerified;
+  }
+
+  /// Resend the email verification link to the current user.
+  /// Returns an error message if it fails, or null on success.
+  Future<String?> resendVerificationEmail() async {
+    final user = _auth?.currentUser;
+    if (user == null) {
+      return 'No user is signed in.';
+    }
+    if (user.emailVerified) {
+      return 'Email is already verified.';
+    }
+    try {
+      await user.sendEmailVerification();
+      debugPrint('[Auth] Verification email resent to ${user.email}');
+      return null;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('[Auth] Failed to resend verification email: ${e.message}');
+      if (e.code == 'too-many-requests') {
+        return 'Too many requests. Please wait a few minutes and try again.';
+      }
+      return 'Failed to send verification email.';
+    } catch (e) {
+      debugPrint('[Auth] Failed to resend verification email: $e');
+      return 'Failed to send verification email.';
+    }
+  }
+
+  /// Refresh the current user's data from Firebase to check email verification status.
+  Future<void> refreshUserData() async {
+    final user = _auth?.currentUser;
+    if (user != null) {
+      await user.reload();
+      notifyListeners();
     }
   }
 
