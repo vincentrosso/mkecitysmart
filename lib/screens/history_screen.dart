@@ -5,6 +5,7 @@ import '../models/parking_event.dart';
 import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
 import '../services/parking_history_service.dart';
+import '../widgets/ad_widgets.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -185,6 +186,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                     ),
                   ),
+          ),
+
+          // Ad banner for free tier users
+          const SafeArea(
+            top: false,
+            child: AdBannerWidget(showPlaceholder: false),
           ),
         ],
       ),

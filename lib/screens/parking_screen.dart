@@ -8,6 +8,7 @@ import '../services/alternate_side_parking_service.dart';
 import '../services/location_service.dart';
 import '../services/parking_prediction_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_widgets.dart';
 
 class ParkingScreen extends StatelessWidget {
   const ParkingScreen({super.key});
@@ -37,6 +38,9 @@ class ParkingScreen extends StatelessWidget {
               subtitle: 'See citation risk zones nearby',
               onTap: () => Navigator.pushNamed(context, '/parking-heatmap'),
             ),
+            // Ad banner for free tier users
+            const SizedBox(height: 16),
+            const AdBannerWidget(showPlaceholder: false),
           ],
         ),
       ),

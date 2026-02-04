@@ -25,6 +25,7 @@ import '../models/city_rule_pack.dart';
 import '../data/city_rule_packs.dart';
 import '../data/sample_schedules.dart';
 import '../data/sample_tickets.dart';
+import '../services/ad_service.dart';
 import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
 import '../services/location_service.dart';
@@ -224,6 +225,8 @@ class UserProvider extends ChangeNotifier {
     _receipts = await _repository.loadReceipts();
     _adPreferences = _profile?.adPreferences ?? _adPreferences;
     _tier = _profile?.tier ?? _tier;
+    // Update AdService with user's subscription tier
+    AdService.instance.updateUserState(tier: _tier);
     _maintenanceReports = await _repository.loadMaintenanceReports();
     _garbageSchedules = sampleSchedules(
       _profile?.address ?? '1234 E Sample St',
@@ -815,6 +818,8 @@ class UserProvider extends ChangeNotifier {
     _sightings = const [];
     _adPreferences = const AdPreferences();
     _tier = SubscriptionTier.free;
+    // Reset AdService to show ads for free tier
+    AdService.instance.updateUserState(tier: SubscriptionTier.free);
     _receipts = const [];
     _maintenanceReports = const [];
     _garbageSchedules = const [];
@@ -1106,6 +1111,8 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> updateSubscriptionTier(SubscriptionTier tier) async {
     _tier = tier;
+    // Update AdService so it knows whether to show ads
+    AdService.instance.updateUserState(tier: tier);
     if (_profile != null) {
       _profile = _profile!.copyWith(tier: tier);
       await _repository.saveProfile(_profile!);

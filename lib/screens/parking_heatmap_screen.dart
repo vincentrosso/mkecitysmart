@@ -7,6 +7,7 @@ import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
 import '../services/parking_prediction_service.dart';
 import '../services/parking_risk_service.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/feature_gate.dart';
 import '../widgets/parking_risk_badge.dart';
 
@@ -601,6 +602,12 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                         ),
                     ],
                   ),
+                ),
+
+                // Ad banner for free tier users
+                const SafeArea(
+                  top: false,
+                  child: AdBannerWidget(showPlaceholder: false),
                 ),
               ],
             ),
