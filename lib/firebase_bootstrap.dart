@@ -11,7 +11,7 @@ import 'firebase_options.dart';
 class FirestoreCacheConfig {
   /// Maximum cache size in bytes (100 MB default, good for scalability)
   static const int maxCacheSizeBytes = 100 * 1024 * 1024;
-  
+
   /// Enable persistence for offline support
   static const bool persistenceEnabled = true;
 }
@@ -40,7 +40,9 @@ Future<bool> initializeFirebaseIfAvailable() async {
       if (apiKey.isEmpty || projectId.isEmpty) return true;
       if (apiKey.toUpperCase().contains('TEST')) return true;
       if (projectId.toLowerCase().contains('test-')) return true;
-      if (iOSBundleId.isNotEmpty && iOSBundleId.startsWith('com.example.')) return true;
+      if (iOSBundleId.isNotEmpty && iOSBundleId.startsWith('com.example.')) {
+        return true;
+      }
       return false;
     }
 
@@ -60,7 +62,7 @@ Future<bool> initializeFirebaseIfAvailable() async {
     }
 
     await Firebase.initializeApp(options: options);
-    
+
     // Configure Firestore for better offline support and performance
     // This enables local caching to reduce reads and improve scalability
     try {
@@ -68,12 +70,14 @@ Future<bool> initializeFirebaseIfAvailable() async {
         persistenceEnabled: FirestoreCacheConfig.persistenceEnabled,
         cacheSizeBytes: FirestoreCacheConfig.maxCacheSizeBytes,
       );
-      debugPrint('[Bootstrap] Firestore persistence enabled (${FirestoreCacheConfig.maxCacheSizeBytes ~/ (1024 * 1024)} MB cache)');
+      debugPrint(
+        '[Bootstrap] Firestore persistence enabled (${FirestoreCacheConfig.maxCacheSizeBytes ~/ (1024 * 1024)} MB cache)',
+      );
     } catch (e) {
       // Settings may already be set, ignore
       debugPrint('[Bootstrap] Firestore settings already configured');
     }
-    
+
     // If running in debug mode, point Firebase clients at the local emulators.
     // Adjust ports as needed to match your `firebase emulators:start` output.
     // if (kDebugMode) {

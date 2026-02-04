@@ -31,7 +31,9 @@ class NotificationService {
     try {
       await _setupLocalNotifications();
       if (!enableRemoteNotifications) {
-        log('Push notifications disabled; init limited to local notifications.');
+        log(
+          'Push notifications disabled; init limited to local notifications.',
+        );
         CloudLogService.instance.logEvent('push_notifications_disabled');
         _initTimeZones();
         _initialized = true;
@@ -57,7 +59,8 @@ class NotificationService {
         final notification = message.notification;
         final android = message.notification?.android;
         if (notification != null) {
-          final canReceive = await (_canReceiveAlertCallback?.call() ?? Future.value(true));
+          final canReceive =
+              await (_canReceiveAlertCallback?.call() ?? Future.value(true));
           if (canReceive) {
             _local.show(
               notification.hashCode,
@@ -76,7 +79,9 @@ class NotificationService {
           }
         }
       });
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
       _initialized = true;
     } catch (e) {
       log('Notification init skipped: $e');
@@ -84,10 +89,7 @@ class NotificationService {
     }
   }
 
-  Future<void> showLocal({
-    required String title,
-    required String body,
-  }) async {
+  Future<void> showLocal({required String title, required String body}) async {
     await _local.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title,
@@ -111,11 +113,11 @@ class NotificationService {
   }) async {
     // Skip if the scheduled time has already passed
     if (when.isBefore(DateTime.now())) return;
-    
+
     try {
       final tzWhen = tz.TZDateTime.from(when, tz.local);
       final notificationId = id ?? when.millisecondsSinceEpoch ~/ 1000;
-      
+
       await _local.zonedSchedule(
         notificationId,
         title,
@@ -154,7 +156,7 @@ class NotificationService {
   }) async {
     var currentTime = startTime;
     var idOffset = 0;
-    
+
     while (currentTime.isBefore(cutoffTime)) {
       if (currentTime.isAfter(DateTime.now())) {
         await scheduleLocal(
@@ -187,14 +189,14 @@ class NotificationService {
       badge: true,
       sound: true,
     );
-    
+
     // Enable foreground notification presentation on iOS
     await _messaging!.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
     );
-    
+
     PushDiagnosticsService.instance.recordPermission(settings);
     log('Notification permission: ${settings.authorizationStatus}');
     CloudLogService.instance.logEvent(
@@ -217,7 +219,8 @@ class NotificationService {
     );
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
   }
 
@@ -233,7 +236,9 @@ class NotificationService {
         positionResult.diagnostics,
       );
       final position = positionResult.position;
-      final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'registerDevice',
+      );
       await callable.call({
         'token': token,
         'platform': _platform(),
@@ -252,10 +257,16 @@ class NotificationService {
         },
       );
     } catch (e) {
-      PushDiagnosticsService.instance.recordRegisterAttempt(success: false, error: e);
+      PushDiagnosticsService.instance.recordRegisterAttempt(
+        success: false,
+        error: e,
+      );
       log('Failed to register push token: $e');
-      CloudLogService.instance
-          .recordError('push_token_register_failed', e, StackTrace.current);
+      CloudLogService.instance.recordError(
+        'push_token_register_failed',
+        e,
+        StackTrace.current,
+      );
     }
   }
 
@@ -267,8 +278,11 @@ class NotificationService {
       CloudLogService.instance.logEvent('subscribed_to_alerts_topic');
     } catch (e) {
       log('Failed to subscribe to alerts topic: $e');
-      CloudLogService.instance
-          .recordError('alerts_topic_subscription_failed', e, StackTrace.current);
+      CloudLogService.instance.recordError(
+        'alerts_topic_subscription_failed',
+        e,
+        StackTrace.current,
+      );
     }
   }
 
@@ -286,7 +300,9 @@ class NotificationService {
           positionResult.diagnostics,
         );
         final position = positionResult.position;
-        final callable = FirebaseFunctions.instance.httpsCallable('registerDevice');
+        final callable = FirebaseFunctions.instance.httpsCallable(
+          'registerDevice',
+        );
         await callable.call({
           'token': token,
           'platform': _platform(),
@@ -305,10 +321,16 @@ class NotificationService {
           },
         );
       } catch (e) {
-        PushDiagnosticsService.instance.recordRegisterAttempt(success: false, error: e);
+        PushDiagnosticsService.instance.recordRegisterAttempt(
+          success: false,
+          error: e,
+        );
         log('Failed to refresh push token: $e');
-        CloudLogService.instance
-            .recordError('push_token_refresh_failed', e, StackTrace.current);
+        CloudLogService.instance.recordError(
+          'push_token_refresh_failed',
+          e,
+          StackTrace.current,
+        );
       }
     });
   }
@@ -374,7 +396,8 @@ class _BestEffortPositionResult {
   });
 }
 
-Future<_BestEffortPositionResult> _getBestEffortPositionWithDiagnostics() async {
+Future<_BestEffortPositionResult>
+_getBestEffortPositionWithDiagnostics() async {
   try {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     var permission = await Geolocator.checkPermission();
@@ -390,24 +413,30 @@ Future<_BestEffortPositionResult> _getBestEffortPositionWithDiagnostics() async 
     };
 
     if (!serviceEnabled) {
-      return _BestEffortPositionResult(position: null, diagnostics: diagnostics);
+      return _BestEffortPositionResult(
+        position: null,
+        diagnostics: diagnostics,
+      );
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      return _BestEffortPositionResult(position: null, diagnostics: diagnostics);
+      return _BestEffortPositionResult(
+        position: null,
+        diagnostics: diagnostics,
+      );
     }
 
     final pos = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.medium,
-      timeLimit: const Duration(seconds: 8),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 8),
+      ),
     );
     return _BestEffortPositionResult(position: pos, diagnostics: diagnostics);
   } catch (e) {
     return _BestEffortPositionResult(
       position: null,
-      diagnostics: <String, Object?>{
-        'locationError': e.toString(),
-      },
+      diagnostics: <String, Object?>{'locationError': e.toString()},
     );
   }
 }

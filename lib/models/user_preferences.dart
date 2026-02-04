@@ -4,6 +4,7 @@ class UserPreferences {
     required this.towAlerts,
     required this.reminderNotifications,
     this.ticketRiskAlerts = true,
+    this.ticketDueDateReminders = true,
     this.geoRadiusMiles = 5,
     this.defaultVehicleId,
   });
@@ -12,6 +13,7 @@ class UserPreferences {
   final bool towAlerts;
   final bool reminderNotifications;
   final bool ticketRiskAlerts;
+  final bool ticketDueDateReminders; // Privacy option for ticket reminders
   final int geoRadiusMiles;
   final String? defaultVehicleId;
 
@@ -20,6 +22,7 @@ class UserPreferences {
     towAlerts: true,
     reminderNotifications: true,
     ticketRiskAlerts: true,
+    ticketDueDateReminders: true,
     geoRadiusMiles: 5,
   );
 
@@ -28,6 +31,7 @@ class UserPreferences {
     bool? towAlerts,
     bool? reminderNotifications,
     bool? ticketRiskAlerts,
+    bool? ticketDueDateReminders,
     int? geoRadiusMiles,
     String? defaultVehicleId,
   }) {
@@ -37,6 +41,8 @@ class UserPreferences {
       reminderNotifications:
           reminderNotifications ?? this.reminderNotifications,
       ticketRiskAlerts: ticketRiskAlerts ?? this.ticketRiskAlerts,
+      ticketDueDateReminders:
+          ticketDueDateReminders ?? this.ticketDueDateReminders,
       geoRadiusMiles: geoRadiusMiles ?? this.geoRadiusMiles,
       defaultVehicleId: defaultVehicleId ?? this.defaultVehicleId,
     );
@@ -48,6 +54,7 @@ class UserPreferences {
       towAlerts: json['towAlerts'] as bool? ?? true,
       reminderNotifications: json['reminderNotifications'] as bool? ?? true,
       ticketRiskAlerts: json['ticketRiskAlerts'] as bool? ?? true,
+      ticketDueDateReminders: json['ticketDueDateReminders'] as bool? ?? true,
       geoRadiusMiles: json['geoRadiusMiles'] as int? ?? 5,
       defaultVehicleId: json['defaultVehicleId'] as String?,
     );
@@ -58,6 +65,7 @@ class UserPreferences {
     'towAlerts': towAlerts,
     'reminderNotifications': reminderNotifications,
     'ticketRiskAlerts': ticketRiskAlerts,
+    'ticketDueDateReminders': ticketDueDateReminders,
     'geoRadiusMiles': geoRadiusMiles,
     'defaultVehicleId': defaultVehicleId,
   };

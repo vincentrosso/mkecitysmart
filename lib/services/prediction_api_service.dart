@@ -31,9 +31,8 @@ class PredictionApiService {
         if (decoded is List) {
           return decoded
               .map(
-                (item) => ParkingPrediction.fromJson(
-                  item as Map<String, dynamic>,
-                ),
+                (item) =>
+                    ParkingPrediction.fromJson(item as Map<String, dynamic>),
               )
               .toList();
         }
@@ -67,9 +66,8 @@ class PredictionApiService {
         if (decoded is List) {
           return decoded
               .map(
-                (item) => ParkingPrediction.fromJson(
-                  item as Map<String, dynamic>,
-                ),
+                (item) =>
+                    ParkingPrediction.fromJson(item as Map<String, dynamic>),
               )
               .toList();
         }

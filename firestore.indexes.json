@@ -1,11 +1,15 @@
 {
   "indexes": [
     {
-      "collectionGroup": "devices",
+      "collectionGroup": "savedPlaces",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "geohash",
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "ASCENDING"
         },
         {

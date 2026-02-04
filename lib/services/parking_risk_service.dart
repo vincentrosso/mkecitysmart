@@ -74,13 +74,17 @@ class LocationRisk {
   });
 
   factory LocationRisk.fromMap(Map<String, dynamic> map) {
-    final hourlyRisk = map['hourlyRisk'] as Map<String, dynamic>?;
+    // Cast hourlyRisk properly - it comes as Map<Object?, Object?>
+    final rawHourlyRisk = map['hourlyRisk'];
+    final hourlyRisk = rawHourlyRisk != null
+        ? Map<String, dynamic>.from(rawHourlyRisk as Map)
+        : null;
     return LocationRisk(
       riskScore: (map['riskScore'] as num?)?.toInt() ?? 0,
-      riskLevel: RiskLevel.fromString(map['riskLevel']),
+      riskLevel: RiskLevel.fromString(map['riskLevel']?.toString()),
       riskPercentage: (map['riskPercentage'] as num?)?.toInt() ?? 0,
-      message: map['message'] ?? '',
-      currentHour: hourlyRisk?['currentHour'] as int?,
+      message: map['message']?.toString() ?? '',
+      currentHour: (hourlyRisk?['currentHour'] as num?)?.toInt(),
       hourlyMultiplier: (hourlyRisk?['hourlyMultiplier'] as num?)?.toDouble(),
       peakHours:
           (map['peakHours'] as List<dynamic>?)
@@ -137,11 +141,18 @@ class ParkingRiskService {
         'longitude': longitude,
       });
 
-      final data = result.data as Map<String, dynamic>?;
-      debugPrint('ParkingRiskService: Response data: $data');
-      if (data == null || data['success'] != true) {
+      // Cast the response properly - Cloud Functions returns Map<Object?, Object?>
+      final rawData = result.data;
+      debugPrint('ParkingRiskService: Response data: $rawData');
+      if (rawData == null) {
+        debugPrint('ParkingRiskService: getRiskForLocation failed - null data');
+        return null;
+      }
+
+      final data = Map<String, dynamic>.from(rawData as Map);
+      if (data['success'] != true) {
         debugPrint(
-          'ParkingRiskService: getRiskForLocation failed - success=${data?['success']}',
+          'ParkingRiskService: getRiskForLocation failed - success=${data['success']}',
         );
         return null;
       }
@@ -198,18 +209,28 @@ class ParkingRiskService {
       );
       final result = await callable.call(params);
 
-      final data = result.data as Map<String, dynamic>?;
+      // Cast the response properly - Cloud Functions returns Map<Object?, Object?>
+      final rawData = result.data;
+      if (rawData == null) {
+        debugPrint('ParkingRiskService: getRiskZones failed - null data');
+        return _cachedZones ?? [];
+      }
+
+      final data = Map<String, dynamic>.from(rawData as Map);
       debugPrint(
-        'ParkingRiskService: getRiskZones response - success=${data?['success']}, count=${data?['count']}',
+        'ParkingRiskService: getRiskZones response - success=${data['success']}, count=${data['count']}',
       );
-      if (data == null || data['success'] != true) {
+      if (data['success'] != true) {
         debugPrint('ParkingRiskService: getRiskZones failed - data: $data');
         return _cachedZones ?? [];
       }
 
+      final rawZones = data['zones'] as List<dynamic>?;
       final zones =
-          (data['zones'] as List<dynamic>?)
-              ?.map((z) => RiskZone.fromMap(z as Map<String, dynamic>))
+          rawZones
+              ?.map(
+                (z) => RiskZone.fromMap(Map<String, dynamic>.from(z as Map)),
+              )
               .toList() ??
           [];
 

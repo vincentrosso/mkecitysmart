@@ -8,8 +8,7 @@ class AlertDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final docRef =
-        FirebaseFirestore.instance.collection('alerts').doc(alertId);
+    final docRef = FirebaseFirestore.instance.collection('alerts').doc(alertId);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Alert detail')),
@@ -58,10 +57,8 @@ class AlertDetailScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 12),
                 Text('Type: ${type.isNotEmpty ? type : 'unknown'}'),
-                if (createdAt != null)
-                  Text('Created: ${createdAt.toDate()}'),
-                if (expiresAt != null)
-                  Text('Expires: ${expiresAt.toDate()}'),
+                if (createdAt != null) Text('Created: ${createdAt.toDate()}'),
+                if (expiresAt != null) Text('Expires: ${expiresAt.toDate()}'),
               ],
             ),
           );

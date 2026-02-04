@@ -48,10 +48,7 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
 
   void _settle(UserProvider provider) {
     if (_result == null || !_result!.eligible) return;
-    final receipt = provider.settlePermit(
-      result: _result!,
-      method: _payMethod,
-    );
+    final receipt = provider.settlePermit(result: _result!, method: _payMethod);
     setState(() {
       _receipt = receipt;
     });
@@ -65,9 +62,7 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
     return Consumer<UserProvider>(
       builder: (context, provider, _) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Permit eligibility & settlement'),
-          ),
+          appBar: AppBar(title: const Text('Permit eligibility & settlement')),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -84,7 +79,9 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                       const SizedBox(height: 12),
                       DropdownButtonFormField<PermitType>(
                         initialValue: _type,
-                        decoration: const InputDecoration(labelText: 'Permit type'),
+                        decoration: const InputDecoration(
+                          labelText: 'Permit type',
+                        ),
                         items: PermitType.values
                             .map(
                               (type) => DropdownMenuItem(
@@ -93,8 +90,9 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                               ),
                             )
                             .toList(),
-                        onChanged: (value) =>
-                            setState(() => _type = value ?? PermitType.residential),
+                        onChanged: (value) => setState(
+                          () => _type = value ?? PermitType.residential,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -112,12 +110,14 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                           FilterChip(
                             selected: _hasProof,
                             label: const Text('Proof of residence'),
-                            onSelected: (value) => setState(() => _hasProof = value),
+                            onSelected: (value) =>
+                                setState(() => _hasProof = value),
                           ),
                           FilterChip(
                             selected: _ecoVehicle,
                             label: const Text('EV/Hybrid'),
-                            onSelected: (value) => setState(() => _ecoVehicle = value),
+                            onSelected: (value) =>
+                                setState(() => _ecoVehicle = value),
                           ),
                           FilterChip(
                             selected: _isLowIncome,
@@ -128,7 +128,8 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                           FilterChip(
                             selected: _isSenior,
                             label: const Text('Senior'),
-                            onSelected: (value) => setState(() => _isSenior = value),
+                            onSelected: (value) =>
+                                setState(() => _isSenior = value),
                           ),
                         ],
                       ),
@@ -139,7 +140,10 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                           const Spacer(),
                           IconButton(
                             onPressed: () => setState(
-                              () => _unpaidTickets = (_unpaidTickets - 1).clamp(0, 99),
+                              () => _unpaidTickets = (_unpaidTickets - 1).clamp(
+                                0,
+                                99,
+                              ),
                             ),
                             icon: const Icon(Icons.remove_circle_outline),
                           ),
@@ -188,7 +192,9 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                           FilledButton.icon(
                             onPressed: () => _settle(provider),
                             icon: const Icon(Icons.verified),
-                            label: Text('Pay \$${_result!.totalDue.toStringAsFixed(2)}'),
+                            label: Text(
+                              'Pay \$${_result!.totalDue.toStringAsFixed(2)}',
+                            ),
                           ),
                         ],
                       ),
@@ -201,7 +207,9 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                 _ReceiptCard(receipt: _receipt!),
               ],
               const SizedBox(height: 12),
-              if (context.read<UserProvider>().receipts
+              if (context
+                  .read<UserProvider>()
+                  .receipts
                   .where((r) => r.category == 'permit')
                   .isNotEmpty) ...[
                 Text(
@@ -209,21 +217,25 @@ class _PermitWorkflowScreenState extends State<PermitWorkflowScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                ...context.read<UserProvider>().receipts
+                ...context
+                    .read<UserProvider>()
+                    .receipts
                     .where((r) => r.category == 'permit')
-                    .map((r) => Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.receipt),
-                            title: Text(r.reference),
-                            subtitle: Text(
-                              '\$${r.amountCharged.toStringAsFixed(2)} • ${r.method.toUpperCase()}',
-                            ),
-                            trailing: Text(
-                              r.createdAt.toLocal().toString().split('.').first,
-                              style: const TextStyle(fontSize: 12),
-                            ),
+                    .map(
+                      (r) => Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.receipt),
+                          title: Text(r.reference),
+                          subtitle: Text(
+                            '\$${r.amountCharged.toStringAsFixed(2)} • ${r.method.toUpperCase()}',
                           ),
-                        )),
+                          trailing: Text(
+                            r.createdAt.toLocal().toString().split('.').first,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ),
               ],
             ],
           ),
@@ -274,10 +286,16 @@ class _EligibilityResultCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total due', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text(
+                  'Total due',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 Text(
                   '\$${result.totalDue.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
                 ),
               ],
             ),
@@ -299,7 +317,9 @@ class _FeeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = value >= 0 ? '\$${value.toStringAsFixed(2)}' : '-\$${value.abs().toStringAsFixed(2)}';
+    final display = value >= 0
+        ? '\$${value.toStringAsFixed(2)}'
+        : '-\$${value.abs().toStringAsFixed(2)}';
     return Column(
       children: [
         Text(label, style: const TextStyle(color: Colors.black54)),
@@ -322,7 +342,10 @@ class _ReceiptCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Receipt ${receipt.reference}', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Receipt ${receipt.reference}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text('Method: ${receipt.method.toUpperCase()}'),
             Text('Charged: \$${receipt.amountCharged.toStringAsFixed(2)}'),

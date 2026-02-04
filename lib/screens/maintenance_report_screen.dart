@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../models/maintenance_report.dart';
 import '../providers/user_provider.dart';
+import '../services/ad_service.dart';
 import '../services/location_service.dart';
 import '../widgets/publicstuff_embed.dart';
 
@@ -14,7 +15,8 @@ class MaintenanceReportScreen extends StatefulWidget {
   const MaintenanceReportScreen({super.key});
 
   @override
-  State<MaintenanceReportScreen> createState() => _MaintenanceReportScreenState();
+  State<MaintenanceReportScreen> createState() =>
+      _MaintenanceReportScreenState();
 }
 
 class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
@@ -36,7 +38,10 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
     if (picked != null) {
       setState(() => _photoPath = picked.path);
     }
@@ -49,16 +54,18 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
     if (!mounted) return;
     if (position == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location unavailable. Check permissions.')),
+        const SnackBar(
+          content: Text('Location unavailable. Check permissions.'),
+        ),
       );
       return;
     }
     setState(() => _lastPosition = position);
     _locationController.text =
         '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Location added.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Location added.')));
   }
 
   Future<void> _submit(UserProvider provider) async {
@@ -77,6 +84,16 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Report submitted and routed.')),
     );
+    // Record action and possibly show interstitial ad
+    _maybeShowInterstitial();
+  }
+
+  Future<void> _maybeShowInterstitial() async {
+    final adService = AdService.instance;
+    adService.recordAction();
+    if (adService.canShowInterstitial()) {
+      await adService.showInterstitial();
+    }
   }
 
   @override
@@ -104,12 +121,16 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Report an issue',
-                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Report an issue',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<MaintenanceCategory>(
                           initialValue: _category,
-                          decoration: const InputDecoration(labelText: 'Category'),
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                          ),
                           items: MaintenanceCategory.values
                               .map(
                                 (c) => DropdownMenuItem(
@@ -118,8 +139,10 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                                 ),
                               )
                               .toList(),
-                          onChanged: (value) =>
-                              setState(() => _category = value ?? MaintenanceCategory.pothole),
+                          onChanged: (value) => setState(
+                            () => _category =
+                                value ?? MaintenanceCategory.pothole,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -130,7 +153,9 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                           ),
                           maxLines: 3,
                           validator: (value) =>
-                              value != null && value.trim().isNotEmpty ? null : 'Describe the issue',
+                              value != null && value.trim().isNotEmpty
+                              ? null
+                              : 'Describe the issue',
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -139,7 +164,9 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                             labelText: 'Location (cross-streets or address)',
                           ),
                           validator: (value) =>
-                              value != null && value.trim().isNotEmpty ? null : 'Add a location',
+                              value != null && value.trim().isNotEmpty
+                              ? null
+                              : 'Add a location',
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -150,7 +177,9 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                                   ? const SizedBox(
                                       width: 16,
                                       height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Icon(Icons.my_location),
                               label: const Text('Use my GPS'),
@@ -159,7 +188,11 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                             OutlinedButton.icon(
                               onPressed: _pickPhoto,
                               icon: const Icon(Icons.photo_camera_back),
-                              label: Text(_photoPath == null ? 'Add photo' : 'Replace photo'),
+                              label: Text(
+                                _photoPath == null
+                                    ? 'Add photo'
+                                    : 'Replace photo',
+                              ),
                             ),
                           ],
                         ),
@@ -167,12 +200,19 @@ class _MaintenanceReportScreenState extends State<MaintenanceReportScreen> {
                           const SizedBox(height: 8),
                           Text(
                             _photoPath!,
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                           if (File(_photoPath!).existsSync())
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
-                              child: Image.file(File(_photoPath!), height: 120, fit: BoxFit.cover),
+                              child: Image.file(
+                                File(_photoPath!),
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                         ],
                         const SizedBox(height: 12),

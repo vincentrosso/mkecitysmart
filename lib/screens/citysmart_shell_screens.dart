@@ -58,9 +58,7 @@ class _SimpleShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(body),
-      ),
+      body: Center(child: Text(body)),
     );
   }
 }

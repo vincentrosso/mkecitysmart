@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/payment_receipt.dart';
 import '../models/ticket.dart';
 import '../providers/user_provider.dart';
+import '../services/ad_service.dart';
 
 class TicketWorkflowScreen extends StatefulWidget {
   const TicketWorkflowScreen({super.key});
@@ -39,9 +40,9 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
       _receipt = null;
     });
     if (ticket == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ticket not found.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ticket not found.')));
     }
   }
 
@@ -61,6 +62,16 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Ticket settled. Receipt ready.')),
     );
+    // Record action and possibly show interstitial ad
+    _maybeShowInterstitial();
+  }
+
+  Future<void> _maybeShowInterstitial() async {
+    final adService = AdService.instance;
+    adService.recordAction();
+    if (adService.canShowInterstitial()) {
+      await adService.showInterstitial();
+    }
   }
 
   double _computeDue(Ticket ticket) {
@@ -94,7 +105,10 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Lookup', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Lookup',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _plateController,
@@ -103,7 +117,9 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _ticketController,
-                        decoration: const InputDecoration(labelText: 'Ticket ID'),
+                        decoration: const InputDecoration(
+                          labelText: 'Ticket ID',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       FilledButton(
@@ -122,7 +138,8 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
               ),
               const SizedBox(height: 12),
               if (_selected != null) _TicketDetailCard(ticket: _selected!),
-              if (_selected != null && _selected!.status == TicketStatus.open) ...[
+              if (_selected != null &&
+                  _selected!.status == TicketStatus.open) ...[
                 const SizedBox(height: 12),
                 Card(
                   child: Padding(
@@ -130,8 +147,10 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Apply fee-waive rules',
-                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Apply fee-waive rules',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
@@ -140,7 +159,8 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
                             FilterChip(
                               selected: _lowIncome,
                               label: const Text('Low-income'),
-                              onSelected: (value) => setState(() => _lowIncome = value),
+                              onSelected: (value) =>
+                                  setState(() => _lowIncome = value),
                             ),
                             FilterChip(
                               selected: _firstOffense,
@@ -151,7 +171,8 @@ class _TicketWorkflowScreenState extends State<TicketWorkflowScreen> {
                             FilterChip(
                               selected: _resident,
                               label: const Text('Resident'),
-                              onSelected: (value) => setState(() => _resident = value),
+                              onSelected: (value) =>
+                                  setState(() => _resident = value),
                             ),
                           ],
                         ),
@@ -284,7 +305,9 @@ class _TicketListTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(statusIcon),
         title: Text(ticket.id),
-        subtitle: Text('${ticket.reason} • \$${ticket.amount.toStringAsFixed(0)}'),
+        subtitle: Text(
+          '${ticket.reason} • \$${ticket.amount.toStringAsFixed(0)}',
+        ),
         trailing: Text(ticket.status.name),
       ),
     );
@@ -303,8 +326,10 @@ class _TicketReceipt extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Receipt ${receipt.reference}',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Receipt ${receipt.reference}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text('Amount: \$${receipt.amountCharged.toStringAsFixed(2)}'),
             if (receipt.waivedAmount > 0)

@@ -26,7 +26,8 @@ class AdService {
       'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create interstitial in AdMob
   static const _prodRewardedAdUnitId =
       'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create rewarded in AdMob
-  static const _prodNativeAdUnitId = 'ca-app-pub-2009498889741048/3072178018'; // Feed Screen native ad
+  static const _prodNativeAdUnitId =
+      'ca-app-pub-2009498889741048/3072178018'; // Feed Screen native ad
 
   // Frequency caps
   static const int _maxInterstitialsPerHour = 3;
@@ -87,10 +88,7 @@ class AdService {
   }
 
   /// Update user preferences and tier
-  void updateUserState({
-    AdPreferences? preferences,
-    SubscriptionTier? tier,
-  }) {
+  void updateUserState({AdPreferences? preferences, SubscriptionTier? tier}) {
     if (preferences != null) _preferences = preferences;
     if (tier != null) _userTier = tier;
   }
@@ -117,15 +115,17 @@ class AdService {
 
     // Check hourly cap
     final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
-    final recentCount =
-        _interstitialTimestamps.where((t) => t.isAfter(oneHourAgo)).length;
+    final recentCount = _interstitialTimestamps
+        .where((t) => t.isAfter(oneHourAgo))
+        .length;
     if (recentCount >= _maxInterstitialsPerHour) return false;
 
     // Check daily cap
     final today = DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
-    final todayCount =
-        _interstitialTimestamps.where((t) => t.isAfter(startOfDay)).length;
+    final todayCount = _interstitialTimestamps
+        .where((t) => t.isAfter(startOfDay))
+        .length;
     if (todayCount >= _maxInterstitialsPerDay) return false;
 
     return true;
@@ -193,7 +193,8 @@ class AdService {
     await _rewardedAd!.show(
       onUserEarnedReward: (ad, reward) {
         debugPrint(
-            'AdService: User earned reward - ${reward.amount} ${reward.type}');
+          'AdService: User earned reward - ${reward.amount} ${reward.type}',
+        );
         rewardGranted = true;
       },
     );
@@ -262,10 +263,7 @@ class AdService {
   Future<void> preloadAds() async {
     if (!shouldShowAds) return;
 
-    await Future.wait([
-      _loadInterstitialAd(),
-      _loadRewardedAd(),
-    ]);
+    await Future.wait([_loadInterstitialAd(), _loadRewardedAd()]);
   }
 
   Future<void> _loadInterstitialAd() async {
@@ -323,11 +321,11 @@ class AdService {
 
       final lastShown = prefs.getInt('ad_last_interstitial');
       if (lastShown != null) {
-        _lastInterstitialShown =
-            DateTime.fromMillisecondsSinceEpoch(lastShown);
+        _lastInterstitialShown = DateTime.fromMillisecondsSinceEpoch(lastShown);
       }
 
-      final timestamps = prefs.getStringList('ad_interstitial_timestamps') ?? [];
+      final timestamps =
+          prefs.getStringList('ad_interstitial_timestamps') ?? [];
       _interstitialTimestamps.clear();
       for (final t in timestamps) {
         final ms = int.tryParse(t);
@@ -338,8 +336,10 @@ class AdService {
 
       // Reset action count if it's a new day
       final lastDate = prefs.getString('ad_last_date');
-      final today =
-          DateTime.now().toIso8601String().substring(0, 10); // YYYY-MM-DD
+      final today = DateTime.now().toIso8601String().substring(
+        0,
+        10,
+      ); // YYYY-MM-DD
       if (lastDate != today) {
         _actionCount = 0;
         await prefs.setString('ad_last_date', today);

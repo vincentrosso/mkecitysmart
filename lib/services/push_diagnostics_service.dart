@@ -79,7 +79,9 @@ class PushDiagnosticsService {
     }
 
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('testPushToSelf');
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'testPushToSelf',
+      );
       final resp = await callable.call({
         'token': token,
         if (title != null) 'title': title,
@@ -104,7 +106,9 @@ class PushDiagnosticsService {
     }
 
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('simulateNearbyWarning');
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'simulateNearbyWarning',
+      );
       final resp = await callable.call({
         'latitude': latitude,
         'longitude': longitude,
@@ -123,7 +127,7 @@ class PushDiagnosticsService {
     if (error is FirebaseFunctionsException) {
       final details = error.details;
       String detailsStr = '';
-      
+
       // Try to extract FCM error code from details map
       if (details is Map) {
         final message = details['message'];
@@ -139,7 +143,7 @@ class PushDiagnosticsService {
       } else if (details != null) {
         detailsStr = ' details=$details';
       }
-      
+
       return 'functions/${error.code}: ${error.message ?? 'Unknown error.'}$detailsStr';
     }
     return error?.toString();
@@ -151,10 +155,12 @@ class PushDiagnosticsService {
     if (lower.contains('registration-token-not-registered')) {
       return 'FCM_TOKEN_NOT_REGISTERED: Token not registered with Firebase Messaging';
     }
-    if (lower.contains('invalid-argument') || lower.contains('invalid.*token')) {
+    if (lower.contains('invalid-argument') ||
+        lower.contains('invalid.*token')) {
       return 'FCM_INVALID_TOKEN: Token format is invalid or corrupted';
     }
-    if (lower.contains('authentication-error') || lower.contains('unauthorized')) {
+    if (lower.contains('authentication-error') ||
+        lower.contains('unauthorized')) {
       return 'FCM_AUTH_ERROR: Firebase Messaging authentication failed';
     }
     if (lower.contains('instance-id-error')) {

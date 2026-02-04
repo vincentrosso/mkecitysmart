@@ -38,13 +38,31 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
     {'name': 'West Milwaukee', 'id': 'west_milwaukee', 'isMain': false},
   ];
 
+  // Supported languages with Flutter Material localization support
+  static const _supportedLanguages = ['en', 'es', 'ar', 'fr', 'zh', 'hi', 'el'];
+
   @override
   void initState() {
     super.initState();
     final provider = context.read<UserProvider>();
     _cityId = provider.cityId;
-    _languageCode = provider.languageCode;
-    _selectedCity = _cityId.isEmpty ? 'milwaukee' : _cityId;
+
+    // Ensure language code is valid, default to 'en' if not supported
+    final storedLang = provider.languageCode;
+    _languageCode = _supportedLanguages.contains(storedLang)
+        ? storedLang
+        : 'en';
+
+    // Ensure selected city matches one of the available cities
+    // Default to 'milwaukee' if the current cityId isn't in the list
+    final cityIds = _milwaukeeCountyCities
+        .map((c) => c['id'] as String)
+        .toList();
+    if (cityIds.contains(_cityId)) {
+      _selectedCity = _cityId;
+    } else {
+      _selectedCity = 'milwaukee';
+    }
   }
 
   @override
@@ -61,10 +79,10 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0).withOpacity(0.1),
+                  color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF1565C0).withOpacity(0.3),
+                    color: const Color(0xFF1565C0).withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -161,12 +179,21 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
                   DropdownMenuItem(value: 'es', child: Text('Español')),
-                  DropdownMenuItem(value: 'hmn', child: Text('Hmoob')),
                   DropdownMenuItem(value: 'ar', child: Text('العربية')),
                   DropdownMenuItem(value: 'fr', child: Text('Français')),
+                  DropdownMenuItem(value: 'zh', child: Text('中文')),
+                  DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
+                  DropdownMenuItem(value: 'el', child: Text('Ελληνικά')),
                 ],
                 onChanged: (value) =>
                     setState(() => _languageCode = value ?? 'en'),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Changes date/time formats and system text',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
               const SizedBox(height: 16),
               FilledButton(
@@ -179,7 +206,7 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
                   await provider.updateLanguage(_languageCode);
                   if (!mounted) return;
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('Settings updated')),
+                    const SnackBar(content: Text('Settings saved')),
                   );
                 },
                 child: const Text('Save'),

@@ -15,7 +15,9 @@ class ReportApiService {
     try {
       // Use Firebase Cloud Function for sighting submission
       // This triggers the nearby user fanout for push notifications
-      final callable = FirebaseFunctions.instance.httpsCallable('submitSighting');
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'submitSighting',
+      );
       final result = await callable.call({
         'location': report.location,
         'notes': report.notes,
@@ -23,12 +25,12 @@ class ReportApiService {
         'latitude': report.latitude,
         'longitude': report.longitude,
       });
-      
+
       log('Sighting submitted via Cloud Function: ${result.data}');
       return Map<String, dynamic>.from(result.data as Map);
     } catch (e) {
       log('Failed to submit sighting via Cloud Function: $e');
-      
+
       // Fallback to REST API if Cloud Function fails
       try {
         await _client.post(

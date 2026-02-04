@@ -16,9 +16,9 @@ class UserRepository {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     LocalDatabase? localDatabase,
-  })  : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
-        _localDb = localDatabase ?? LocalDatabase();
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _localDb = localDatabase ?? LocalDatabase();
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -117,9 +117,9 @@ class UserRepository {
   }
 
   Future<List<SightingReport>> loadSightings() => _loadSubCollection(
-        collectionName: 'sightings',
-        fromJson: SightingReport.fromJson,
-      );
+    collectionName: 'sightings',
+    fromJson: SightingReport.fromJson,
+  );
 
   Future<void> saveSightings(List<SightingReport> reports) async {
     if (_activeUserId == null) return;
@@ -152,33 +152,35 @@ class UserRepository {
       await _userDocument().set({'reports': 0}, SetOptions(merge: true));
 
       // Try to increment the reportCount by the number of reports added.
-      await _userDocument().update({'reportCount': FieldValue.increment(reports.length)});
+      await _userDocument().update({
+        'reportCount': FieldValue.increment(reports.length),
+      });
     } catch (e) {
       // If update fails (for example the document didn't exist concurrently),
       // try to set the count explicitly as a fallback.
       try {
-        await _userDocument().set({'reportCount': reports.length}, SetOptions(merge: true));
+        await _userDocument().set({
+          'reportCount': reports.length,
+        }, SetOptions(merge: true));
       } catch (_) {
         // Swallow — this counter is a convenience and should not prevent app flow.
       }
     }
   }
 
-  Future<List<Ticket>> loadTickets() => _loadSubCollection(
-        collectionName: 'tickets',
-        fromJson: Ticket.fromJson,
-      );
+  Future<List<Ticket>> loadTickets() =>
+      _loadSubCollection(collectionName: 'tickets', fromJson: Ticket.fromJson);
 
   Future<void> saveTickets(List<Ticket> tickets) => _saveSubCollection(
-        collectionName: 'tickets',
-        items: tickets,
-        toJson: (t) => t.toJson(),
-      );
+    collectionName: 'tickets',
+    items: tickets,
+    toJson: (t) => t.toJson(),
+  );
 
   Future<List<PaymentReceipt>> loadReceipts() => _loadSubCollection(
-        collectionName: 'receipts',
-        fromJson: PaymentReceipt.fromJson,
-      );
+    collectionName: 'receipts',
+    fromJson: PaymentReceipt.fromJson,
+  );
 
   Future<void> saveReceipts(List<PaymentReceipt> receipts) =>
       _saveSubCollection(
@@ -206,8 +208,9 @@ class UserRepository {
       try {
         final data = jsonDecode(mutation.payload) as Map<String, dynamic>;
         if (data['type'] == 'profile_upsert') {
-          final profile =
-              UserProfile.fromJson(data['profile'] as Map<String, dynamic>);
+          final profile = UserProfile.fromJson(
+            data['profile'] as Map<String, dynamic>,
+          );
           await _userDocument().set(profile.toJson());
         }
         await _localDb.removePending(mutation.id);
@@ -239,8 +242,8 @@ class UserRepository {
         final currentCount = data['alertsToday'] as int? ?? 0;
 
         // Reset count if it's a new day
-        final newCount = (lastAlertDay == null ||
-                !isSameDay(lastAlertDay, today))
+        final newCount =
+            (lastAlertDay == null || !isSameDay(lastAlertDay, today))
             ? 1
             : currentCount + 1;
 
@@ -281,7 +284,9 @@ class UserRepository {
       final today = DateTime(now.year, now.month, now.day);
 
       // Return 0 if it's a new day
-      return (lastAlertDay == null || !isSameDay(lastAlertDay, today)) ? 0 : count;
+      return (lastAlertDay == null || !isSameDay(lastAlertDay, today))
+          ? 0
+          : count;
     } catch (e) {
       return 0;
     }
@@ -290,7 +295,7 @@ class UserRepository {
   /// Helper function to check if two dates are the same day
   bool isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 }

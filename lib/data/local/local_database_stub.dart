@@ -7,11 +7,11 @@ class LocalDatabase {
   Future<void> enqueueProfileSync(UserProfile profile) async {}
   Future<void> removePending(String id) async {}
   Future<void> clearProfile(String userId) async {}
-  Future<List<_PendingMutationStub>> pendingMutations() async => [];
+  Future<List<PendingMutationStub>> pendingMutations() async => [];
 }
 
-class _PendingMutationStub {
-  _PendingMutationStub(this.id, this.payload);
+class PendingMutationStub {
+  PendingMutationStub(this.id, this.payload);
   final String id;
   final String payload;
 }

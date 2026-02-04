@@ -22,11 +22,14 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
   final _locationService = LocationService();
   final _riskService = ParkingRiskService();
 
-  LatLng _currentLocation = const LatLng(43.0389, -87.9065); // Milwaukee default
+  LatLng _currentLocation = const LatLng(
+    43.0389,
+    -87.9065,
+  ); // Milwaukee default
   bool _loadingLocation = true;
   bool _loadingSpots = true;
   String? _error;
-  
+
   List<_ParkingSpot> _parkingSpots = [];
   _ParkingSpot? _selectedSpot;
   String? _currentRiskLevel;
@@ -222,9 +225,65 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
   }
 
   Future<void> _openDirections(_ParkingSpot spot) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}',
+    // Show a choice dialog for Google Maps or Apple Maps
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.grey.shade900,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'Open directions in...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map, color: Colors.green),
+                title: const Text(
+                  'Apple Maps',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => Navigator.pop(ctx, 'apple'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map_outlined, color: Colors.blue),
+                title: const Text(
+                  'Google Maps',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => Navigator.pop(ctx, 'google'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+
+    if (choice == null || !mounted) return;
+
+    Uri uri;
+    if (choice == 'apple') {
+      uri = Uri.parse(
+        'https://maps.apple.com/?daddr=${spot.lat},${spot.lng}&dirflg=d',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}',
+      );
+    }
+
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -277,7 +336,8 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
             options: MapOptions(
               initialCenter: _currentLocation,
               initialZoom: 13.5,
-              onTap: (_, __) => setState(() => _selectedSpot = null),
+              onTap: (tapPosition, point) =>
+                  setState(() => _selectedSpot = null),
             ),
             children: [
               TileLayer(
@@ -327,7 +387,9 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: _getSpotColor(spot.type).withValues(alpha: 0.5),
+                                    color: _getSpotColor(
+                                      spot.type,
+                                    ).withValues(alpha: 0.5),
                                     blurRadius: 10,
                                     spreadRadius: 2,
                                   ),
@@ -353,7 +415,10 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
               top: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: _getRiskColor(_currentRiskLevel!),
                   borderRadius: BorderRadius.circular(20),
@@ -361,7 +426,11 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.warning_amber, color: Colors.white, size: 16),
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Ticket Risk: $_currentRiskLevel',
@@ -390,11 +459,23 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _LegendItem(color: Colors.blue, icon: Icons.local_parking, label: 'Garage'),
+                  _LegendItem(
+                    color: Colors.blue,
+                    icon: Icons.local_parking,
+                    label: 'Garage',
+                  ),
                   const SizedBox(height: 4),
-                  _LegendItem(color: Colors.green, icon: Icons.square_outlined, label: 'Lot'),
+                  _LegendItem(
+                    color: Colors.green,
+                    icon: Icons.square_outlined,
+                    label: 'Lot',
+                  ),
                   const SizedBox(height: 4),
-                  _LegendItem(color: kCitySmartYellow, icon: Icons.attach_money, label: 'Street'),
+                  _LegendItem(
+                    color: kCitySmartYellow,
+                    icon: Icons.attach_money,
+                    label: 'Street',
+                  ),
                 ],
               ),
             ),
@@ -530,14 +611,14 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 20,
           height: 20,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           child: Icon(icon, color: Colors.white, size: 12),
         ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: kCitySmartText, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: kCitySmartText, fontSize: 11),
+        ),
       ],
     );
   }
@@ -584,8 +665,8 @@ class _SpotDetailCard extends StatelessWidget {
                   spot.type == ParkingType.garage
                       ? Icons.local_parking
                       : spot.type == ParkingType.lot
-                          ? Icons.square_outlined
-                          : Icons.attach_money,
+                      ? Icons.square_outlined
+                      : Icons.attach_money,
                   color: Colors.white,
                 ),
               ),
@@ -604,7 +685,10 @@ class _SpotDetailCard extends StatelessWidget {
                     ),
                     Text(
                       spot.address,
-                      style: const TextStyle(color: kCitySmartMuted, fontSize: 13),
+                      style: const TextStyle(
+                        color: kCitySmartMuted,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -618,7 +702,10 @@ class _SpotDetailCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoChip(icon: Icons.directions_walk, label: '${distance.toStringAsFixed(1)} mi'),
+              _InfoChip(
+                icon: Icons.directions_walk,
+                label: '${distance.toStringAsFixed(1)} mi',
+              ),
               const SizedBox(width: 8),
               _InfoChip(icon: Icons.attach_money, label: spot.rates),
               const SizedBox(width: 8),
@@ -628,7 +715,10 @@ class _SpotDetailCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _InfoChip(icon: Icons.local_parking, label: '${spot.spaces} spaces'),
+              _InfoChip(
+                icon: Icons.local_parking,
+                label: '${spot.spaces} spaces',
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -638,9 +728,7 @@ class _SpotDetailCard extends StatelessWidget {
               onPressed: onDirections,
               icon: const Icon(Icons.directions),
               label: const Text('Get directions'),
-              style: FilledButton.styleFrom(
-                backgroundColor: spotColor,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: spotColor),
             ),
           ),
         ],
@@ -698,7 +786,11 @@ class _SpotListPreview extends StatelessWidget {
 
   double _distance(_ParkingSpot spot) {
     const distance = Distance();
-    return distance.as(LengthUnit.Mile, currentLocation, LatLng(spot.lat, spot.lng));
+    return distance.as(
+      LengthUnit.Mile,
+      currentLocation,
+      LatLng(spot.lat, spot.lng),
+    );
   }
 
   @override
@@ -753,7 +845,10 @@ class _SpotListPreview extends StatelessWidget {
               ),
               title: Text(
                 spot.name,
-                style: const TextStyle(color: kCitySmartText, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: kCitySmartText,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               subtitle: Text(
                 '${spot.rates} • ${_distance(spot).toStringAsFixed(1)} mi',

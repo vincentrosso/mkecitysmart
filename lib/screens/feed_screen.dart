@@ -37,7 +37,7 @@ class _FeedBodyState extends State<_FeedBody> {
     radiusMiles: 5.0, // Default: 5 miles
     timeWindow: Duration(hours: 2), // Default: last 2 hours
   );
-  
+
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _docs = [];
   Position? _userPosition;
   bool _loading = true;
@@ -76,15 +76,18 @@ class _FeedBodyState extends State<_FeedBody> {
       final query = _filterService.buildQuery(
         filters: _filters.copyWith(lastDoc: _lastDoc),
       );
-      
+
       final snapshot = await query.get().timeout(
         const Duration(seconds: 15),
-        onTimeout: () => throw Exception('Request timed out. Please check your connection.'),
+        onTimeout: () =>
+            throw Exception('Request timed out. Please check your connection.'),
       );
       final rawDocs = snapshot.docs;
-      
+
       if (kDebugMode) {
-        debugPrint('[Feed] Raw docs: ${rawDocs.length}, filters: radius=${_filters.radiusMiles}, time=${_filters.timeWindow?.inHours}h');
+        debugPrint(
+          '[Feed] Raw docs: ${rawDocs.length}, filters: radius=${_filters.radiusMiles}, time=${_filters.timeWindow?.inHours}h',
+        );
       }
 
       // Apply radius filter if needed
@@ -113,21 +116,22 @@ class _FeedBodyState extends State<_FeedBody> {
         debugPrint('[Feed] Error: $e');
         debugPrint('[Feed] Stack: $stackTrace');
       }
-      
+
       if (!mounted) return;
-      
+
       // Provide user-friendly error messages
       String errorMessage;
       if (e.toString().contains('permission-denied')) {
         errorMessage = 'Access denied. Please sign in to view the feed.';
-      } else if (e.toString().contains('unavailable') || e.toString().contains('network')) {
+      } else if (e.toString().contains('unavailable') ||
+          e.toString().contains('network')) {
         errorMessage = 'Network error. Please check your connection.';
       } else if (e.toString().contains('timed out')) {
         errorMessage = e.toString();
       } else {
         errorMessage = 'Failed to load feed. Please try again.';
       }
-      
+
       setState(() {
         _error = errorMessage;
         _loading = false;
@@ -144,14 +148,17 @@ class _FeedBodyState extends State<_FeedBody> {
 
   void _updateFilters(FeedFilters newFilters) {
     // Track filter changes for analytics
-    AnalyticsService.instance.logEvent('feed_filters_changed', parameters: {
-      'radius_miles': newFilters.radiusMiles?.toString() ?? 'all',
-      'time_window_hours': newFilters.timeWindow != null 
-          ? (newFilters.timeWindow!.inMinutes / 60).toString()
-          : 'all',
-      'sighting_type': newFilters.typeFilter.name,
-    });
-    
+    AnalyticsService.instance.logEvent(
+      'feed_filters_changed',
+      parameters: {
+        'radius_miles': newFilters.radiusMiles?.toString() ?? 'all',
+        'time_window_hours': newFilters.timeWindow != null
+            ? (newFilters.timeWindow!.inMinutes / 60).toString()
+            : 'all',
+        'sighting_type': newFilters.typeFilter.name,
+      },
+    );
+
     setState(() {
       _filters = newFilters;
     });
@@ -164,33 +171,33 @@ class _FeedBodyState extends State<_FeedBody> {
       children: [
         // Warning banner (non-fatal issues)
         if (_warning != null && !_loading)
-          _WarningBanner(message: _warning!, onDismiss: () => setState(() => _warning = null)),
-        
+          _WarningBanner(
+            message: _warning!,
+            onDismiss: () => setState(() => _warning = null),
+          ),
+
         // Filter bar
-        _FilterBar(
-          filters: _filters,
-          onFiltersChanged: _updateFilters,
-        ),
-        
+        _FilterBar(filters: _filters, onFiltersChanged: _updateFilters),
+
         // Feed content
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? _ErrorView(error: _error!, onRetry: _loadFeed)
-                  : RefreshIndicator(
-                      onRefresh: () => _loadFeed(),
-                      child: _docs.isEmpty
-                          ? _EmptyFeedView(filters: _filters)
-                          : _FeedListView(
-                              docs: _docs,
-                              hasMore: _hasMore,
-                              loadingMore: _loadingMore,
-                              userPosition: _userPosition,
-                              filterService: _filterService,
-                              onLoadMore: _loadMore,
-                            ),
-                    ),
+              ? _ErrorView(error: _error!, onRetry: _loadFeed)
+              : RefreshIndicator(
+                  onRefresh: () => _loadFeed(),
+                  child: _docs.isEmpty
+                      ? _EmptyFeedView(filters: _filters)
+                      : _FeedListView(
+                          docs: _docs,
+                          hasMore: _hasMore,
+                          loadingMore: _loadingMore,
+                          userPosition: _userPosition,
+                          filterService: _filterService,
+                          onLoadMore: _loadMore,
+                        ),
+                ),
         ),
       ],
     );
@@ -223,7 +230,7 @@ class _FeedListView extends StatelessWidget {
     return Consumer<UserProvider>(
       builder: (context, provider, _) {
         final showAds = provider.tier == SubscriptionTier.free;
-        
+
         // Calculate total items including ads
         final adCount = showAds ? (docs.length / _adInterval).floor() : 0;
         final totalItems = docs.length + adCount + (hasMore ? 1 : 0);
@@ -235,25 +242,24 @@ class _FeedListView extends StatelessWidget {
             // Check if this is the load more button
             final loadMoreIndex = docs.length + adCount;
             if (index == loadMoreIndex && hasMore) {
-              return _LoadMoreButton(
-                loading: loadingMore,
-                onTap: onLoadMore,
-              );
+              return _LoadMoreButton(loading: loadingMore, onTap: onLoadMore);
             }
 
             // Calculate actual doc index accounting for ads
             int docIndex;
             bool isAdSlot;
-            
+
             if (showAds) {
               // Every (_adInterval + 1)th position after _adInterval items is an ad
               final itemsBeforeIndex = index;
-              final adsBeforeIndex = (itemsBeforeIndex / (_adInterval + 1)).floor();
+              final adsBeforeIndex = (itemsBeforeIndex / (_adInterval + 1))
+                  .floor();
               docIndex = index - adsBeforeIndex;
-              
+
               // Check if this specific index is an ad slot
-              isAdSlot = index > 0 && 
-                  ((index + 1) % (_adInterval + 1) == 0) && 
+              isAdSlot =
+                  index > 0 &&
+                  ((index + 1) % (_adInterval + 1) == 0) &&
                   docIndex <= docs.length;
             } else {
               docIndex = index;
@@ -289,10 +295,7 @@ class _FilterBar extends StatelessWidget {
   final FeedFilters filters;
   final ValueChanged<FeedFilters> onFiltersChanged;
 
-  const _FilterBar({
-    required this.filters,
-    required this.onFiltersChanged,
-  });
+  const _FilterBar({required this.filters, required this.onFiltersChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +456,7 @@ class _SightingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final data = doc.data();
-    
+
     final type = (data['type'] ?? 'unknown').toString();
     final title = (data['title'] ?? '').toString();
     final message = (data['message'] ?? '').toString();
@@ -493,11 +496,8 @@ class _SightingCard extends StatelessWidget {
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/alert-detail',
-          arguments: doc.id,
-        ),
+        onTap: () =>
+            Navigator.pushNamed(context, '/alert-detail', arguments: doc.id),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -530,7 +530,11 @@ class _SightingCard extends StatelessWidget {
                         Row(
                           children: [
                             if (timeText.isNotEmpty) ...[
-                              Icon(Icons.schedule, size: 12, color: Colors.grey),
+                              Icon(
+                                Icons.schedule,
+                                size: 12,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 timeText,
@@ -539,7 +543,8 @@ class _SightingCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            if (distanceText != null && distanceText.isNotEmpty) ...[
+                            if (distanceText != null &&
+                                distanceText.isNotEmpty) ...[
                               const SizedBox(width: 12),
                               Icon(Icons.near_me, size: 12, color: Colors.grey),
                               const SizedBox(width: 4),
@@ -557,7 +562,10 @@ class _SightingCard extends StatelessWidget {
                   ),
                   if (reports > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.shade100,
                         borderRadius: BorderRadius.circular(12),
@@ -565,7 +573,11 @@ class _SightingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.flag, size: 12, color: Colors.orange.shade700),
+                          Icon(
+                            Icons.flag,
+                            size: 12,
+                            color: Colors.orange.shade700,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '$reports',
@@ -580,13 +592,17 @@ class _SightingCard extends StatelessWidget {
                     ),
                 ],
               ),
-              
+
               // Location
               if (location.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -631,33 +647,29 @@ class _EmptyFeedView extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       children: [
         const SizedBox(height: 60),
-        Icon(
-          Icons.search_off,
-          size: 64,
-          color: Colors.grey.shade400,
-        ),
+        Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
         const SizedBox(height: 16),
         Text(
           'No sightings found',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.grey.shade600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Try expanding your radius or time window to see more sightings.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey.shade500,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade500),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
         Text(
           'Current filters:\n${filters.radiusLabel} • ${filters.timeLabel}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey.shade400,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade400),
           textAlign: TextAlign.center,
         ),
       ],
@@ -746,10 +758,7 @@ class _WarningBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.amber.shade900,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.amber.shade900),
             ),
           ),
           IconButton(

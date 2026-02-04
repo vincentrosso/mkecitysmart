@@ -38,7 +38,8 @@ class PaymentReceipt {
       amountCharged: (json['amountCharged'] as num?)?.toDouble() ?? 0,
       method: json['method'] as String? ?? '',
       reference: json['reference'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       waivedAmount: (json['waivedAmount'] as num?)?.toDouble() ?? 0,
       description: json['description'] as String? ?? '',

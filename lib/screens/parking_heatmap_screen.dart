@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
+import '../services/parking_prediction_service.dart';
 import '../services/parking_risk_service.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/feature_gate.dart';
 import '../widgets/parking_risk_badge.dart';
 
@@ -17,6 +20,7 @@ class ParkingHeatmapScreen extends StatefulWidget {
 
 class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   final _riskService = ParkingRiskService.instance;
+  final _predictionService = ParkingPredictionService.instance;
   final _mapController = MapController();
 
   double _centerLat = 43.0389; // Milwaukee default
@@ -27,6 +31,11 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   bool _loading = true;
   String? _error;
   RiskZone? _selectedZone;
+  bool _riskBannerDismissed = false;
+
+  // Prediction data
+  List<SafeParkingSpot> _safestSpots = [];
+  bool _showSafestSpots = false;
 
   @override
   void initState() {
@@ -99,6 +108,26 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
     });
   }
 
+  Future<void> _findSafestSpots() async {
+    final spots = await _predictionService.findSafestSpotsNearby(
+      latitude: _centerLat,
+      longitude: _centerLng,
+      radiusKm: 3.0,
+      maxResults: 5,
+    );
+
+    setState(() {
+      _safestSpots = spots;
+      _showSafestSpots = true;
+    });
+
+    // If we have a safest spot, zoom to it
+    if (spots.isNotEmpty) {
+      final safest = spots.first;
+      _mapController.move(LatLng(safest.latitude, safest.longitude), 14.0);
+    }
+  }
+
   Color _getRiskColor(RiskLevel level) {
     switch (level) {
       case RiskLevel.high:
@@ -140,6 +169,14 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
           ],
         ],
       ),
+      floatingActionButton: hasAccess && !_loading
+          ? FloatingActionButton.extended(
+              onPressed: _findSafestSpots,
+              backgroundColor: const Color(0xFF4CAF50),
+              icon: const Icon(Icons.verified_user),
+              label: const Text('Find Safest'),
+            )
+          : null,
       body: !hasAccess
           ? FeatureGate(
               feature: PremiumFeature.heatmap,
@@ -200,13 +237,28 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                     ),
                   ),
 
-                // Risk badge at top
-                if (_locationRisk != null)
+                // Risk badge at top with dismiss button
+                if (_locationRisk != null && !_riskBannerDismissed)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    color: Color(_locationRisk!.colorValue).withOpacity(0.1),
-                    child: ParkingRiskBadge(risk: _locationRisk!),
+                    color: Color(
+                      _locationRisk!.colorValue,
+                    ).withValues(alpha: 0.1),
+                    child: Row(
+                      children: [
+                        Expanded(child: ParkingRiskBadge(risk: _locationRisk!)),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () =>
+                              setState(() => _riskBannerDismissed = true),
+                          tooltip: 'Dismiss',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: Colors.grey.shade600,
+                        ),
+                      ],
+                    ),
                   ),
 
                 // Map
@@ -220,7 +272,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                           initialZoom: 11.5,
                           minZoom: 9,
                           maxZoom: 18,
-                          onTap: (_, __) {
+                          onTap: (tapPosition, point) {
                             setState(() => _selectedZone = null);
                           },
                         ),
@@ -244,7 +296,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                 point: LatLng(zone.lat, zone.lng),
                                 radius: radius,
                                 useRadiusInMeter: true,
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 borderColor: color,
                                 borderStrokeWidth: 2,
                               );
@@ -275,7 +327,9 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                       boxShadow: isSelected
                                           ? [
                                               BoxShadow(
-                                                color: color.withOpacity(0.5),
+                                                color: color.withValues(
+                                                  alpha: 0.5,
+                                                ),
                                                 blurRadius: 8,
                                                 spreadRadius: 2,
                                               ),
@@ -298,6 +352,60 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             }).toList(),
                           ),
 
+                          // Safest spots markers (green checkmarks)
+                          if (_showSafestSpots && _safestSpots.isNotEmpty)
+                            MarkerLayer(
+                              markers: _safestSpots.asMap().entries.map((
+                                entry,
+                              ) {
+                                final index = entry.key;
+                                final spot = entry.value;
+                                final isFirst = index == 0;
+                                return Marker(
+                                  point: LatLng(spot.latitude, spot.longitude),
+                                  width: isFirst ? 50 : 40,
+                                  height: isFirst ? 50 : 40,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isFirst
+                                          ? const Color(0xFF4CAF50)
+                                          : const Color(0xFF81C784),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: isFirst ? 4 : 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: isFirst ? 12 : 6,
+                                          spreadRadius: isFirst ? 3 : 1,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: isFirst
+                                          ? const Icon(
+                                              Icons.verified,
+                                              color: Colors.white,
+                                              size: 28,
+                                            )
+                                          : Text(
+                                              '${index + 1}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
                           // Current location marker
                           MarkerLayer(
                             markers: [
@@ -315,7 +423,9 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.blue.withOpacity(0.3),
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -339,7 +449,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -395,7 +505,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -457,6 +567,27 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                           ),
                         ),
 
+                      // Safest spots results card
+                      if (_showSafestSpots &&
+                          _safestSpots.isNotEmpty &&
+                          _selectedZone == null)
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 50,
+                          child: _SafestSpotsCard(
+                            spots: _safestSpots,
+                            onClose: () =>
+                                setState(() => _showSafestSpots = false),
+                            onSpotTap: (spot) {
+                              _mapController.move(
+                                LatLng(spot.latitude, spot.longitude),
+                                15.0,
+                              );
+                            },
+                          ),
+                        ),
+
                       // Error message
                       if (_error != null)
                         Positioned(
@@ -477,6 +608,12 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                         ),
                     ],
                   ),
+                ),
+
+                // Ad banner for free tier users
+                const SafeArea(
+                  top: false,
+                  child: AdBannerWidget(showPlaceholder: false),
                 ),
               ],
             ),
@@ -504,7 +641,7 @@ class _LegendItem extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 blurRadius: 4,
                 spreadRadius: 1,
               ),
@@ -653,5 +790,291 @@ class _ZoneDetailCard extends StatelessWidget {
       case RiskLevel.low:
         return '✅ Lower risk area, but always check posted signs.';
     }
+  }
+}
+
+/// Card showing safest parking spots found by prediction service
+class _SafestSpotsCard extends StatefulWidget {
+  const _SafestSpotsCard({
+    required this.spots,
+    required this.onClose,
+    required this.onSpotTap,
+  });
+
+  final List<SafeParkingSpot> spots;
+  final VoidCallback onClose;
+  final void Function(SafeParkingSpot) onSpotTap;
+
+  @override
+  State<_SafestSpotsCard> createState() => _SafestSpotsCardState();
+}
+
+class _SafestSpotsCardState extends State<_SafestSpotsCard> {
+  bool _minimized = false;
+
+  Future<void> _navigateToSpot(SafeParkingSpot spot) async {
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final safest = widget.spots.first;
+
+    // Minimized view - just a small bar
+    if (_minimized) {
+      return Card(
+        elevation: 4,
+        child: InkWell(
+          onTap: () => setState(() => _minimized = false),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.verified, color: Color(0xFF4CAF50), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Safest: ${(safest.safetyScore * 100).round()}% safe',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.expand_less, color: Colors.grey),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: widget.onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Full view
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified, color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        'SAFEST SPOT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // Minimize button
+                IconButton(
+                  icon: const Icon(Icons.expand_more, size: 20),
+                  onPressed: () => setState(() => _minimized = true),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Minimize',
+                ),
+                const SizedBox(width: 8),
+                // Close button
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: widget.onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Top recommendation
+            InkWell(
+              onTap: () => widget.onSpotTap(safest),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF4CAF50),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${(safest.safetyScore * 100).round()}% Safe',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${safest.distanceLabel} • ${safest.walkingMinutes} min walk',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.directions_walk,
+                        color: Color(0xFF4CAF50),
+                      ),
+                      onPressed: () => _navigateToSpot(safest),
+                      tooltip: 'Navigate',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Navigate button
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToSpot(safest),
+                icon: const Icon(Icons.directions_walk),
+                label: const Text('Navigate to Safe Spot'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+
+            // Other spots
+            if (widget.spots.length > 1) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Other safe options:',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...widget.spots
+                  .skip(1)
+                  .take(3)
+                  .map(
+                    (spot) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: InkWell(
+                        onTap: () => widget.onSpotTap(spot),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF81C784),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${widget.spots.indexOf(spot) + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '${(spot.safetyScore * 100).round()}% safe',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            const Spacer(),
+                            Text(
+                              spot.distanceLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => _navigateToSpot(spot),
+                              child: const Icon(
+                                Icons.directions_walk,
+                                size: 18,
+                                color: Color(0xFF81C784),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

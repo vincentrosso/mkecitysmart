@@ -74,7 +74,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
       address: rawAddress.isEmpty ? null : rawAddress,
-      formattedAddress: formattedAddress ?? (rawAddress.isEmpty ? null : rawAddress),
+      formattedAddress:
+          formattedAddress ?? (rawAddress.isEmpty ? null : rawAddress),
       addressLatitude: lat,
       addressLongitude: lng,
     );
@@ -158,7 +159,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Card(
                       child: ListTile(
                         leading: CircleAvatar(
-                          child: Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U'),
+                          child: Text(
+                            profile.name.isNotEmpty
+                                ? profile.name[0].toUpperCase()
+                                : 'U',
+                          ),
                         ),
                         title: Text(profile.name),
                         subtitle: Text(profile.email),
@@ -172,7 +177,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: const Text('Saved Places'),
                         subtitle: const Text('Home, work, and favorites'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.pushNamed(context, '/saved-places'),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/saved-places'),
                       ),
                     ),
                     const SizedBox(height: 24),

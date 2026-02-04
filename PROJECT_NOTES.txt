@@ -174,3 +174,19 @@ Architecture flow (text diagram)
     - LocationService (Geolocator, sample zones, distance/directions).
 - Firebase bootstrap
     - firebase_bootstrap + firebase_options (platform configs), web also uses web/firebase-config.json.
+
+Future Enhancements (to implement if users request)
+---------------------------------------
+- Full App Localization (i18n):
+  * Current state: Language setting in City Settings changes the app locale for date/time formats and
+    Material widget text (calendar, date pickers, dialog buttons), but custom app UI text (like "Save",
+    "Settings", "Dashboard") remains hardcoded in English.
+  * To implement full translations: Use Flutter's localization system with ARB files.
+    - Add `flutter_localizations` to pubspec.yaml (already done)
+    - Create `lib/l10n/` folder with ARB files: `app_en.arb`, `app_es.arb`, `app_ar.arb`, etc.
+    - Add `generate: true` to pubspec.yaml flutter section
+    - Create `l10n.yaml` config file
+    - Replace hardcoded strings with `AppLocalizations.of(context)!.stringKey`
+    - Supported languages: English (en), Spanish (es), Arabic (ar), French (fr), Chinese (zh), Hindi (hi), Greek (el)
+  * Hmong (hmn) not supported by Flutter's Material localizations - would need custom delegate.
+  * Estimated effort: ~2-3 days for full implementation depending on string count.

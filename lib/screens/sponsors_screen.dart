@@ -123,10 +123,7 @@ class SponsorsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF1565C0),
-                  const Color(0xFF1976D2),
-                ],
+                colors: [const Color(0xFF1565C0), const Color(0xFF1976D2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -153,7 +150,7 @@ class SponsorsScreen extends StatelessWidget {
                 Text(
                   'Supporting Milwaukee drivers with exclusive deals and services.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -171,23 +168,34 @@ class SponsorsScreen extends StatelessWidget {
           ],
 
           // Categories
-          ...categories.where((c) => !featured.any((f) => f.category == c && featured.length == _sponsors.where((s) => s.category == c).length)).map((category) {
-            final categorySponsors = _sponsors.where((s) => s.category == category && !s.isFeatured).toList();
-            if (categorySponsors.isEmpty) return const SizedBox.shrink();
-            
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionHeader(
-                  title: category,
-                  icon: _getCategoryIcon(category),
+          ...categories
+              .where(
+                (c) => !featured.any(
+                  (f) =>
+                      f.category == c &&
+                      featured.length ==
+                          _sponsors.where((s) => s.category == c).length,
                 ),
-                const SizedBox(height: 12),
-                ...categorySponsors.map((s) => _SponsorCard(sponsor: s)),
-                const SizedBox(height: 20),
-              ],
-            );
-          }),
+              )
+              .map((category) {
+                final categorySponsors = _sponsors
+                    .where((s) => s.category == category && !s.isFeatured)
+                    .toList();
+                if (categorySponsors.isEmpty) return const SizedBox.shrink();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(
+                      title: category,
+                      icon: _getCategoryIcon(category),
+                    ),
+                    const SizedBox(height: 12),
+                    ...categorySponsors.map((s) => _SponsorCard(sponsor: s)),
+                    const SizedBox(height: 20),
+                  ],
+                );
+              }),
 
           // Become a sponsor CTA
           const SizedBox(height: 16),
@@ -230,10 +238,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -267,7 +272,7 @@ class _FeaturedSponsorCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0).withOpacity(0.1),
+                      color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -294,7 +299,10 @@ class _FeaturedSponsorCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.amber,
                                 borderRadius: BorderRadius.circular(12),
@@ -324,11 +332,9 @@ class _FeaturedSponsorCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                sponsor.description,
-                style: const TextStyle(fontSize: 14),
-              ),
-              if (sponsor.promoCode != null || sponsor.promoDescription != null) ...[
+              Text(sponsor.description, style: const TextStyle(fontSize: 14)),
+              if (sponsor.promoCode != null ||
+                  sponsor.promoDescription != null) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -339,7 +345,11 @@ class _FeaturedSponsorCard extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.local_offer, color: Colors.green.shade700, size: 20),
+                      Icon(
+                        Icons.local_offer,
+                        color: Colors.green.shade700,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -453,7 +463,10 @@ class _SponsorCard extends StatelessWidget {
                     if (sponsor.promoCode != null) ...[
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(6),
@@ -510,24 +523,20 @@ class _BecomeASponsorCard extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'Become a Partner',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Reach Milwaukee drivers with targeted ads relevant to parking, auto services, and local businesses.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () {
-                _launchUrl('mailto:partners@mkecitysmart.com?subject=Partnership Inquiry');
+                _launchUrl(
+                  'mailto:partners@mkecitysmart.com?subject=Partnership Inquiry',
+                );
               },
               icon: const Icon(Icons.email),
               label: const Text('Contact Us'),

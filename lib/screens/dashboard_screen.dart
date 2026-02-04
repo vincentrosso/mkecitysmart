@@ -5,8 +5,9 @@ import '../providers/user_provider.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
 import '../theme/app_theme.dart';
-import 'alerts_landing_screen.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
+import 'alerts_landing_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,14 +16,65 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   LocationRisk? _locationRisk;
   bool _loadingRisk = true;
+  bool _hasBeenBackgrounded = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRiskData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App went to background
+      _hasBeenBackgrounded = true;
+      debugPrint('Dashboard: App went to background');
+    } else if (state == AppLifecycleState.resumed && _hasBeenBackgrounded) {
+      // App came back from background - show welcome back
+      _hasBeenBackgrounded = false;
+      debugPrint('Dashboard: App resumed from background');
+      _showWelcomeBack();
+    }
+  }
+
+  void _showWelcomeBack() {
+    final userProvider = context.read<UserProvider>();
+
+    // Show welcome if user is logged in (not a guest)
+    if (userProvider.isLoggedIn && !userProvider.isGuest) {
+      final name = userProvider.profile?.name;
+      final greeting = name != null && name.isNotEmpty
+          ? 'Welcome back, $name!'
+          : 'Welcome back!';
+
+      debugPrint('Dashboard: Showing welcome message: $greeting');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.waving_hand, color: Colors.amber),
+              const SizedBox(width: 12),
+              Expanded(child: Text(greeting)),
+            ],
+          ),
+          backgroundColor: kCitySmartGreen,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _loadRiskData() async {
@@ -132,8 +184,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   HomeTile(
                     icon: Icons.receipt_long,
-                    title: 'Tickets',
-                    onTap: () => Navigator.pushNamed(context, '/tickets'),
+                    title: 'My tickets',
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/ticket-tracker'),
                   ),
                   HomeTile(
                     icon: Icons.workspace_premium,
@@ -190,6 +243,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               text: 'Start saving today with Auto Insurance?',
               onTap: () => Navigator.pushNamed(context, '/subscriptions'),
             ),
+            // Show ad banner for free tier users
+            const SizedBox(height: 12),
+            const AdBannerWidget(showPlaceholder: false),
           ],
         ),
       ),
@@ -229,29 +285,37 @@ class HomeTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: tileBorder, width: 1),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 40, color: accent),
+              Icon(icon, size: 36, color: accent),
               const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                  letterSpacing: 0.2,
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    letterSpacing: 0.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
+                const SizedBox(height: 2),
+                Flexible(
+                  child: Text(
+                    subtitle!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -336,9 +400,9 @@ class _RiskBadgeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.15),
+        color: _color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _color.withOpacity(0.4), width: 1),
+        border: Border.all(color: _color.withValues(alpha: 0.4), width: 1),
       ),
       child: Row(
         children: [
@@ -404,16 +468,16 @@ class _RiskBadgeCardLoading extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: const SizedBox(
@@ -442,16 +506,19 @@ class _RiskBadgeCardError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.3),
+              color: Colors.orange.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: const Icon(

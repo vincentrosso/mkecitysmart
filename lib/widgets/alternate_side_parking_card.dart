@@ -33,7 +33,9 @@ class AlternateSideParkingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -75,7 +77,7 @@ class AlternateSideParkingCard extends StatelessWidget {
               instructions: today,
               isToday: true,
             ),
-            
+
             const SizedBox(height: 12),
 
             // Tomorrow's Instructions
@@ -119,20 +121,18 @@ class AlternateSideParkingCard extends StatelessWidget {
     required ParkingInstructions instructions,
     required bool isToday,
   }) {
-    final color = isToday 
-        ? Theme.of(context).primaryColor 
-        : Colors.grey[700]!;
-    
+    final color = isToday ? Theme.of(context).primaryColor : Colors.grey[700]!;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isToday 
-            ? Theme.of(context).primaryColor.withOpacity(0.08)
+        color: isToday
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.08)
             : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isToday 
-              ? Theme.of(context).primaryColor.withOpacity(0.3)
+          color: isToday
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.3)
               : Colors.grey[200]!,
           width: 1.5,
         ),
@@ -144,19 +144,21 @@ class AlternateSideParkingCard extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: instructions.isOddDay 
-                  ? const Color(0xFFED8936)  // Theme warning orange for odd days
+              color: instructions.isOddDay
+                  ? const Color(0xFFED8936) // Theme warning orange for odd days
                   : const Color(0xFF4299E1), // Theme info blue for even days
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (instructions.isOddDay 
-                      ? const Color(0xFFED8936) 
-                      : const Color(0xFF4299E1)).withOpacity(0.3),
+                  color:
+                      (instructions.isOddDay
+                              ? const Color(0xFFED8936)
+                              : const Color(0xFF4299E1))
+                          .withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -174,7 +176,7 @@ class AlternateSideParkingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Instructions
           Expanded(
             child: Column(
@@ -201,19 +203,16 @@ class AlternateSideParkingCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Addresses: ${instructions.sideExamples}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
-          
+
           // Icon indicator
           Icon(
             instructions.isOddDay ? Icons.looks_one : Icons.looks_two,
-            color: instructions.isOddDay 
+            color: instructions.isOddDay
                 ? const Color(0xFFED8936) // Theme warning orange
                 : const Color(0xFF4299E1), // Theme info blue
             size: 32,
@@ -226,7 +225,7 @@ class AlternateSideParkingCard extends StatelessWidget {
   Widget _buildSwitchWarning(BuildContext context, ParkingInstructions today) {
     final hours = today.timeUntilSwitch.inHours;
     final minutes = today.timeUntilSwitch.inMinutes % 60;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -236,7 +235,11 @@ class AlternateSideParkingCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange[700], size: 28),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange[700],
+            size: 28,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -253,10 +256,7 @@ class AlternateSideParkingCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Switch in ${hours}h ${minutes}m',
-                  style: TextStyle(
-                    color: Colors.orange[800],
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.orange[800], fontSize: 13),
                 ),
               ],
             ),
@@ -266,14 +266,17 @@ class AlternateSideParkingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingDays(BuildContext context, AlternateSideParkingService service) {
+  Widget _buildUpcomingDays(
+    BuildContext context,
+    AlternateSideParkingService service,
+  ) {
     final upcoming = service.getUpcomingInstructions(upcomingDays);
-    
+
     return Column(
       children: upcoming.skip(2).map((instructions) {
         final dateFormat = DateFormat('EEE, MMM d');
         final isOdd = instructions.isOddDay;
-        
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
@@ -283,25 +286,22 @@ class AlternateSideParkingCard extends StatelessWidget {
                 width: 100,
                 child: Text(
                   dateFormat.format(instructions.date),
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
                 ),
               ),
-              
+
               // Day number badge
               Container(
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: isOdd 
-                      ? const Color(0xFFED8936).withOpacity(0.15) 
-                      : const Color(0xFF4299E1).withOpacity(0.15),
+                  color: isOdd
+                      ? const Color(0xFFED8936).withValues(alpha: 0.15)
+                      : const Color(0xFF4299E1).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isOdd 
-                        ? const Color(0xFFED8936) 
+                    color: isOdd
+                        ? const Color(0xFFED8936)
                         : const Color(0xFF4299E1),
                     width: 1.5,
                   ),
@@ -310,8 +310,8 @@ class AlternateSideParkingCard extends StatelessWidget {
                   child: Text(
                     '${instructions.dayOfMonth}',
                     style: TextStyle(
-                      color: isOdd 
-                          ? const Color(0xFFED8936) 
+                      color: isOdd
+                          ? const Color(0xFFED8936)
                           : const Color(0xFF4299E1),
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -319,9 +319,9 @@ class AlternateSideParkingCard extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // Side label
               Expanded(
                 child: Text(
@@ -349,7 +349,7 @@ class AlternateSideParkingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = AlternateSideParkingService.instance;
     final today = service.getTodayInstructions();
-    
+
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -367,19 +367,21 @@ class AlternateSideParkingTile extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: today.isOddDay 
-                      ? const Color(0xFFED8936) 
+                  color: today.isOddDay
+                      ? const Color(0xFFED8936)
                       : const Color(0xFF4299E1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (today.isOddDay 
-                          ? const Color(0xFFED8936) 
-                          : const Color(0xFF4299E1)).withOpacity(0.3),
+                      color:
+                          (today.isOddDay
+                                  ? const Color(0xFFED8936)
+                                  : const Color(0xFF4299E1))
+                              .withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -411,19 +413,12 @@ class AlternateSideParkingTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Today: ${today.sideExamples}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 16,
-              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
             ],
           ),
         ),

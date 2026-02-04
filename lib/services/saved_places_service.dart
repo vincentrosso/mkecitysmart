@@ -50,19 +50,29 @@ class SavedPlacesService {
 
   /// Initialize service - load from cache then sync from Firestore
   Future<void> initialize() async {
+    debugPrint('[SavedPlacesService] initialize() called');
+    debugPrint('[SavedPlacesService] Current user ID: $_userId');
+
     if (_userId == null) {
       debugPrint('[SavedPlacesService] No user, skipping init');
       return;
     }
 
     // Load from local cache first (instant)
+    debugPrint('[SavedPlacesService] Loading from cache...');
     await _loadFromCache();
+    debugPrint('[SavedPlacesService] Cache loaded: ${_places.length} places');
 
     // Then sync from Firestore
+    debugPrint('[SavedPlacesService] Syncing from Firestore...');
     await _syncFromFirestore();
+    debugPrint(
+      '[SavedPlacesService] Firestore sync complete: ${_places.length} places',
+    );
 
     // Set up real-time listener
     _setupListener();
+    debugPrint('[SavedPlacesService] Real-time listener set up');
 
     debugPrint(
       '[SavedPlacesService] Initialized with ${_places.length} places',
@@ -123,6 +133,11 @@ class SavedPlacesService {
     try {
       final now = DateTime.now();
       final docRef = _firestore.collection(_collection).doc();
+      debugPrint(
+        '[SavedPlacesService] Creating new place with ID: ${docRef.id}',
+      );
+      debugPrint('[SavedPlacesService] User ID: $userId, Type: $type');
+      debugPrint('[SavedPlacesService] Location: $latitude, $longitude');
 
       final place = SavedPlace(
         id: docRef.id,
@@ -140,7 +155,9 @@ class SavedPlacesService {
         updatedAt: now,
       );
 
+      debugPrint('[SavedPlacesService] Saving to Firestore...');
       await docRef.set(place.toFirestore());
+      debugPrint('[SavedPlacesService] Firestore write SUCCESS');
 
       // Track analytics
       AnalyticsService.instance.logEvent(
@@ -155,6 +172,7 @@ class SavedPlacesService {
       _places.add(place);
       _controller.add(_places);
       await _saveToCache();
+      debugPrint('[SavedPlacesService] Local cache updated');
 
       debugPrint('[SavedPlacesService] Added place: ${place.displayName}');
       return place;

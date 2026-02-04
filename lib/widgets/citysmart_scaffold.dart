@@ -57,10 +57,7 @@ class CitySmartScaffold extends StatelessWidget {
             icon: Icon(Icons.dashboard_outlined),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            label: 'Map',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
           BottomNavigationBarItem(
             icon: Icon(Icons.view_list_outlined),
             label: 'Feed',
@@ -73,10 +70,7 @@ class CitySmartScaffold extends StatelessWidget {
     if (bottomBar != null && nav != null) {
       bottomNav = Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          bottomBar!,
-          nav,
-        ],
+        children: [bottomBar!, nav],
       );
     } else {
       bottomNav = bottomBar ?? nav;
@@ -115,7 +109,9 @@ class _ProfileButton extends StatelessWidget {
         final isLoggedIn = provider.isLoggedIn;
         final profile = provider.profile;
         final userName = profile?.name ?? '';
-        final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+        final userInitial = userName.isNotEmpty
+            ? userName[0].toUpperCase()
+            : 'U';
 
         if (isLoggedIn && profile != null) {
           // User is signed in - show avatar with menu
@@ -152,7 +148,11 @@ class _ProfileButton extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(Icons.arrow_drop_down, color: kCitySmartMuted, size: 20),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: kCitySmartMuted,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -163,7 +163,9 @@ class _ProfileButton extends StatelessWidget {
                   leading: const Icon(Icons.person_outline),
                   title: const Text('My Profile'),
                   subtitle: Text(
-                    profile.email.isNotEmpty ? profile.email : 'View & edit profile',
+                    profile.email.isNotEmpty
+                        ? profile.email
+                        : 'View & edit profile',
                     style: const TextStyle(fontSize: 12),
                   ),
                   contentPadding: EdgeInsets.zero,
@@ -184,7 +186,10 @@ class _ProfileButton extends StatelessWidget {
                 value: 'signout',
                 child: ListTile(
                   leading: const Icon(Icons.logout, color: Colors.redAccent),
-                  title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent)),
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                 ),
@@ -203,7 +208,10 @@ class _ProfileButton extends StatelessWidget {
                     context: context,
                     builder: (context) => AlertDialog(
                       backgroundColor: kCitySmartCard,
-                      title: const Text('Sign out?', style: TextStyle(color: kCitySmartText)),
+                      title: const Text(
+                        'Sign out?',
+                        style: TextStyle(color: kCitySmartText),
+                      ),
                       content: const Text(
                         'You can sign back in anytime to access your saved data.',
                         style: TextStyle(color: kCitySmartMuted),
@@ -243,11 +251,8 @@ class _ProfileButton extends StatelessWidget {
         return IconButton(
           icon: const Icon(Icons.person_outline),
           tooltip: 'Sign in',
-          onPressed: onProfileTap ??
-              () => Navigator.pushNamed(
-                    context,
-                    '/auth',
-                  ),
+          onPressed:
+              onProfileTap ?? () => Navigator.pushNamed(context, '/auth'),
         );
       },
     );

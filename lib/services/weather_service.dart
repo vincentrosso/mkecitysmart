@@ -41,14 +41,15 @@ class WeatherService {
   }) async {
     // Step 1: resolve grid via points endpoint
     final pointsUri = Uri.parse(
-        'https://api.weather.gov/points/${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}');
+      'https://api.weather.gov/points/${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}',
+    );
     final pointsResp = await _client
         .get(pointsUri, headers: _headers())
         .timeout(const Duration(seconds: 10));
     if (pointsResp.statusCode != 200) return null;
     final pointsJson = jsonDecode(pointsResp.body) as Map<String, dynamic>;
-    final hourlyUrl =
-        (pointsJson['properties']?['forecastHourly'] as String?)?.trim();
+    final hourlyUrl = (pointsJson['properties']?['forecastHourly'] as String?)
+        ?.trim();
     if (hourlyUrl == null) return null;
 
     // Step 2: grab first period from hourly forecast
@@ -61,8 +62,8 @@ class WeatherService {
     if (periods == null || periods.isEmpty) return null;
     final first = periods.first as Map<String, dynamic>;
     final temp = (first['temperature'] as num?)?.toDouble();
-    final precip = ((first['probabilityOfPrecipitation']?['value'] as num?)
-                ?.toDouble())
+    final precip =
+        ((first['probabilityOfPrecipitation']?['value'] as num?)?.toDouble())
             ?.round() ??
         0;
     final short = (first['shortForecast'] as String?) ?? 'N/A';
@@ -80,7 +81,8 @@ class WeatherService {
     required double lng,
   }) async {
     final alertsUri = Uri.parse(
-        'https://api.weather.gov/alerts/active?point=${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}');
+      'https://api.weather.gov/alerts/active?point=${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}',
+    );
     final resp = await _client
         .get(alertsUri, headers: _headers())
         .timeout(const Duration(seconds: 10));
@@ -95,7 +97,8 @@ class WeatherService {
     final props = f['properties'] as Map<String, dynamic>? ?? {};
     return WeatherAlert(
       event: (props['event'] as String?) ?? 'Weather alert',
-      headline: (props['headline'] as String?) ??
+      headline:
+          (props['headline'] as String?) ??
           (props['description'] as String?) ??
           'Alert in your area',
       severity: (props['severity'] as String?) ?? 'Unknown',
@@ -110,7 +113,7 @@ class WeatherService {
   }
 
   Map<String, String> _headers() => const {
-        'Accept': 'application/geo+json',
-        'User-Agent': 'mkecitysmart/1.0 (support@mkecitysmart.com)',
-      };
+    'Accept': 'application/geo+json',
+    'User-Agent': 'mkecitysmart/1.0 (support@mkecitysmart.com)',
+  };
 }

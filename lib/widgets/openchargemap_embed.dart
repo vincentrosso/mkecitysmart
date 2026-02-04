@@ -6,10 +6,7 @@ import 'openchargemap_embed_stub.dart'
 /// Platform-aware embed for OpenChargeMap. On web, renders an iframe.
 /// On mobile/desktop, shows a CTA that opens the external map.
 class OpenChargeMapEmbed extends StatelessWidget {
-  const OpenChargeMapEmbed({
-    super.key,
-    required this.onOpenExternal,
-  });
+  const OpenChargeMapEmbed({super.key, required this.onOpenExternal});
 
   final VoidCallback onOpenExternal;
 

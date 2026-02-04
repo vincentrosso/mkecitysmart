@@ -66,10 +66,21 @@ class PreferencesScreen extends StatelessWidget {
               ),
               SwitchListTile(
                 title: const Text('Ticket risk alerts'),
-                subtitle: const Text('Automatic alerts when ticket risk is high'),
+                subtitle: const Text(
+                  'Automatic alerts when ticket risk is high',
+                ),
                 value: prefs.ticketRiskAlerts,
                 onChanged: (value) =>
                     provider.updatePreferences(ticketRiskAlerts: value),
+              ),
+              SwitchListTile(
+                title: const Text('Ticket due date reminders'),
+                subtitle: const Text(
+                  'Get reminders before ticket payment deadlines',
+                ),
+                value: prefs.ticketDueDateReminders,
+                onChanged: (value) =>
+                    provider.updatePreferences(ticketDueDateReminders: value),
               ),
               const Divider(height: 32),
               Text(
@@ -77,20 +88,29 @@ class PreferencesScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              DropdownButton<int>(
-                value: prefs.geoRadiusMiles,
-                items: const [5, 10, 15, 20, 25, 30]
-                    .map(
-                      (radius) => DropdownMenuItem(
-                        value: radius,
-                        child: Text('$radius miles'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => provider.updatePreferences(
-                  geoRadiusMiles: value,
-                ),
-                isExpanded: true,
+              Builder(
+                builder: (context) {
+                  const validRadii = [5, 10, 15, 20, 25, 30];
+                  // Ensure the current value is in the list, default to 10 if not
+                  final currentRadius =
+                      validRadii.contains(prefs.geoRadiusMiles)
+                      ? prefs.geoRadiusMiles
+                      : 10;
+                  return DropdownButton<int>(
+                    value: currentRadius,
+                    items: validRadii
+                        .map(
+                          (radius) => DropdownMenuItem(
+                            value: radius,
+                            child: Text('$radius miles'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        provider.updatePreferences(geoRadiusMiles: value),
+                    isExpanded: true,
+                  );
+                },
               ),
               const Divider(height: 32),
               Text(

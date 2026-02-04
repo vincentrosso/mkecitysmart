@@ -10,7 +10,8 @@ class ReferralService {
   static final instance = ReferralService._();
 
   // Rewards configuration
-  static const int _premiumTrialDays = 7; // Days of premium for successful referral
+  static const int _premiumTrialDays =
+      7; // Days of premium for successful referral
   static const int _maxReferralRewards = 10; // Max rewards per user
 
   FirebaseFirestore? _firestore;
@@ -51,7 +52,10 @@ class ReferralService {
   String _generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars
     final random = Random.secure();
-    final code = List.generate(6, (_) => chars[random.nextInt(chars.length)]).join();
+    final code = List.generate(
+      6,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
     return 'MKE$code'; // Prefix for branding
   }
 
@@ -92,9 +96,7 @@ class ReferralService {
 
         // Save code to user profile and codes collection
         await Future.wait([
-          userRef.set({
-            'referralCode': _referralCode,
-          }, SetOptions(merge: true)),
+          userRef.set({'referralCode': _referralCode}, SetOptions(merge: true)),
           _firestore!.collection('referral_codes').doc(_referralCode).set({
             'ownerId': _userId,
             'createdAt': FieldValue.serverTimestamp(),
@@ -114,10 +116,7 @@ class ReferralService {
   /// Apply a referral code during signup
   Future<ReferralResult> applyReferralCode(String code) async {
     if (_userId == null) {
-      return const ReferralResult(
-        success: false,
-        error: 'User not logged in',
-      );
+      return const ReferralResult(success: false, error: 'User not logged in');
     }
 
     code = code.trim().toUpperCase();
@@ -202,18 +201,20 @@ class ReferralService {
         final referrerRef = _firestore!.collection('users').doc(referrerId);
         final referrerDoc = await tx.get(referrerRef);
         final referrerData = referrerDoc.data() ?? {};
-        final currentRewards = (referrerData['referralRewardsCount'] ?? 0) as int;
+        final currentRewards =
+            (referrerData['referralRewardsCount'] ?? 0) as int;
 
         if (currentRewards < _maxReferralRewards) {
-          final existingTrialEnd = referrerData['premiumTrialEnd'] as Timestamp?;
+          final existingTrialEnd =
+              referrerData['premiumTrialEnd'] as Timestamp?;
           DateTime referrerTrialEnd;
 
           if (existingTrialEnd != null &&
               existingTrialEnd.toDate().isAfter(now)) {
             // Extend existing trial
-            referrerTrialEnd = existingTrialEnd
-                .toDate()
-                .add(Duration(days: _premiumTrialDays));
+            referrerTrialEnd = existingTrialEnd.toDate().add(
+              Duration(days: _premiumTrialDays),
+            );
           } else {
             // Start new trial
             referrerTrialEnd = now.add(Duration(days: _premiumTrialDays));

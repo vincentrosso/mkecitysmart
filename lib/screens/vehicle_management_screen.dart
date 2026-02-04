@@ -22,9 +22,7 @@ class VehicleManagementScreen extends StatelessWidget {
           return const CitySmartScaffold(
             title: 'Vehicles',
             currentIndex: 0,
-            body: Center(
-              child: Text('Sign in to manage vehicles.'),
-            ),
+            body: Center(child: Text('Sign in to manage vehicles.')),
           );
         }
 
@@ -41,9 +39,7 @@ class VehicleManagementScreen extends StatelessWidget {
                 return const Card(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text(
-                      'Sign in to manage vehicles.',
-                    ),
+                    child: Text('Sign in to manage vehicles.'),
                   ),
                 );
               }

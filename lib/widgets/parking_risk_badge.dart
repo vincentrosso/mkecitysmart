@@ -6,17 +6,13 @@ class ParkingRiskBadge extends StatelessWidget {
   final LocationRisk risk;
   final bool compact;
 
-  const ParkingRiskBadge({
-    super.key,
-    required this.risk,
-    this.compact = false,
-  });
+  const ParkingRiskBadge({super.key, required this.risk, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     final color = Color(risk.colorValue);
-    final textColor = risk.riskLevel == RiskLevel.low 
-        ? Colors.white 
+    final textColor = risk.riskLevel == RiskLevel.low
+        ? Colors.white
         : Colors.white;
 
     if (compact) {
@@ -62,7 +58,10 @@ class ParkingRiskBadge extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(16),
@@ -81,10 +80,7 @@ class ParkingRiskBadge extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             risk.message,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[800], fontSize: 14),
           ),
           if (risk.topViolations.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -113,10 +109,7 @@ class ParkingRiskBadge extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   'Peak: ${_formatPeakHours()}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -138,11 +131,14 @@ class ParkingRiskBadge extends StatelessWidget {
   }
 
   String _formatPeakHours() {
-    return risk.peakHours.take(3).map((h) {
-      final suffix = h >= 12 ? 'PM' : 'AM';
-      final hour12 = h > 12 ? h - 12 : (h == 0 ? 12 : h);
-      return '$hour12$suffix';
-    }).join(', ');
+    return risk.peakHours
+        .take(3)
+        .map((h) {
+          final suffix = h >= 12 ? 'PM' : 'AM';
+          final hour12 = h > 12 ? h - 12 : (h == 0 ? 12 : h);
+          return '$hour12$suffix';
+        })
+        .join(', ');
   }
 }
 
@@ -172,10 +168,7 @@ class ParkingRiskBadgeLoading extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             'Calculating risk...',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
         ],
       ),
@@ -262,10 +255,7 @@ class _ParkingRiskCardState extends State<ParkingRiskCard> {
               style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
             const Spacer(),
-            TextButton(
-              onPressed: _fetchRisk,
-              child: const Text('Retry'),
-            ),
+            TextButton(onPressed: _fetchRisk, child: const Text('Retry')),
           ],
         ),
       );

@@ -15,6 +15,7 @@ class ParkingPrediction {
   final String blockId;
   final double lat;
   final double lng;
+
   /// Probability 0–1 of finding a spot.
   final double score;
   final int hour;
@@ -23,16 +24,16 @@ class ParkingPrediction {
   final double weatherScore;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'blockId': blockId,
-        'lat': lat,
-        'lng': lng,
-        'score': score,
-        'hour': hour,
-        'dayOfWeek': dayOfWeek,
-        'eventScore': eventScore,
-        'weatherScore': weatherScore,
-      };
+    'id': id,
+    'blockId': blockId,
+    'lat': lat,
+    'lng': lng,
+    'score': score,
+    'hour': hour,
+    'dayOfWeek': dayOfWeek,
+    'eventScore': eventScore,
+    'weatherScore': weatherScore,
+  };
 
   factory ParkingPrediction.fromJson(Map<String, dynamic> json) {
     return ParkingPrediction(

@@ -4,43 +4,43 @@ import 'package:flutter/material.dart';
 enum ParkingEventType {
   /// Street sweeping alert received
   streetSweepingAlert,
-  
+
   /// Alternate side parking reminder
   alternateSideReminder,
-  
+
   /// Parking session started
   parkingStarted,
-  
+
   /// Parking session ended
   parkingEnded,
-  
+
   /// Parking meter expiring soon
   meterExpiring,
-  
+
   /// Citation risk alert
   citationRiskAlert,
-  
+
   /// Enforcement spotted nearby
   enforcementSpotted,
-  
+
   /// Tow truck spotted nearby
   towTruckSpotted,
-  
+
   /// Permit renewed
   permitRenewed,
-  
+
   /// Permit expiring soon
   permitExpiring,
-  
+
   /// Vehicle moved reminder
   moveVehicleReminder,
-  
+
   /// User reported a sighting
   sightingReported,
-  
+
   /// Garbage/recycling reminder
   garbageReminder,
-  
+
   /// General notification
   generalNotification,
 }
@@ -144,7 +144,7 @@ extension ParkingEventTypeExt on ParkingEventType {
         return const Color(0xFF4299E1); // Blue
     }
   }
-  
+
   /// Whether this event type is considered important/urgent
   bool get isUrgent {
     switch (this) {
@@ -177,34 +177,34 @@ class ParkingEvent {
 
   /// Unique identifier for this event
   final String id;
-  
+
   /// Type of parking event
   final ParkingEventType type;
-  
+
   /// Short title for the event
   final String title;
-  
+
   /// Detailed description
   final String description;
-  
+
   /// When this event occurred
   final DateTime timestamp;
-  
+
   /// Optional location name
   final String? location;
-  
+
   /// Optional latitude
   final double? latitude;
-  
+
   /// Optional longitude
   final double? longitude;
-  
+
   /// Optional vehicle ID this event relates to
   final String? vehicleId;
-  
+
   /// Additional metadata (e.g., permit type, risk level)
   final Map<String, dynamic> metadata;
-  
+
   /// Whether the user has seen this event
   final bool read;
 
@@ -268,7 +268,7 @@ class ParkingEvent {
     'metadata': metadata,
     'read': read,
   };
-  
+
   @override
   String toString() => 'ParkingEvent(id: $id, type: $type, title: $title)';
 }

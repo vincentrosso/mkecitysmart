@@ -5,6 +5,7 @@ import '../models/parking_event.dart';
 import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
 import '../services/parking_history_service.dart';
+import '../widgets/ad_widgets.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -113,7 +114,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: const Color(0xFF203731).withOpacity(0.1),
+            color: const Color(0xFF203731).withValues(alpha: 0.1),
             child: Row(
               children: [
                 const Icon(Icons.history, size: 18, color: Color(0xFF203731)),
@@ -185,6 +186,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                     ),
                   ),
+          ),
+
+          // Ad banner for free tier users
+          const SafeArea(
+            top: false,
+            child: AdBannerWidget(showPlaceholder: false),
           ),
         ],
       ),
@@ -280,7 +287,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: _getEventColor(event.type).withOpacity(0.15),
+            color: _getEventColor(event.type).withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -416,7 +423,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: _getEventColor(event.type).withOpacity(0.15),
+                        color: _getEventColor(
+                          event.type,
+                        ).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(

@@ -1045,6 +1045,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
     String? defaultVehicleId,
     int? geoRadiusMiles,
     bool? ticketRiskAlerts,
+    bool? ticketDueDateReminders,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#updatePreferences, [], {
@@ -1054,6 +1055,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #defaultVehicleId: defaultVehicleId,
               #geoRadiusMiles: geoRadiusMiles,
               #ticketRiskAlerts: ticketRiskAlerts,
+              #ticketDueDateReminders: ticketDueDateReminders,
             }),
             returnValue: _i11.Future<void>.value(),
             returnValueForMissingStub: _i11.Future<void>.value(),

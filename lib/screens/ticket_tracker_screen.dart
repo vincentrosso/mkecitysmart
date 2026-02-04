@@ -1,15 +1,51 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../models/ticket.dart';
+import '../models/user_preferences.dart';
 import '../providers/user_provider.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
+
+/// Milwaukee parking violation types from 466K citation data analysis
+/// Ordered by frequency (most common first)
+const kMilwaukeeViolationTypes = [
+  'NIGHT PARKING',
+  'NIGHT PARKING - WINTER RESTRICTED',
+  'PARKING PROHIBITED BY OFFICIAL SIGN',
+  'NIGHT PARKING - WRONG SIDE',
+  'METER PARKING VIOLATION',
+  'PARKED IN EXCESS OF 2 HOURS PROHIBITED',
+  'FAILURE TO DISPLAY CURRENT REGISTRATION',
+  'UNREGISTERED/ IMPROPERLY REGISTERED VEHICLE',
+  'PARKED LESS THAN 15 FEET FROM CROSSWALK',
+  'PARKED WITHIN 4 FEET OF DRIVE OR ALLEY',
+  'PARKED IN EXCESS OF 1 HOUR PROHIBITED',
+  'RESIDENTIAL PARKING PROGRAM',
+  'PARKED WITHIN 10 FEET OF FIRE HYDRANT',
+  'OBSTRUCTING BUS LOADING ZONE',
+  'TOW-AWAY ZONE (BLOCKING TRAFFIC)',
+  'PARKED IN EXCESS OF 3 HOURS PROHIBITED',
+  'PARKED IN LOADING ZONE',
+  'PARKING IN EXCESS OF 24 HOURS',
+  'NIGHT PARKING IN ALLEY',
+  'PARKED MORE THAN 12 INCHES FROM CURB',
+  'SNOW EMERGENCY',
+  'PARKED POSTED PRIVATE PROPERTY',
+  'NIGHT PARKING - INELIGIBLE VEHICLE',
+  'PARKING IN HANDICAPPED AREA',
+  'PARKED IN SCHOOL ZONE',
+  'PARKED IN SAFETY ZONE',
+  'PARKED ON SIDEWALK (SIDEWALK AREA)',
+  'OTHER',
+];
 
 /// Enhanced ticket tracking screen with photo capture and manual entry
 class TicketTrackerScreen extends StatefulWidget {
@@ -40,9 +76,13 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
     return Consumer<UserProvider>(
       builder: (context, provider, _) {
         final tickets = provider.tickets;
-        final openTickets = tickets.where((t) => t.status == TicketStatus.open).toList();
-        final paidTickets = tickets.where((t) => t.status != TicketStatus.open).toList();
-        
+        final openTickets = tickets
+            .where((t) => t.status == TicketStatus.open)
+            .toList();
+        final paidTickets = tickets
+            .where((t) => t.status != TicketStatus.open)
+            .toList();
+
         return CitySmartScaffold(
           title: 'My tickets',
           currentIndex: 0,
@@ -55,13 +95,19 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
           ],
           body: Column(
             children: [
-              // Summary card
+              // Summary card - uses currentAmountOwed for accurate late fee calculation
               _TicketSummaryCard(
                 openCount: openTickets.length,
-                totalOwed: openTickets.fold(0.0, (sum, t) => sum + t.amount + (t.isOverdue ? 15 : 0)),
+                totalOwed: openTickets.fold(
+                  0.0,
+                  (sum, t) => sum + t.currentAmountOwed,
+                ),
                 overdueCount: openTickets.where((t) => t.isOverdue).length,
+                lateFeeCount: openTickets
+                    .where((t) => t.hasLateFeeApplied)
+                    .length,
               ),
-              
+
               // Tabs
               TabBar(
                 controller: _tabController,
@@ -74,7 +120,7 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                   const Tab(text: 'Add new'),
                 ],
               ),
-              
+
               // Tab content
               Expanded(
                 child: TabBarView(
@@ -92,12 +138,22 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                             itemCount: openTickets.length,
                             itemBuilder: (context, index) => _TicketCard(
                               ticket: openTickets[index],
-                              onPay: () => _showPayDialog(context, provider, openTickets[index]),
-                              onContest: () => _showContestDialog(context, openTickets[index]),
-                              onSetReminder: () => _showReminderDialog(context, openTickets[index]),
+                              onPay: () => _showPayDialog(
+                                context,
+                                provider,
+                                openTickets[index],
+                              ),
+                              onContest: () => _showContestDialog(
+                                context,
+                                openTickets[index],
+                              ),
+                              onSetReminder: () => _showReminderDialog(
+                                context,
+                                openTickets[index],
+                              ),
                             ),
                           ),
-                    
+
                     // Paid/resolved tickets
                     paidTickets.isEmpty
                         ? const _EmptyState(
@@ -108,18 +164,19 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                         : ListView.builder(
                             padding: const EdgeInsets.all(12),
                             itemCount: paidTickets.length,
-                            itemBuilder: (context, index) => _PaidTicketCard(
-                              ticket: paidTickets[index],
-                            ),
+                            itemBuilder: (context, index) =>
+                                _PaidTicketCard(ticket: paidTickets[index]),
                           ),
-                    
+
                     // Add new ticket
                     _AddTicketForm(
                       onSubmit: (ticket) {
                         provider.addTicket(ticket);
                         _tabController.animateTo(0);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Ticket added for tracking')),
+                          const SnackBar(
+                            content: Text('Ticket added for tracking'),
+                          ),
                         );
                       },
                     ),
@@ -137,7 +194,11 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
     _tabController.animateTo(2); // Switch to Add tab
   }
 
-  void _showPayDialog(BuildContext context, UserProvider provider, Ticket ticket) {
+  void _showPayDialog(
+    BuildContext context,
+    UserProvider provider,
+    Ticket ticket,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: kCitySmartCard,
@@ -155,9 +216,9 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
             resident: true,
           );
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Payment recorded!')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Payment recorded!')));
         },
       ),
     );
@@ -168,7 +229,10 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: kCitySmartCard,
-        title: const Text('Contest ticket', style: TextStyle(color: kCitySmartText)),
+        title: const Text(
+          'Contest ticket',
+          style: TextStyle(color: kCitySmartText),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +242,10 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
               style: TextStyle(color: kCitySmartText),
             ),
             const SizedBox(height: 12),
-            _ContestStep(number: '1', text: 'Visit milwaukee.gov/parkingtickets'),
+            _ContestStep(
+              number: '1',
+              text: 'Visit milwaukee.gov/parkingtickets',
+            ),
             _ContestStep(number: '2', text: 'Select "Contest a Ticket"'),
             _ContestStep(number: '3', text: 'Enter ticket # ${ticket.id}'),
             _ContestStep(number: '4', text: 'Provide your evidence/reason'),
@@ -197,7 +264,7 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
   void _showReminderDialog(BuildContext context, Ticket ticket) {
     final daysUntilDue = ticket.dueDate.difference(DateTime.now()).inDays;
     final dueDateFormatted = DateFormat('MMM d, yyyy').format(ticket.dueDate);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: kCitySmartCard,
@@ -215,10 +282,14 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4FC3F7).withOpacity(0.2),
+                    color: const Color(0xFF4FC3F7).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.notifications_active, color: Color(0xFF4FC3F7), size: 28),
+                  child: const Icon(
+                    Icons.notifications_active,
+                    color: Color(0xFF4FC3F7),
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -236,7 +307,10 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                       const SizedBox(height: 4),
                       Text(
                         'Ticket #${ticket.id} • Due $dueDateFormatted',
-                        style: const TextStyle(color: kCitySmartMuted, fontSize: 13),
+                        style: const TextStyle(
+                          color: kCitySmartMuted,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -247,18 +321,25 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                  const Icon(
+                    Icons.info_outline,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Late fees add \$15 after the due date. Don\'t let a forgotten ticket cost you more!',
-                      style: TextStyle(fontSize: 13, color: Colors.orange.shade700),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange.shade700,
+                      ),
                     ),
                   ),
                 ],
@@ -267,7 +348,10 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
             const SizedBox(height: 20),
             const Text(
               'Choose reminder timing:',
-              style: TextStyle(color: kCitySmartText, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: kCitySmartText,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 12),
             _ReminderOption(
@@ -280,7 +364,9 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
             _ReminderOption(
               icon: Icons.date_range,
               title: '3 days before',
-              subtitle: daysUntilDue > 3 ? 'Good for planning' : 'Not available',
+              subtitle: daysUntilDue > 3
+                  ? 'Good for planning'
+                  : 'Not available',
               enabled: daysUntilDue > 3,
               onTap: () => _scheduleReminder(context, ticket, 3),
             ),
@@ -298,22 +384,53 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
     );
   }
 
-  Future<void> _scheduleReminder(BuildContext context, Ticket ticket, int daysBefore) async {
+  Future<void> _scheduleReminder(
+    BuildContext context,
+    Ticket ticket,
+    int daysBefore,
+  ) async {
+    // Check if user has ticket due date reminders enabled (privacy option)
+    final provider = context.read<UserProvider>();
+    final prefs = provider.profile?.preferences ?? UserPreferences.defaults();
+    if (!prefs.ticketDueDateReminders) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Ticket reminders are disabled. Enable in Settings > Preferences.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     final reminderDate = ticket.dueDate.subtract(Duration(days: daysBefore));
-    final reminderTime = DateTime(reminderDate.year, reminderDate.month, reminderDate.day, 9, 0); // 9 AM
-    
+    final reminderTime = DateTime(
+      reminderDate.year,
+      reminderDate.month,
+      reminderDate.day,
+      9,
+      0,
+    ); // 9 AM
+
     await NotificationService.instance.scheduleLocal(
       title: '💳 Parking Ticket Due Soon!',
-      body: 'Ticket #${ticket.id} for \$${ticket.amount.toStringAsFixed(2)} is due in $daysBefore day${daysBefore == 1 ? '' : 's'}. Pay now to avoid \$15 late fee!',
+      body:
+          'Ticket #${ticket.id} for \$${ticket.amount.toStringAsFixed(2)} is due in $daysBefore day${daysBefore == 1 ? '' : 's'}. Pay now to avoid late fees!',
       when: reminderTime,
       id: ticket.id.hashCode + daysBefore,
     );
-    
+
     if (context.mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Reminder set for ${DateFormat('MMM d').format(reminderTime)} at 9:00 AM'),
+          content: Text(
+            'Reminder set for ${DateFormat('MMM d').format(reminderTime)} at 9:00 AM',
+          ),
           backgroundColor: const Color(0xFF4FC3F7),
         ),
       );
@@ -325,11 +442,13 @@ class _TicketSummaryCard extends StatelessWidget {
   final int openCount;
   final double totalOwed;
   final int overdueCount;
+  final int lateFeeCount;
 
   const _TicketSummaryCard({
     required this.openCount,
     required this.totalOwed,
     required this.overdueCount,
+    this.lateFeeCount = 0,
   });
 
   @override
@@ -354,7 +473,9 @@ class _TicketSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  openCount == 0 ? 'All clear!' : '$openCount open ticket${openCount == 1 ? '' : 's'}',
+                  openCount == 0
+                      ? 'All clear!'
+                      : '$openCount open ticket${openCount == 1 ? '' : 's'}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -372,7 +493,11 @@ class _TicketSummaryCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.warning_amber, color: Colors.yellow, size: 16),
+                      const Icon(
+                        Icons.warning_amber,
+                        color: Colors.yellow,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '$overdueCount overdue - late fees apply!',
@@ -421,8 +546,10 @@ class _TicketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daysUntilDue = ticket.dueDate.difference(DateTime.now()).inDays;
-    final totalDue = ticket.amount + (ticket.isOverdue ? 15 : 0);
-    
+    // Use the model's currentAmountOwed for accurate late fee calculation
+    final totalDue = ticket.currentAmountOwed;
+    final lateFee = ticket.lateFeeAmount ?? 15.0;
+
     return Card(
       color: kCitySmartCard,
       margin: const EdgeInsets.only(bottom: 12),
@@ -468,7 +595,10 @@ class _TicketCard extends StatelessWidget {
                       ),
                       Text(
                         ticket.reason,
-                        style: const TextStyle(color: kCitySmartMuted, fontSize: 13),
+                        style: const TextStyle(
+                          color: kCitySmartMuted,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -479,15 +609,17 @@ class _TicketCard extends StatelessWidget {
                     Text(
                       '\$${totalDue.toStringAsFixed(2)}',
                       style: TextStyle(
-                        color: ticket.isOverdue ? Colors.red : kCitySmartYellow,
+                        color: ticket.hasLateFeeApplied
+                            ? Colors.red
+                            : kCitySmartYellow,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
-                    if (ticket.isOverdue)
-                      const Text(
-                        '+\$15 late fee',
-                        style: TextStyle(color: Colors.red, fontSize: 11),
+                    if (ticket.hasLateFeeApplied)
+                      Text(
+                        '+\$${lateFee.toStringAsFixed(0)} late fee',
+                        style: const TextStyle(color: Colors.red, fontSize: 11),
                       ),
                   ],
                 ),
@@ -501,7 +633,10 @@ class _TicketCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     ticket.location,
-                    style: const TextStyle(color: kCitySmartMuted, fontSize: 12),
+                    style: const TextStyle(
+                      color: kCitySmartMuted,
+                      fontSize: 12,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -527,12 +662,14 @@ class _TicketCard extends StatelessWidget {
                   ticket.isOverdue
                       ? 'Overdue!'
                       : daysUntilDue == 0
-                          ? 'Due today'
-                          : 'Due in $daysUntilDue days',
+                      ? 'Due today'
+                      : 'Due in $daysUntilDue days',
                   style: TextStyle(
                     color: ticket.isOverdue ? Colors.red : kCitySmartMuted,
                     fontSize: 12,
-                    fontWeight: ticket.isOverdue ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: ticket.isOverdue
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -577,9 +714,13 @@ class _TicketCard extends StatelessWidget {
                         : 'Set payment reminder',
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: daysUntilDue <= 3 ? Colors.orange : const Color(0xFF4FC3F7),
+                    foregroundColor: daysUntilDue <= 3
+                        ? Colors.orange
+                        : const Color(0xFF4FC3F7),
                     side: BorderSide(
-                      color: daysUntilDue <= 3 ? Colors.orange : const Color(0xFF4FC3F7),
+                      color: daysUntilDue <= 3
+                          ? Colors.orange
+                          : const Color(0xFF4FC3F7),
                     ),
                   ),
                 ),
@@ -617,7 +758,10 @@ class _PaidTicketCard extends StatelessWidget {
         ),
         title: Text(
           ticket.id,
-          style: const TextStyle(color: kCitySmartText, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: kCitySmartText,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: Text(
           '${ticket.reason} • ${ticket.status == TicketStatus.waived ? "Waived" : "Paid"} ${ticket.paidAt != null ? DateFormat('M/d/yy').format(ticket.paidAt!) : ""}',
@@ -625,7 +769,10 @@ class _PaidTicketCard extends StatelessWidget {
         ),
         trailing: Text(
           '\$${ticket.amount.toStringAsFixed(2)}',
-          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -644,34 +791,39 @@ class _AddTicketForm extends StatefulWidget {
 class _AddTicketFormState extends State<_AddTicketForm> {
   final _formKey = GlobalKey<FormState>();
   final _ticketIdController = TextEditingController();
-  final _plateController = TextEditingController();
   final _amountController = TextEditingController();
-  final _reasonController = TextEditingController();
   final _locationController = TextEditingController();
+  String? _selectedViolation;
+  String? _selectedVehicleId;
+  String _manualPlate = '';
   DateTime _issuedDate = DateTime.now();
   DateTime _dueDate = DateTime.now().add(const Duration(days: 14));
   File? _photoFile;
+  bool _useManualPlate = false;
 
   final _picker = ImagePicker();
 
   @override
   void dispose() {
     _ticketIdController.dispose();
-    _plateController.dispose();
     _amountController.dispose();
-    _reasonController.dispose();
     _locationController.dispose();
     super.dispose();
   }
 
   Future<void> _takePhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
     final photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       setState(() => _photoFile = File(photo.path));
       // TODO: Use OCR to extract ticket details from photo
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo captured! Enter details manually.')),
-      );
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Photo captured! Enter details manually.'),
+          ),
+        );
+      }
     }
   }
 
@@ -682,30 +834,116 @@ class _AddTicketFormState extends State<_AddTicketForm> {
     }
   }
 
-  void _submit() {
+  /// Save photo to app's local documents directory
+  Future<String?> _savePhotoLocally(File photo, String ticketId) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final ticketPhotosDir = Directory('${appDir.path}/ticket_photos');
+      if (!await ticketPhotosDir.exists()) {
+        await ticketPhotosDir.create(recursive: true);
+      }
+      final fileName =
+          'ticket_${ticketId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final savedPath = '${ticketPhotosDir.path}/$fileName';
+      await photo.copy(savedPath);
+      debugPrint('📷 Ticket photo saved to: $savedPath');
+      return savedPath;
+    } catch (e) {
+      debugPrint('❌ Failed to save ticket photo: $e');
+      return null;
+    }
+  }
+
+  Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
+      // Get plate from vehicle or manual entry
+      final provider = context.read<UserProvider>();
+      String plate;
+      String? vehicleId;
+
+      if (_useManualPlate) {
+        plate = _manualPlate.trim().toUpperCase();
+      } else if (_selectedVehicleId != null) {
+        final vehicle = provider.profile?.vehicles.firstWhere(
+          (v) => v.id == _selectedVehicleId,
+          orElse: () => provider.profile!.vehicles.first,
+        );
+        plate = vehicle?.licensePlate ?? '';
+        vehicleId = _selectedVehicleId;
+      } else {
+        plate = '';
+      }
+
+      // Save photo locally if captured
+      String? savedPhotoPath;
+      final ticketId = _ticketIdController.text.trim();
+      if (_photoFile != null) {
+        savedPhotoPath = await _savePhotoLocally(_photoFile!, ticketId);
+      }
+
+      // Try to geocode the location for risk engine data
+      double? latitude;
+      double? longitude;
+      final locationText = _locationController.text.trim();
+      if (locationText.isNotEmpty) {
+        try {
+          // Add Milwaukee, WI context for better geocoding results
+          final searchText = locationText.contains('Milwaukee')
+              ? locationText
+              : '$locationText, Milwaukee, WI';
+          final locations = await geocoding.locationFromAddress(searchText);
+          if (locations.isNotEmpty) {
+            latitude = locations.first.latitude;
+            longitude = locations.first.longitude;
+            debugPrint('📍 Ticket location geocoded: $latitude, $longitude');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not geocode ticket location: $e');
+          // Continue without coordinates - not critical
+        }
+      }
+
       final ticket = Ticket(
-        id: _ticketIdController.text.trim(),
-        plate: _plateController.text.trim().toUpperCase(),
+        id: ticketId,
+        plate: plate,
         amount: double.tryParse(_amountController.text) ?? 0,
-        reason: _reasonController.text.trim(),
-        location: _locationController.text.trim(),
+        reason: _selectedViolation ?? 'OTHER',
+        location: locationText,
         issuedAt: _issuedDate,
         dueDate: _dueDate,
+        photoPath: savedPhotoPath,
+        vehicleId: vehicleId,
+        latitude: latitude,
+        longitude: longitude,
       );
       widget.onSubmit(ticket);
+
+      // Log citation data for risk engine improvement
+      if (latitude != null && longitude != null) {
+        debugPrint(
+          '🎯 Citation data logged for risk engine: $locationText ($latitude, $longitude) - $_selectedViolation',
+        );
+      }
+
       // Clear form
       _ticketIdController.clear();
-      _plateController.clear();
       _amountController.clear();
-      _reasonController.clear();
       _locationController.clear();
-      setState(() => _photoFile = null);
+      setState(() {
+        _photoFile = null;
+        _selectedViolation = null;
+        _selectedVehicleId = null;
+        _manualPlate = '';
+        _useManualPlate = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<UserProvider>();
+    final vehicles = provider.profile?.vehicles ?? [];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -722,7 +960,10 @@ class _AddTicketFormState extends State<_AddTicketForm> {
                   children: [
                     const Text(
                       'Snap a photo of your ticket',
-                      style: TextStyle(color: kCitySmartText, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: kCitySmartText,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (_photoFile != null)
@@ -741,8 +982,12 @@ class _AddTicketFormState extends State<_AddTicketForm> {
                             top: 4,
                             right: 4,
                             child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () => setState(() => _photoFile = null),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _photoFile = null),
                               style: IconButton.styleFrom(
                                 backgroundColor: Colors.black54,
                               ),
@@ -772,7 +1017,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Manual entry form
             const Text(
               'Or enter details manually',
@@ -780,7 +1025,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            
+
             TextFormField(
               controller: _ticketIdController,
               decoration: const InputDecoration(
@@ -791,19 +1036,58 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
             ),
             const SizedBox(height: 12),
-            
-            TextFormField(
-              controller: _plateController,
-              decoration: const InputDecoration(
-                labelText: 'License plate *',
-                hintText: 'e.g., ABC-1234',
-                prefixIcon: Icon(Icons.directions_car),
+
+            // Vehicle selection - dropdown or manual entry
+            if (vehicles.isNotEmpty && !_useManualPlate) ...[
+              DropdownButtonFormField<String>(
+                initialValue: _selectedVehicleId,
+                decoration: const InputDecoration(
+                  labelText: 'Vehicle *',
+                  prefixIcon: Icon(Icons.directions_car),
+                ),
+                items: vehicles.map((v) {
+                  return DropdownMenuItem(
+                    value: v.id,
+                    child: Text(
+                      '${v.nickname.isNotEmpty ? v.nickname : v.make} - ${v.licensePlate}',
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedVehicleId = value),
+                validator: (v) => v == null ? 'Select a vehicle' : null,
               ),
-              textCapitalization: TextCapitalization.characters,
-              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-            ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => setState(() => _useManualPlate = true),
+                icon: const Icon(Icons.edit, size: 16),
+                label: const Text('Enter plate manually'),
+              ),
+            ] else ...[
+              TextFormField(
+                initialValue: _manualPlate,
+                decoration: InputDecoration(
+                  labelText: 'License plate *',
+                  hintText: 'e.g., ABC-1234',
+                  prefixIcon: const Icon(Icons.directions_car),
+                  suffixIcon: vehicles.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.list),
+                          tooltip: 'Select from vehicles',
+                          onPressed: () => setState(() {
+                            _useManualPlate = false;
+                            _manualPlate = '';
+                          }),
+                        )
+                      : null,
+                ),
+                textCapitalization: TextCapitalization.characters,
+                onChanged: (v) => _manualPlate = v,
+                validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+              ),
+            ],
             const SizedBox(height: 12),
-            
+
             TextFormField(
               controller: _amountController,
               decoration: const InputDecoration(
@@ -819,17 +1103,30 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               },
             ),
             const SizedBox(height: 12),
-            
-            TextFormField(
-              controller: _reasonController,
+
+            // Violation type dropdown with real Milwaukee data
+            DropdownButtonFormField<String>(
+              initialValue: _selectedViolation,
               decoration: const InputDecoration(
-                labelText: 'Violation type',
-                hintText: 'e.g., Expired meter',
+                labelText: 'Violation type *',
                 prefixIcon: Icon(Icons.warning_amber),
               ),
+              isExpanded: true,
+              items: kMilwaukeeViolationTypes.map((violation) {
+                return DropdownMenuItem(
+                  value: violation,
+                  child: Text(
+                    violation,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedViolation = value),
+              validator: (v) => v == null ? 'Select a violation type' : null,
             ),
             const SizedBox(height: 12),
-            
+
             TextFormField(
               controller: _locationController,
               decoration: const InputDecoration(
@@ -839,7 +1136,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Date pickers
             Row(
               children: [
@@ -861,7 +1158,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             FilledButton.icon(
               onPressed: _submit,
               icon: const Icon(Icons.add),
@@ -953,8 +1250,14 @@ class _PaymentSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Base amount:', style: TextStyle(color: kCitySmartMuted)),
-              Text('\$${ticket.amount.toStringAsFixed(2)}', style: const TextStyle(color: kCitySmartText)),
+              const Text(
+                'Base amount:',
+                style: TextStyle(color: kCitySmartMuted),
+              ),
+              Text(
+                '\$${ticket.amount.toStringAsFixed(2)}',
+                style: const TextStyle(color: kCitySmartText),
+              ),
             ],
           ),
           if (ticket.isOverdue) ...[
@@ -971,7 +1274,13 @@ class _PaymentSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total:', style: TextStyle(color: kCitySmartText, fontWeight: FontWeight.bold)),
+              const Text(
+                'Total:',
+                style: TextStyle(
+                  color: kCitySmartText,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               Text(
                 '\$${total.toStringAsFixed(2)}',
                 style: const TextStyle(
@@ -998,9 +1307,7 @@ class _PaymentSheet extends StatelessWidget {
             onPressed: () => onPay('ach'),
             icon: const Icon(Icons.account_balance),
             label: const Text('Pay with bank (ACH)'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.all(16),
-            ),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -1117,10 +1424,14 @@ class _ReminderOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: enabled ? kCitySmartGreen.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+            color: enabled
+                ? kCitySmartGreen.withValues(alpha: 0.1)
+                : Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: enabled ? kCitySmartGreen.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+              color: enabled
+                  ? kCitySmartGreen.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -1128,7 +1439,9 @@ class _ReminderOption extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: enabled ? const Color(0xFF4FC3F7).withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+                  color: enabled
+                      ? const Color(0xFF4FC3F7).withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

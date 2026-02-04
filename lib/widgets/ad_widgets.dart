@@ -85,10 +85,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
             child: const Center(
               child: Text(
                 'Ad',
-                style: TextStyle(
-                  color: kCitySmartMuted,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: kCitySmartMuted, fontSize: 12),
               ),
             ),
           );
@@ -107,10 +104,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
 
 /// A container for banner ads at the bottom of screens
 class BottomBannerContainer extends StatelessWidget {
-  const BottomBannerContainer({
-    super.key,
-    required this.child,
-  });
+  const BottomBannerContainer({super.key, required this.child});
 
   final Widget child;
 
@@ -128,10 +122,7 @@ class BottomBannerContainer extends StatelessWidget {
               Container(
                 color: kCitySmartGreen,
                 padding: const EdgeInsets.only(top: 4),
-                child: const SafeArea(
-                  top: false,
-                  child: AdBannerWidget(),
-                ),
+                child: const SafeArea(top: false, child: AdBannerWidget()),
               ),
           ],
         );
@@ -200,9 +191,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
           decoration: BoxDecoration(
             color: kCitySmartCard,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: kCitySmartYellow.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: kCitySmartYellow.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,10 +211,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
                       ),
                       child: const Text(
                         'Sponsored',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: kCitySmartYellow,
-                        ),
+                        style: TextStyle(fontSize: 10, color: kCitySmartYellow),
                       ),
                     ),
                   ],
@@ -250,7 +236,7 @@ class WatchAdButton extends StatefulWidget {
     required this.onReward,
     this.rewardDescription = 'Watch a short ad',
     this.buttonText = 'Watch Ad',
-    this.rewardText = '3-day Premium Trial',
+    this.rewardText = '2-day Premium Trial',
   });
 
   final VoidCallback onReward;
@@ -306,9 +292,7 @@ class _WatchAdButtonState extends State<WatchAdButton> {
           decoration: BoxDecoration(
             color: kCitySmartCard,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: kCitySmartYellow.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: kCitySmartYellow.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

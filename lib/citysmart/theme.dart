@@ -5,7 +5,7 @@ class CSTheme {
   static const primary = Color(0xFF5E8A45);
   static const secondary = Color(0xFF7CA726);
   static const accent = Color(0xFFE0B000);
-  
+
   // Neutral Colors
   static const background = Color(0xFFF5F7FA);
   static const surface = Colors.white;
@@ -13,13 +13,13 @@ class CSTheme {
   static const textSecondary = Color(0xFF4A5568);
   static const textLight = Color(0xFF718096);
   static const border = Color(0xFFE2E8F0);
-  
+
   // Semantic Colors
   static const success = Color(0xFF48BB78);
   static const warning = Color(0xFFED8936);
   static const error = Color(0xFFF56565);
   static const info = Color(0xFF4299E1);
-  
+
   static ThemeData theme() => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -31,17 +31,15 @@ class CSTheme {
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: background,
-    
+
     // Card styling
     cardTheme: CardThemeData(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: surface,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     ),
-    
+
     // AppBar styling
     appBarTheme: const AppBarTheme(
       elevation: 0,
@@ -55,7 +53,7 @@ class CSTheme {
         fontFamily: 'Inter',
       ),
     ),
-    
+
     // Text styling
     textTheme: const TextTheme(
       displayLarge: TextStyle(
@@ -90,22 +88,11 @@ class CSTheme {
         fontWeight: FontWeight.w500,
         color: text,
       ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: textSecondary,
-        height: 1.5,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: textSecondary,
-        height: 1.5,
-      ),
-      bodySmall: TextStyle(
-        fontSize: 12,
-        color: textLight,
-      ),
+      bodyLarge: TextStyle(fontSize: 16, color: textSecondary, height: 1.5),
+      bodyMedium: TextStyle(fontSize: 14, color: textSecondary, height: 1.5),
+      bodySmall: TextStyle(fontSize: 12, color: textLight),
     ),
-    
+
     // Chip styling
     chipTheme: ChipThemeData(
       backgroundColor: const Color(0xFFE8F5E9),
@@ -114,26 +101,19 @@ class CSTheme {
         fontWeight: FontWeight.w500,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
-    
+
     // Button styling
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
-    
+
     // FAB styling
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       elevation: 4,
@@ -141,7 +121,7 @@ class CSTheme {
         borderRadius: BorderRadius.all(Radius.circular(16)),
       ),
     ),
-    
+
     // Input styling
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -160,7 +140,7 @@ class CSTheme {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    
+
     fontFamily: 'Inter',
   );
 }

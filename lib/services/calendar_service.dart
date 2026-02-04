@@ -9,12 +9,15 @@ class CalendarService {
 
   /// Add a garbage pickup event to the system calendar
   Future<bool> addGarbagePickupToCalendar(GarbageSchedule schedule) async {
-    final typeLabel = schedule.type == PickupType.garbage ? 'Garbage' : 'Recycling';
+    final typeLabel = schedule.type == PickupType.garbage
+        ? 'Garbage'
+        : 'Recycling';
     final pickupTime = schedule.pickupDate;
-    
+
     final event = Event(
       title: '🚛 $typeLabel Pickup - Route ${schedule.routeId}',
-      description: 'Put out your $typeLabel bins before the truck arrives.\n'
+      description:
+          'Put out your $typeLabel bins before the truck arrives.\n'
           'Address: ${schedule.address}\n'
           'Route: ${schedule.routeId}',
       location: schedule.address,
@@ -24,9 +27,7 @@ class CalendarService {
       iosParams: const IOSParams(
         reminder: Duration(hours: 12), // Night before reminder
       ),
-      androidParams: const AndroidParams(
-        emailInvites: [],
-      ),
+      androidParams: const AndroidParams(emailInvites: []),
     );
 
     return Add2Calendar.addEvent2Cal(event);

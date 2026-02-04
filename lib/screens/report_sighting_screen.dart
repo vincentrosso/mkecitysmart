@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/sighting_report.dart';
 import '../providers/user_provider.dart';
+import '../services/ad_service.dart';
 import '../services/location_service.dart';
 import '../services/street_segment_service.dart';
 
@@ -55,6 +56,8 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
           duration: const Duration(seconds: 4),
         ),
       );
+      // Record action and possibly show interstitial ad
+      _maybeShowInterstitial();
     } catch (e) {
       debugPrint('Report sighting error: $e');
       if (mounted) {
@@ -68,6 +71,14 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _maybeShowInterstitial() async {
+    final adService = AdService.instance;
+    adService.recordAction();
+    if (adService.canShowInterstitial()) {
+      await adService.showInterstitial();
     }
   }
 

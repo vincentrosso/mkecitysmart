@@ -51,31 +51,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.location_city,
       title: 'Welcome to MKE CitySmart',
-      description: 'Your smart companion for navigating Milwaukee parking, city services, and avoiding tickets.',
+      description:
+          'Your smart companion for navigating Milwaukee parking, city services, and avoiding tickets.',
       color: kCitySmartYellow,
     ),
     _OnboardingPage(
       icon: Icons.warning_amber_rounded,
       title: 'Avoid Parking Tickets',
-      description: 'Get real-time risk alerts based on 466,000+ citation records. Know where tickets happen most.',
+      description:
+          'Get real-time risk alerts based on 466,000+ citation records. Know where tickets happen most.',
       color: const Color(0xFFE53935),
     ),
     _OnboardingPage(
       icon: Icons.swap_horiz,
       title: 'Alternate Side Parking',
-      description: 'Never forget which side to park on. Get daily reminders before the rules change at midnight.',
+      description:
+          'Never forget which side to park on. Get daily reminders before the rules change at midnight.',
       color: const Color(0xFF4FC3F7),
     ),
     _OnboardingPage(
       icon: Icons.notifications_active,
       title: 'Smart Notifications',
-      description: 'Receive alerts for street sweeping, garbage day, high-risk zones, and more.',
+      description:
+          'Receive alerts for street sweeping, garbage day, high-risk zones, and more.',
       color: const Color(0xFF66BB6A),
     ),
     _OnboardingPage(
       icon: Icons.person_add,
       title: 'Create Your Account',
-      description: 'Sign up to save your preferences, track tickets, and get personalized alerts.',
+      description:
+          'Sign up to save your preferences, track tickets, and get personalized alerts.',
       color: kCitySmartYellow,
       isLastPage: true,
     ),
@@ -101,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding({bool createAccount = false}) async {
     await OnboardingService.instance.setOnboardingComplete();
     if (!mounted) return;
-    
+
     if (createAccount) {
       Navigator.pushReplacementNamed(context, '/register');
     } else {
@@ -192,14 +197,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 140,
             height: 140,
             decoration: BoxDecoration(
-              color: page.color.withOpacity(0.15),
+              color: page.color.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              page.icon,
-              size: 70,
-              color: page.color,
-            ),
+            child: Icon(page.icon, size: 70, color: page.color),
           ),
           const SizedBox(height: 48),
 
@@ -238,7 +239,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? kCitySmartYellow : kCitySmartMuted.withOpacity(0.4),
+        color: isActive
+            ? kCitySmartYellow
+            : kCitySmartMuted.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -259,10 +262,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         child: const Text(
           'Next',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -286,10 +286,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             child: const Text(
               'Create Account',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -310,10 +307,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             child: const Text(
               'Continue as Guest',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -328,10 +322,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           },
           child: const Text(
             'Already have an account? Sign in',
-            style: TextStyle(
-              color: kCitySmartMuted,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: kCitySmartMuted, fontSize: 14),
           ),
         ),
       ],

@@ -29,11 +29,9 @@ class FeatureGate extends StatelessWidget {
 
   /// Whether to show upgrade prompt when tapping locked feature
   final bool showUpgradePrompt;
-  
+
   /// Features that have a 7-day free trial for new users
-  static const _freeTrialFeatures = {
-    PremiumFeature.heatmap,
-  };
+  static const _freeTrialFeatures = {PremiumFeature.heatmap};
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +39,11 @@ class FeatureGate extends StatelessWidget {
       builder: (context, provider, _) {
         final plan = SubscriptionService.getPlanForTier(provider.tier);
         final hasAccess = plan.hasFeature(feature);
-        
+
         // Check for free trial access
         final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
-        final hasTrialAccess = isInFreeTrial && _freeTrialFeatures.contains(feature);
+        final hasTrialAccess =
+            isInFreeTrial && _freeTrialFeatures.contains(feature);
 
         if (hasAccess || hasTrialAccess) {
           return child;
@@ -64,23 +63,26 @@ class FeatureGate extends StatelessWidget {
     final provider = context.read<UserProvider>();
     final plan = SubscriptionService.getPlanForTier(provider.tier);
     final hasFeature = plan.hasFeature(feature);
-    
+
     // Check for free trial access
     final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
-    final hasTrialAccess = isInFreeTrial && _freeTrialFeatures.contains(feature);
-    
+    final hasTrialAccess =
+        isInFreeTrial && _freeTrialFeatures.contains(feature);
+
     return hasFeature || hasTrialAccess;
   }
-  
+
   /// Check if user is accessing via free trial (not paid subscription)
   static bool isTrialAccess(BuildContext context, PremiumFeature feature) {
     final provider = context.read<UserProvider>();
     final plan = SubscriptionService.getPlanForTier(provider.tier);
     final hasPaidAccess = plan.hasFeature(feature);
     final isInFreeTrial = provider.profile?.isInFreeTrial ?? true;
-    return !hasPaidAccess && isInFreeTrial && _freeTrialFeatures.contains(feature);
+    return !hasPaidAccess &&
+        isInFreeTrial &&
+        _freeTrialFeatures.contains(feature);
   }
-  
+
   /// Get remaining free trial days
   static int getTrialDaysRemaining(BuildContext context) {
     final provider = context.read<UserProvider>();
@@ -127,9 +129,7 @@ class _DefaultLockedWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: kCitySmartCard,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: kCitySmartYellow.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: kCitySmartYellow.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -163,24 +163,23 @@ class _DefaultLockedWidget extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               feature.displayName,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               feature.description,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: kCitySmartText.withValues(alpha: 0.7),
-                  ),
+                color: kCitySmartText.withValues(alpha: 0.7),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             if (showUpgradePrompt)
               FilledButton.icon(
-                onPressed: () =>
-                    PaywallScreen.show(context, feature: feature),
+                onPressed: () => PaywallScreen.show(context, feature: feature),
                 icon: const Icon(Icons.workspace_premium),
                 label: Text('Upgrade to ${feature.minimumTier.name}'),
                 style: FilledButton.styleFrom(
@@ -216,10 +215,7 @@ class LockedTileOverlay extends StatelessWidget {
         return Stack(
           children: [
             // Original tile with reduced opacity if locked
-            Opacity(
-              opacity: hasAccess ? 1.0 : 0.5,
-              child: child,
-            ),
+            Opacity(opacity: hasAccess ? 1.0 : 0.5, child: child),
 
             // Lock overlay
             if (!hasAccess)
@@ -285,11 +281,7 @@ class LockedTileOverlay extends StatelessWidget {
 
 /// Banner widget to show at bottom of screens for upgrade prompt
 class UpgradeBanner extends StatelessWidget {
-  const UpgradeBanner({
-    super.key,
-    this.feature,
-    this.message,
-  });
+  const UpgradeBanner({super.key, this.feature, this.message});
 
   final PremiumFeature? feature;
   final String? message;
@@ -314,9 +306,7 @@ class UpgradeBanner extends StatelessWidget {
               ],
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: kCitySmartYellow.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: kCitySmartYellow.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [

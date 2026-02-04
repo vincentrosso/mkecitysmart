@@ -19,9 +19,7 @@ class GarbageScheduleService {
   final http.Client _client;
 
   Map<String, String> _headers() {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (authToken != null && authToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $authToken';
     }
@@ -43,16 +41,19 @@ class GarbageScheduleService {
     required double latitude,
     required double longitude,
   }) async {
-    final uri = Uri.parse('$baseUrl/query').replace(queryParameters: {
-      'f': 'json',
-      // ArcGIS expects x,y = lon,lat
-      'geometry': '${longitude.toStringAsFixed(6)},${latitude.toStringAsFixed(6)}',
-      'geometryType': 'esriGeometryPoint',
-      'inSR': '4326',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'outFields': '*',
-      'returnGeometry': 'false',
-    });
+    final uri = Uri.parse('$baseUrl/query').replace(
+      queryParameters: {
+        'f': 'json',
+        // ArcGIS expects x,y = lon,lat
+        'geometry':
+            '${longitude.toStringAsFixed(6)},${latitude.toStringAsFixed(6)}',
+        'geometryType': 'esriGeometryPoint',
+        'inSR': '4326',
+        'spatialRel': 'esriSpatialRelIntersects',
+        'outFields': '*',
+        'returnGeometry': 'false',
+      },
+    );
     final resp = await _safeGet(uri);
     if (resp.statusCode != 200) {
       throw Exception('Failed to fetch schedule: ${resp.statusCode}');
@@ -67,12 +68,14 @@ class GarbageScheduleService {
     }
 
     final where = "UPPER(ADDRESS) LIKE '%${address.toUpperCase()}%'";
-    final uri = Uri.parse('$baseUrl/query').replace(queryParameters: {
-      'f': 'json',
-      'where': where,
-      'outFields': '*',
-      'returnGeometry': 'false',
-    });
+    final uri = Uri.parse('$baseUrl/query').replace(
+      queryParameters: {
+        'f': 'json',
+        'where': where,
+        'outFields': '*',
+        'returnGeometry': 'false',
+      },
+    );
     final resp = await _safeGet(uri);
     if (resp.statusCode != 200) {
       throw Exception('Failed to fetch schedule: ${resp.statusCode}');
@@ -141,27 +144,31 @@ class GarbageScheduleService {
 
   GarbageSchedule _fromFeature(Map<String, dynamic> feature) {
     final attrs = feature['attributes'] as Map<String, dynamic>? ?? {};
-    final typeStr = (attrs['type'] ??
-            attrs['TYPE'] ??
-            attrs['service'] ??
-            attrs['SERVICE'] ??
-            attrs['material'] ??
-            '')
-        .toString()
-        .toLowerCase();
-    final type =
-        typeStr.contains('recycl') ? PickupType.recycling : PickupType.garbage;
+    final typeStr =
+        (attrs['type'] ??
+                attrs['TYPE'] ??
+                attrs['service'] ??
+                attrs['SERVICE'] ??
+                attrs['material'] ??
+                '')
+            .toString()
+            .toLowerCase();
+    final type = typeStr.contains('recycl')
+        ? PickupType.recycling
+        : PickupType.garbage;
     final route =
         (attrs['route'] ?? attrs['ROUTE'] ?? attrs['routeId'] ?? 'unknown')
             .toString();
-    final addr = (attrs['address'] ??
-            attrs['ADDRESS'] ??
-            attrs['location'] ??
-            attrs['LOCATION'] ??
-            '')
-        .toString();
+    final addr =
+        (attrs['address'] ??
+                attrs['ADDRESS'] ??
+                attrs['location'] ??
+                attrs['LOCATION'] ??
+                '')
+            .toString();
 
-    final dynamic pickupRaw = attrs['pickupDate'] ??
+    final dynamic pickupRaw =
+        attrs['pickupDate'] ??
         attrs['PICKUPDATE'] ??
         attrs['nextPickup'] ??
         attrs['NEXT_PICKUP'] ??
@@ -232,7 +239,9 @@ class GarbageScheduleService {
   }
 
   DateTime? _parseDate(String raw) {
-    final normalized = _titleCase(raw.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim());
+    final normalized = _titleCase(
+      raw.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim(),
+    );
     try {
       return DateFormat('EEEE MMMM d, yyyy', 'en_US').parse(normalized);
     } catch (_) {
@@ -267,10 +276,15 @@ class _AddressParts {
   final String? streetType;
 
   static _AddressParts fromFreeform(String address) {
-    final cleaned = address.trim().toUpperCase().replaceAll(RegExp(r'\s+'), ' ');
+    final cleaned = address.trim().toUpperCase().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
     final parts = cleaned.split(' ');
     if (parts.length < 2) {
-      throw Exception('Enter a full street address (number, direction, name, type).');
+      throw Exception(
+        'Enter a full street address (number, direction, name, type).',
+      );
     }
 
     final house = parts.removeAt(0);

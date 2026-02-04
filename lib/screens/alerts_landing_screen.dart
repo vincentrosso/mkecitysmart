@@ -22,8 +22,9 @@ class AlertsLandingScreen extends StatelessWidget {
               Card(
                 child: SwitchListTile(
                   title: const Text('Parking enforcer alerts'),
-                  subtitle:
-                      const Text('Notify when enforcer sightings are nearby'),
+                  subtitle: const Text(
+                    'Notify when enforcer sightings are nearby',
+                  ),
                   value: prefs.parkingNotifications,
                   onChanged: (v) =>
                       provider.updatePreferences(parkingNotifications: v),
@@ -49,8 +50,9 @@ class AlertsLandingScreen extends StatelessWidget {
               Card(
                 child: SwitchListTile(
                   title: const Text('Reminder notifications'),
-                  subtitle:
-                      const Text('General reminders for parking and permits'),
+                  subtitle: const Text(
+                    'General reminders for parking and permits',
+                  ),
                   value: prefs.reminderNotifications,
                   onChanged: (v) =>
                       provider.updatePreferences(reminderNotifications: v),
@@ -85,8 +87,9 @@ class AlertsLandingScreen extends StatelessWidget {
                         max: 30,
                         divisions: 29,
                         label: '${prefs.geoRadiusMiles} mi',
-                        onChanged: (v) =>
-                            provider.updatePreferences(geoRadiusMiles: v.round()),
+                        onChanged: (v) => provider.updatePreferences(
+                          geoRadiusMiles: v.round(),
+                        ),
                       ),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -61,6 +62,16 @@ Future<void> main() async {
   // Set up error handlers for crash reporting BEFORE anything else
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+
+    // Skip reporting RenderFlex overflow errors to Crashlytics
+    // These are visual layout issues, not crashes, and clutter crash reports
+    final exceptionString = details.exception.toString();
+    if (exceptionString.contains('RenderFlex overflowed') ||
+        exceptionString.contains('A RenderFlex overflowed')) {
+      debugPrint('⚠️ Layout overflow detected (not reported to Crashlytics)');
+      return;
+    }
+
     // Log to analytics once initialized (fire-and-forget)
     AnalyticsService.instance.recordError(
       details.exception,
@@ -129,20 +140,29 @@ class _BootstrapAppState extends State<_BootstrapApp> {
           )
           .timeout(const Duration(seconds: 12), onTimeout: () => false);
 
-      // If Firebase initialized, attempt an anonymous sign-in so
-      // FirebaseAuth is ready for services that expect a user.
+      // If Firebase initialized, ensure user is authenticated.
+      // Only sign in anonymously if no user is currently signed in.
+      // This preserves existing sessions (email, Google, Apple sign-ins).
       if (firebaseReady) {
-        try {
-          await FirebaseAuth.instance.signInAnonymously();
-          print(
-            'Anonymous auth UID: ${FirebaseAuth.instance.currentUser?.uid}',
+        final existingUser = FirebaseAuth.instance.currentUser;
+        if (existingUser != null) {
+          debugPrint(
+            'Existing auth session found - UID: ${existingUser.uid}, '
+            'Provider: ${existingUser.providerData.map((p) => p.providerId).join(", ")}',
           );
-        } catch (e, st) {
-          print('Anonymous sign-in failed: $e');
-          // Log to cloud if available; ignore failures here.
+        } else {
           try {
-            developer.log('Anonymous sign-in failed: $e', stackTrace: st);
-          } catch (_) {}
+            await FirebaseAuth.instance.signInAnonymously();
+            debugPrint(
+              'Anonymous auth UID: ${FirebaseAuth.instance.currentUser?.uid}',
+            );
+          } catch (e, st) {
+            debugPrint('Anonymous sign-in failed: $e');
+            // Log to cloud if available; ignore failures here.
+            try {
+              developer.log('Anonymous sign-in failed: $e', stackTrace: st);
+            } catch (_) {}
+          }
         }
       }
 
@@ -319,16 +339,31 @@ class MKEParkApp extends StatelessWidget {
             title: 'MKE CitySmart',
             theme: buildCitySmartTheme(),
             locale: Locale(provider.languageCode),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             supportedLocales: const [
               Locale('en'),
               Locale('es'),
-              Locale('hmn'),
               Locale('ar'),
               Locale('fr'),
               Locale('zh'),
               Locale('hi'),
               Locale('el'),
             ],
+            // Fall back to English for unsupported locales (e.g., Hmong)
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (locale == null) return const Locale('en');
+              for (final supported in supportedLocales) {
+                if (supported.languageCode == locale.languageCode) {
+                  return supported;
+                }
+              }
+              // Fall back to English for unsupported locales
+              return const Locale('en');
+            },
             initialRoute: '/',
             onUnknownRoute: (settings) => MaterialPageRoute(
               builder: (context) => Scaffold(
@@ -436,7 +471,7 @@ class _InitialRouteDeciderState extends State<_InitialRouteDecider> {
                 'assets/brand/citysmart_icon_rounded.png',
                 width: 80,
                 height: 80,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, error, stackTrace) => const Icon(
                   Icons.location_city,
                   size: 80,
                   color: Color(0xFFE0C164),
