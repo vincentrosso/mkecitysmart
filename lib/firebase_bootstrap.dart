@@ -40,8 +40,9 @@ Future<bool> initializeFirebaseIfAvailable() async {
       if (apiKey.isEmpty || projectId.isEmpty) return true;
       if (apiKey.toUpperCase().contains('TEST')) return true;
       if (projectId.toLowerCase().contains('test-')) return true;
-      if (iOSBundleId.isNotEmpty && iOSBundleId.startsWith('com.example.'))
+      if (iOSBundleId.isNotEmpty && iOSBundleId.startsWith('com.example.')) {
         return true;
+      }
       return false;
     }
 
