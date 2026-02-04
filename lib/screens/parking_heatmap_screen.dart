@@ -803,7 +803,7 @@ class _SafestSpotsCardState extends State<_SafestSpotsCard> {
     final url = Uri.parse(
       'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
     );
-    
+
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -963,7 +963,10 @@ class _SafestSpotsCardState extends State<_SafestSpotsCard> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.directions_walk, color: Color(0xFF4CAF50)),
+                      icon: const Icon(
+                        Icons.directions_walk,
+                        color: Color(0xFF4CAF50),
+                      ),
                       onPressed: () => _navigateToSpot(safest),
                       tooltip: 'Navigate',
                     ),
@@ -971,7 +974,7 @@ class _SafestSpotsCardState extends State<_SafestSpotsCard> {
                 ),
               ),
             ),
-            
+
             // Navigate button
             const SizedBox(height: 12),
             SizedBox(

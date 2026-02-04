@@ -29,7 +29,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
   bool _showAvailableOnly = false;
   bool _loadingStations = true;
   String? _stationError;
-  List<EVStation> _stations = mockEvStations;
+  List<EVStation> _stations = []; // Start empty, load from API
   EVStation? _selected;
   List<ParkingPrediction> _predictions = const [];
   bool _loadingPredictions = false;
