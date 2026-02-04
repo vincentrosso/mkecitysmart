@@ -41,11 +41,24 @@ class OpenChargeMapService {
       final resp = await _client
           .get(
             uri,
-            headers: {'Accept': 'application/json', 'X-API-Key': _ocmApiKey},
+            headers: {
+              'Accept': 'application/json',
+              'X-API-Key': _ocmApiKey,
+              'User-Agent':
+                  'MKE-CitySmart-App/1.0 (iOS; contact@mkecitysmart.com)',
+            },
           )
           .timeout(const Duration(seconds: 15));
 
       debugPrint('OpenChargeMap: Response status ${resp.statusCode}');
+
+      if (resp.statusCode == 503) {
+        // API temporarily blocking - return empty list with warning
+        debugPrint(
+          'OpenChargeMap: API temporarily unavailable (503). Try again later.',
+        );
+        return [];
+      }
 
       if (resp.statusCode != 200) {
         final preview = resp.body.length > 200

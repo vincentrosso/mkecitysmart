@@ -222,9 +222,59 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
   }
 
   Future<void> _openDirections(_ParkingSpot spot) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}',
+    // Show a choice dialog for Google Maps or Apple Maps
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.grey.shade900,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'Open directions in...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map, color: Colors.green),
+                title: const Text('Apple Maps', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pop(ctx, 'apple'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map_outlined, color: Colors.blue),
+                title: const Text('Google Maps', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pop(ctx, 'google'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+
+    if (choice == null || !mounted) return;
+
+    Uri uri;
+    if (choice == 'apple') {
+      uri = Uri.parse(
+        'https://maps.apple.com/?daddr=${spot.lat},${spot.lng}&dirflg=d',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}',
+      );
+    }
+
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

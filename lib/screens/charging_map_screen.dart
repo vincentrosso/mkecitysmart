@@ -323,24 +323,32 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     const centerLat = 43.0389;
     const centerLng = -87.9065;
     final api = PredictionApiService(ApiClient());
-    List<ParkingPrediction> result;
-    if (_mode == _PredictionMode.points) {
-      result = await api.fetchPoints(
-        lat: centerLat,
-        lng: centerLng,
-        radiusMiles: radius,
-        includeEvents: _includeEvents,
-        includeWeather: _includeWeather,
-      );
-    } else {
-      result = await api.fetchPredictions(
-        lat: centerLat,
-        lng: centerLng,
-        radiusMiles: radius,
-        includeEvents: _includeEvents,
-        includeWeather: _includeWeather,
-      );
+    List<ParkingPrediction> result = [];
+
+    try {
+      if (_mode == _PredictionMode.points) {
+        result = await api.fetchPoints(
+          lat: centerLat,
+          lng: centerLng,
+          radiusMiles: radius,
+          includeEvents: _includeEvents,
+          includeWeather: _includeWeather,
+        );
+      } else {
+        result = await api.fetchPredictions(
+          lat: centerLat,
+          lng: centerLng,
+          radiusMiles: radius,
+          includeEvents: _includeEvents,
+          includeWeather: _includeWeather,
+        );
+      }
+    } catch (e) {
+      // Prediction API not available - use mock data
+      debugPrint('Prediction API unavailable: $e');
+      result = [];
     }
+
     if (!mounted) return;
     setState(() {
       _predictions = result.isNotEmpty ? result : _mockPredictions();
@@ -696,9 +704,59 @@ class _StationDetailCard extends StatelessWidget {
 
 extension on _ChargingMapScreenState {
   Future<void> _openDirections(EVStation station) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${station.latitude},${station.longitude}',
+    // Show a choice dialog for Google Maps or Apple Maps
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.grey.shade900,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'Open directions in...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map, color: Colors.green),
+                title: const Text('Apple Maps', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pop(ctx, 'apple'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.map_outlined, color: Colors.blue),
+                title: const Text('Google Maps', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pop(ctx, 'google'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+
+    if (choice == null || !mounted) return;
+
+    Uri uri;
+    if (choice == 'apple') {
+      uri = Uri.parse(
+        'https://maps.apple.com/?daddr=${station.latitude},${station.longitude}&dirflg=d',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}',
+      );
+    }
+
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
       ScaffoldMessenger.of(

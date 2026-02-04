@@ -15,30 +15,50 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   LocationRisk? _locationRisk;
   bool _loadingRisk = true;
-  bool _welcomeShown = false;
+  bool _hasBeenBackgrounded = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRiskData();
-    // Show welcome back message after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showWelcomeBack());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App went to background
+      _hasBeenBackgrounded = true;
+      debugPrint('Dashboard: App went to background');
+    } else if (state == AppLifecycleState.resumed && _hasBeenBackgrounded) {
+      // App came back from background - show welcome back
+      _hasBeenBackgrounded = false;
+      debugPrint('Dashboard: App resumed from background');
+      _showWelcomeBack();
+    }
   }
 
   void _showWelcomeBack() {
-    if (_welcomeShown) return;
-    _welcomeShown = true;
-
     final userProvider = context.read<UserProvider>();
+
+    // Show welcome if user is logged in (not a guest)
     if (userProvider.isLoggedIn && !userProvider.isGuest) {
       final name = userProvider.profile?.name;
       final greeting = name != null && name.isNotEmpty
           ? 'Welcome back, $name!'
           : 'Welcome back!';
 
+      debugPrint('Dashboard: Showing welcome message: $greeting');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
