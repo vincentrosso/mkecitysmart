@@ -83,6 +83,7 @@ class _AltSideCardState extends State<_AltSideCard> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text('Today\'s parking side', style: textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -240,6 +241,7 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -561,6 +563,7 @@ class _TopSafeSpotCard extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -689,6 +692,7 @@ class _NearbyParkingCardState extends State<_NearbyParkingCard> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

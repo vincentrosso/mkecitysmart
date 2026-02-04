@@ -62,6 +62,16 @@ Future<void> main() async {
   // Set up error handlers for crash reporting BEFORE anything else
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+
+    // Skip reporting RenderFlex overflow errors to Crashlytics
+    // These are visual layout issues, not crashes, and clutter crash reports
+    final exceptionString = details.exception.toString();
+    if (exceptionString.contains('RenderFlex overflowed') ||
+        exceptionString.contains('A RenderFlex overflowed')) {
+      debugPrint('⚠️ Layout overflow detected (not reported to Crashlytics)');
+      return;
+    }
+
     // Log to analytics once initialized (fire-and-forget)
     AnalyticsService.instance.recordError(
       details.exception,
