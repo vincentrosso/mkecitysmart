@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
@@ -194,7 +195,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to privacy policy
+                        launchUrl(
+                          Uri.parse(
+                            'https://mkeparkapp-1ad15.web.app/privacy.html',
+                          ),
+                        );
                       },
                       child: Text(
                         'Privacy Policy',
@@ -212,7 +217,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to terms of service
+                        launchUrl(
+                          Uri.parse(
+                            'https://mkeparkapp-1ad15.web.app/terms.html',
+                          ),
+                        );
                       },
                       child: Text(
                         'Terms of Service',
