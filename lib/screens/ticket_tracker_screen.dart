@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/ticket.dart';
 import '../models/user_preferences.dart';
@@ -58,11 +59,30 @@ class TicketTrackerScreen extends StatefulWidget {
 class _TicketTrackerScreenState extends State<TicketTrackerScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _showSampleHint = false;
+  static const _sampleHintDismissedKey = 'ticket_sample_hint_dismissed';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _checkSampleHintStatus();
+  }
+
+  Future<void> _checkSampleHintStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool(_sampleHintDismissedKey) ?? false;
+    if (mounted && !dismissed) {
+      setState(() => _showSampleHint = true);
+    }
+  }
+
+  Future<void> _dismissSampleHint() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_sampleHintDismissedKey, true);
+    if (mounted) {
+      setState(() => _showSampleHint = false);
+    }
   }
 
   @override
@@ -120,6 +140,65 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                   const Tab(text: 'Add new'),
                 ],
               ),
+
+              // Sample tickets hint - only show if there are sample tickets and hint not dismissed
+              if (_showSampleHint && tickets.any((t) => t.isSample))
+                Container(
+                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: kCitySmartYellow.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: kCitySmartYellow.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.lightbulb_outline,
+                        color: kCitySmartYellow,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Sample tickets for demo',
+                              style: TextStyle(
+                                color: kCitySmartYellow,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Swipe left on any ticket to delete it. These are just examples to show you how the tracker works.',
+                              style: TextStyle(
+                                color: kCitySmartText.withValues(alpha: 0.8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _dismissSampleHint,
+                        icon: const Icon(
+                          Icons.close,
+                          color: kCitySmartMuted,
+                          size: 20,
+                        ),
+                        tooltip: 'Dismiss',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Tab content
               Expanded(
