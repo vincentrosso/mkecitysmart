@@ -263,7 +263,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Widget _buildFallbackPlanCards() {
-    // Show static plan card when RevenueCat isn't configured
+    // Show static plan card when RevenueCat isn't configured or products pending approval
     final plan = SubscriptionService.getPlanForTier(SubscriptionTier.pro);
     final price = _yearly ? plan.yearlyPrice : plan.monthlyPrice;
     final period = _yearly ? '/year' : '/month';
@@ -278,7 +278,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         onTap: () {
           setState(() {
             _error =
-                'In-app purchases not configured. Please set up RevenueCat.';
+                'Subscriptions coming soon! Products are pending App Store approval.';
           });
         },
       ),

@@ -239,6 +239,9 @@ class UserProvider extends ChangeNotifier {
         ? storedTickets
         : List<Ticket>.from(sampleTickets);
     _sightings = await _repository.loadSightings();
+
+    // Auto-cleanup old sightings (older than 7 days) to prevent storage bloat
+    await cleanupOldSightings(days: 7);
   }
 
   String _mapAuthError(FirebaseAuthException e) {
@@ -1005,6 +1008,28 @@ class UserProvider extends ChangeNotifier {
       return 'Sighting saved locally. Will sync when online.';
     } else {
       return 'Sighting recorded. May not sync to other users.';
+    }
+  }
+
+  /// Delete a sighting from local storage (swipe-to-delete in UI).
+  Future<void> deleteSighting(String sightingId) async {
+    _sightings = _sightings.where((s) => s.id != sightingId).toList();
+    await _repository.saveSightings(_sightings);
+    notifyListeners();
+  }
+
+  /// Clean up old sightings (older than [days] days) to prevent storage bloat.
+  /// Called automatically during hydration. Default is 7 days.
+  Future<void> cleanupOldSightings({int days = 7}) async {
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    final before = _sightings.length;
+    _sightings = _sightings.where((s) => s.reportedAt.isAfter(cutoff)).toList();
+    if (_sightings.length < before) {
+      await _repository.saveSightings(_sightings);
+      debugPrint(
+        '[UserProvider] Cleaned up ${before - _sightings.length} old sightings',
+      );
+      notifyListeners();
     }
   }
 

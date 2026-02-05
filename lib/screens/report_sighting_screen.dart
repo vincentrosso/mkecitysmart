@@ -225,26 +225,74 @@ class _ReportSightingScreenState extends State<ReportSightingScreen> {
                     )
                   else
                     ...reports.map(
-                      (report) => Card(
-                        child: ListTile(
-                          leading: Icon(
-                            report.type == SightingType.towTruck
-                                ? Icons.local_shipping_outlined
-                                : Icons.shield_moon_outlined,
-                            color: report.type == SightingType.towTruck
-                                ? Colors.redAccent
-                                : Colors.blueGrey,
+                      (report) => Dismissible(
+                        key: Key(report.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          color: Colors.redAccent,
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white,
                           ),
-                          title: Text(report.location),
-                          subtitle: Text(
-                            '${report.type == SightingType.towTruck ? 'Tow truck' : 'Parking enforcer'} • ${_formatTime(report.reportedAt)}',
+                        ),
+                        confirmDismiss: (direction) async {
+                          return await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Delete report?'),
+                                  content: const Text(
+                                    'This will remove the report from your recent reports list.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ) ??
+                              false;
+                        },
+                        onDismissed: (direction) {
+                          provider.deleteSighting(report.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Report removed'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          child: ListTile(
+                            leading: Icon(
+                              report.type == SightingType.towTruck
+                                  ? Icons.local_shipping_outlined
+                                  : Icons.shield_moon_outlined,
+                              color: report.type == SightingType.towTruck
+                                  ? Colors.redAccent
+                                  : Colors.blueGrey,
+                            ),
+                            title: Text(report.location),
+                            subtitle: Text(
+                              '${report.type == SightingType.towTruck ? 'Tow truck' : 'Parking enforcer'} • ${_formatTime(report.reportedAt)}',
+                            ),
+                            trailing: report.notes.isNotEmpty
+                                ? const Icon(Icons.notes_outlined)
+                                : null,
+                            onTap: report.notes.isEmpty
+                                ? null
+                                : () => _showNotes(report.notes),
                           ),
-                          trailing: report.notes.isNotEmpty
-                              ? const Icon(Icons.notes_outlined)
-                              : null,
-                          onTap: report.notes.isEmpty
-                              ? null
-                              : () => _showNotes(report.notes),
                         ),
                       ),
                     ),

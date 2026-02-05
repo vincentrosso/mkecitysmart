@@ -111,14 +111,39 @@ class SubscriptionService extends ChangeNotifier {
 
       // Fetch initial customer info and offerings
       _customerInfo = await Purchases.getCustomerInfo();
-      _offerings = await Purchases.getOfferings();
+
+      try {
+        _offerings = await Purchases.getOfferings();
+      } catch (offeringsError) {
+        // Products may not be available yet (Ready to Submit status in App Store Connect)
+        // This is expected during development before app submission
+        debugPrint(
+          'SubscriptionService: Could not fetch offerings (products may not be approved yet): $offeringsError',
+        );
+        _offerings = null;
+      }
 
       _initialized = true;
       _lastError = null;
       debugPrint('SubscriptionService: Initialized successfully');
+      if (_offerings?.current == null) {
+        debugPrint(
+          'SubscriptionService: Note - No offerings available. Products need to be approved in App Store Connect.',
+        );
+      }
     } catch (e) {
-      _lastError = e.toString();
-      debugPrint('SubscriptionService: Init failed - $e');
+      // Handle configuration errors gracefully - service is still usable for checking status
+      if (e is PlatformException && e.code == '23') {
+        debugPrint(
+          'SubscriptionService: Products not yet available in App Store Connect. Running in limited mode.',
+        );
+        _initialized = true;
+        _offerings = null;
+        _lastError = null;
+      } else {
+        _lastError = e.toString();
+        debugPrint('SubscriptionService: Init failed - $e');
+      }
     } finally {
       _isInitializing = false;
       notifyListeners();
