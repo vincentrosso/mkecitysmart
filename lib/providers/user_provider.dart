@@ -212,6 +212,8 @@ class UserProvider extends ChangeNotifier {
     debugPrint('🔐 UserProvider: Guest mode = $_guestMode');
     if (_firebaseEnabled && !_guestMode) {
       unawaited(_repository.syncPending());
+      // Update last activity timestamp for inactive account tracking
+      unawaited(_repository.updateLastActivity());
     }
     if (_guestMode) {
       _guestPermits = _seedPermits();
@@ -910,7 +912,7 @@ class UserProvider extends ChangeNotifier {
   /// - Firestore user document and subcollections
   /// - Local cached data
   /// - RevenueCat subscription association
-  /// 
+  ///
   /// Returns null on success, or an error message on failure.
   Future<String?> deleteAccount() async {
     final user = _auth?.currentUser;
@@ -920,21 +922,26 @@ class UserProvider extends ChangeNotifier {
 
     try {
       final uid = user.uid;
-      
+
       // 1. Delete Firestore data (user document and subcollections)
       if (_firebaseEnabled) {
         final firestore = FirebaseFirestore.instance;
         final userDocRef = firestore.collection('users').doc(uid);
-        
+
         // Delete subcollections
-        final subcollections = ['tickets', 'places', 'sightings', 'maintenance_reports'];
+        final subcollections = [
+          'tickets',
+          'places',
+          'sightings',
+          'maintenance_reports',
+        ];
         for (final subcollection in subcollections) {
           final snapshot = await userDocRef.collection(subcollection).get();
           for (final doc in snapshot.docs) {
             await doc.reference.delete();
           }
         }
-        
+
         // Delete the main user document
         await userDocRef.delete();
       }
@@ -963,14 +970,19 @@ class UserProvider extends ChangeNotifier {
       _cityId = 'default';
       _tenantId = 'default';
       _languageCode = 'en';
-      
+
       // 5. Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       notifyListeners();
-      unawaited(CloudLogService.instance.logEvent('account_deleted', data: {'uid': uid}));
-      
+      unawaited(
+        CloudLogService.instance.logEvent(
+          'account_deleted',
+          data: {'uid': uid},
+        ),
+      );
+
       return null; // Success
     } on FirebaseAuthException catch (e) {
       // User may need to re-authenticate for sensitive operations

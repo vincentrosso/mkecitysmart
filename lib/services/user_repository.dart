@@ -298,4 +298,20 @@ class UserRepository {
         date1.month == date2.month &&
         date1.day == date2.day;
   }
+
+  /// Update the user's last activity timestamp.
+  /// Called when the app opens or user performs significant actions.
+  /// This is used for inactive account cleanup (30-day auto-delete).
+  Future<void> updateLastActivity() async {
+    final userId = _activeUserId;
+    if (userId == null) return;
+
+    try {
+      await _userDocument().set({
+        'lastActivityAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // Silently fail - this is a background operation
+    }
+  }
 }

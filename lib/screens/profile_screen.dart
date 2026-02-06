@@ -240,11 +240,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
-                      onPressed: () => _showDeleteAccountDialog(context, provider),
+                      onPressed: () =>
+                          _showDeleteAccountDialog(context, provider),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.redAccent,
                         side: const BorderSide(color: Colors.redAccent),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 24,
+                        ),
                       ),
                       icon: const Icon(Icons.delete_forever),
                       label: const Text('Delete Account'),
@@ -323,7 +327,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _performAccountDeletion(BuildContext context, UserProvider provider) async {
+  Future<void> _performAccountDeletion(
+    BuildContext context,
+    UserProvider provider,
+  ) async {
     // Show loading indicator
     showDialog(
       context: context,
@@ -352,22 +359,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
       );
     } else {
       // Account deleted successfully - navigate to home
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/',
-        (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account deleted successfully'),
-        ),
+        const SnackBar(content: Text('Account deleted successfully')),
       );
     }
   }
