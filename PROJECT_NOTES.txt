@@ -356,24 +356,159 @@ NEXT STEPS WHEN READY:
 
 ===============================================
 
-TODO: MARKETING VIDEO PROMPT WITH APP SCREENSHOTS
+MKE CITYSMART - AI VIDEO CREATOR PROMPT
 ===============================================
-Need to capture these screenshots from the app and update the AI video creator prompt
-with references to actual app visuals:
+Use this prompt with an AI video creator (Runway, Pika, Sora, etc.) to generate
+a 60-second marketing/promo video for the App Store and social media.
 
-Screenshots needed:
-1. Home/Dashboard - main dashboard screen
-2. Interactive Map - parking heatmap/risk map
-3. OCR Scanner Active - camera scanning a parking sign
-4. OCR Result - interpreted sign text
-5. Push Notification - alert on lock screen
-6. Report Sighting Screen - form with enforcer/tow toggle
-7. Feed Screen - community sightings feed with cards
-8. Referral Screen - "Give 7 Days, Get 7 Days" section
-9. Subscription/Pro Screen - premium features paywall
+───────────────────────────────────────────────
+FULL VIDEO PROMPT - 60 SECONDS
+───────────────────────────────────────────────
 
-Full video prompt is saved in conversation history. Once screenshots are captured,
-update the prompt to reference each image at the appropriate scene timestamp.
+STYLE: Cinematic urban footage, smooth transitions, modern motion graphics.
+COLOR PALETTE: Dark green (#081D19), gold (#E0C164), white.
+MUSIC: Upbeat, confident, urban — think "city in motion" energy.
+VOICE-OVER TONE: Friendly, empowering, community-driven.
+RESOLUTION: 1080x1920 (vertical for TikTok/Reels) or 1920x1080 (landscape for YouTube/App Store).
+
+--- SCENE 1 (0:00–0:05) — THE HOOK ---
+VISUAL: Aerial drone shot of downtown Milwaukee at golden hour. Camera swoops down
+toward a busy street with parked cars. A parking enforcement vehicle turns a corner.
+TEXT OVERLAY (bold, animated): "Still getting parking tickets in Milwaukee?"
+VOICE-OVER: "Still getting surprised by parking tickets?"
+
+--- SCENE 2 (0:05–0:12) — THE PROBLEM ---
+VISUAL: Close-up of a parking ticket being placed on a windshield. Cut to a driver's
+frustrated reaction. Quick montage: a tow truck hooking a car, an alternate-side
+parking sign, a street sweeper approaching parked cars.
+TEXT OVERLAY: "$75 ticket... $150 tow... It adds up fast."
+VOICE-OVER: "Tickets, tow fees, missed street sweeping... it all adds up. What if
+your neighbors could warn you before it happens?"
+
+--- SCENE 3 (0:12–0:18) — INTRODUCING THE APP ---
+VISUAL: A hand pulls out an iPhone. The MKE CitySmart app opens to the Dashboard
+screen showing feature tiles: Citation Risk, Heatmap, Sightings Feed, Parking Finder.
+[INSERT SCREENSHOT: Dashboard]
+TEXT OVERLAY: "Meet MKE CitySmart"
+VOICE-OVER: "Meet MKE CitySmart — your community-powered parking guardian for
+Milwaukee."
+
+--- SCENE 4 (0:18–0:25) — LIVE MAP & HEATMAP ---
+VISUAL: Smooth zoom into the app's interactive parking risk heatmap. Color-coded zones
+pulse from green to red. A pin drops on a high-risk area near downtown. The map
+rotates slightly for 3D effect.
+[INSERT SCREENSHOT: Parking Heatmap Map]
+TEXT OVERLAY: "See citation risk zones in real time"
+VOICE-OVER: "See real-time citation risk zones across Milwaukee. Know which blocks
+are hot — and which are safe to park."
+
+--- SCENE 5 (0:25–0:30) — OCR SIGN SCANNER ---
+VISUAL: User holds phone up to a parking regulation sign. The camera view activates
+with scanning animation. Text on the sign gets highlighted and interpreted: "No Parking
+Tue/Thu 8AM–12PM - Street Sweeping."
+[INSERT SCREENSHOT: OCR Scanner Active → OCR Result]
+TEXT OVERLAY: "Scan any sign. Instantly decoded."
+VOICE-OVER: "Confused by parking signs? Just point your camera. We'll decode it
+instantly."
+
+--- SCENE 6 (0:30–0:37) — COMMUNITY ALERTS ---
+VISUAL: Split screen — left side shows a user tapping "Report Sighting" with the
+enforcer/tow truck toggle. Right side shows another driver's phone lighting up with
+a push notification: "⚠️ Enforcer spotted on Brady St — 2 min ago."
+[INSERT SCREENSHOT: Report Sighting Screen + Push Notification]
+TEXT OVERLAY: "Neighbors warning neighbors."
+VOICE-OVER: "When someone spots an enforcer or tow truck, the whole community gets
+alerted. Real people, real-time warnings."
+
+--- SCENE 7 (0:37–0:43) — THE FEED ---
+VISUAL: Scrolling through the sightings feed showing recent community reports with
+timestamps, distances, and enforcer types. Cards animate in smoothly.
+[INSERT SCREENSHOT: Feed Screen]
+TEXT OVERLAY: "Live community feed — always updated"
+VOICE-OVER: "Check the live feed to see what's happening near you. Filter by
+distance, time, and type."
+
+--- SCENE 8 (0:43–0:48) — PREMIUM & REFERRALS ---
+VISUAL: Quick showcase of premium features — unlimited alerts, priority zones,
+advanced predictions. Then a "Give 7 Days, Get 7 Days" referral card animates in.
+[INSERT SCREENSHOT: Subscription/Pro Screen + Referral Screen]
+TEXT OVERLAY: "Go Pro. Share with friends."
+VOICE-OVER: "Upgrade to Pro for unlimited alerts and predictions. Share with friends
+— give 7 days free, get 7 days free."
+
+--- SCENE 9 (0:48–0:55) — SOCIAL PROOF ---
+VISUAL: Animated counter ticking up: "2,400+ Milwaukee drivers protected." Quick cuts
+of diverse Milwaukee residents smiling at their phones. City landmarks in background
+(Hoan Bridge, Third Ward, Brady Street).
+TEXT OVERLAY: "Join thousands of Milwaukee drivers"
+VOICE-OVER: "Thousands of Milwaukee drivers already protect each other every day."
+
+--- SCENE 10 (0:55–1:00) — CALL TO ACTION ---
+VISUAL: App icon animates center screen with a glowing pulse. App Store and Google
+Play badges slide in below. Milwaukee skyline silhouette in background.
+TEXT OVERLAY:
+  "MKE CitySmart"
+  "Download Free Today"
+  [App Store badge] [Google Play badge]
+VOICE-OVER: "Download MKE CitySmart free today. Because in Milwaukee, we look out
+for each other."
+
+───────────────────────────────────────────────
+SCREENSHOTS TO CAPTURE FOR VIDEO
+───────────────────────────────────────────────
+Capture these from the running app on a real device or simulator:
+
+  1. Dashboard         → Main dashboard with all feature tiles visible
+  2. Parking Heatmap   → Map view with colored risk zones
+  3. OCR Scanner       → Camera view scanning a parking sign (active state)
+  4. OCR Result        → Decoded sign text displayed
+  5. Push Notification → Lock screen showing enforcer/tow alert
+  6. Report Sighting   → Form with enforcer type, tow truck toggle, location
+  7. Feed Screen       → Community sightings feed with distance + time cards
+  8. Referral Screen   → "Give 7 Days, Get 7 Days" section
+  9. Subscription      → Pro features paywall/upgrade screen
+
+TIP: Use Simulator → File → New Screen Recording for animated screen captures,
+or use CleanShot X / Xcode screenshot tool for stills.
+
+───────────────────────────────────────────────
+ALTERNATE SHORT VERSIONS
+───────────────────────────────────────────────
+
+15-SECOND VERSION (Instagram/TikTok Ad):
+  Scene 1 (0-3s): Ticket on windshield → "Tired of this?"
+  Scene 2 (3-8s): App opens → heatmap → notification pops up
+  Scene 3 (8-12s): Feed scrolling → community counter
+  Scene 4 (12-15s): App icon + "Download Free" + store badges
+
+30-SECOND VERSION (YouTube Pre-Roll):
+  Scene 1 (0-5s): Hook — enforcement vehicle + "Still getting tickets?"
+  Scene 2 (5-15s): App walkthrough — dashboard, heatmap, OCR scanner
+  Scene 3 (15-25s): Community alerts — report → notification → feed
+  Scene 4 (25-30s): CTA — "Download MKE CitySmart free today"
+
+───────────────────────────────────────────────
+SOCIAL MEDIA CAPTION TEMPLATES
+───────────────────────────────────────────────
+
+INSTAGRAM/TIKTOK:
+  "POV: You never get a parking ticket in Milwaukee again 🚗💨
+   MKE CitySmart → community-powered parking alerts.
+   Your neighbors warn you before enforcers reach your block.
+   🔗 Link in bio | Free download
+   #Milwaukee #MKE #ParkingHack #MKECitySmart #WisconsinLife"
+
+TWITTER/X:
+  "Milwaukee drivers are saving each other from parking tickets with
+   @MKECitySmart 🚨 Real-time enforcer alerts, risk heatmaps, and sign
+   scanning. Free on iOS & Android. #Milwaukee #MKE"
+
+FACEBOOK:
+  "Tired of surprise parking tickets? MKE CitySmart connects Milwaukee
+   drivers to warn each other when enforcers and tow trucks are spotted.
+   📍 Real-time heatmap | 📸 Sign scanner | 🔔 Instant alerts
+   Download free → [link]"
+
 ===============================================
 
 
