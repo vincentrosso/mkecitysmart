@@ -1,0 +1,22 @@
+Create a cinematic 60-second app promo video for MKE CitySmart, a community-powered parking app for Milwaukee. Style: modern, sleek, dark green and gold color theme. Music: upbeat urban confidence. Add smooth zoom and pan motion to each screenshot. Add text overlays for each scene:
+
+Image 1: "Welcome to MKE CitySmart" — Your smart parking companion for Milwaukee.
+Image 2: "Your Parking Command Center" — Citation risk, alt-side parking, community alerts, all in one dashboard.
+Image 3: "See Citation Risk Zones" — Built from 466,000+ real Milwaukee citations. Know which blocks are risky before you park.
+Image 4: "Never Forget a Ticket" — Life gets busy. Track your tickets so a $65 fine doesn't become $90.
+Image 5 & 6: "Neighbors Warning Neighbors" — Report an enforcer or tow truck, and every nearby driver gets alerted instantly.
+Image 7: "Live Community Feed" — See what's happening near you in real time.
+Image 8 & 9: "Go Pro. Share with Friends." — Unlimited alerts for $4.99/mo. Refer friends and both get 7 days free.
+
+End with: "Plus parking finder, EV chargers, tow helper, street sweeping, and so much more. Growing city by city, state by state. With your help, we put money back in your pocket. Download MKE CitySmart free today."
+
+Upload images in this order:
+1. IMG_5363 — Welcome/Onboarding
+2. IMG_5365 — Dashboard
+3. IMG_5364 — Citation Risk Heatmap
+4. IMG_5371 — Ticket Tracker
+5. IMG_5367 — Report Sighting
+6. IMG_5370 — Push Notification
+7. IMG_5366 — Community Feed
+8. IMG_5368 — Subscription/Pro
+9. IMG_5369 — Referral
