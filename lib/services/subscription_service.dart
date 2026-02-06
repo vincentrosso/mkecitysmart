@@ -166,13 +166,25 @@ class SubscriptionService extends ChangeNotifier {
   }
 
   /// Logout user from RevenueCat
+  /// Note: This will fail if the user is anonymous in RevenueCat.
+  /// We catch and ignore the error since it's expected for anonymous users.
   Future<void> logout() async {
     if (!_initialized) return;
 
     try {
+      // Check if the current user is anonymous in RevenueCat
+      final isAnonymous = await Purchases.isAnonymous;
+      if (isAnonymous) {
+        debugPrint(
+          'SubscriptionService: Skipping logout - user is anonymous in RevenueCat',
+        );
+        return;
+      }
+
       _customerInfo = await Purchases.logOut();
       notifyListeners();
     } catch (e) {
+      // This can fail for anonymous users, which is expected
       _lastError = e.toString();
       debugPrint('SubscriptionService: Logout failed - $e');
     }

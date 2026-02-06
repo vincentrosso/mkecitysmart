@@ -883,6 +883,9 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Log before signing out (while we still have permissions)
+    unawaited(CloudLogService.instance.logEvent('user_logout'));
+
     await _auth?.signOut();
     _profile = null;
     _guestMode = true;
@@ -903,7 +906,6 @@ class UserProvider extends ChangeNotifier {
     _tenantId = 'default';
     _languageCode = 'en';
     notifyListeners();
-    unawaited(CloudLogService.instance.logEvent('user_logout'));
   }
 
   /// Permanently deletes the user's account and all associated data.
