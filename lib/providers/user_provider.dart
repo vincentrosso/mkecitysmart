@@ -1318,6 +1318,43 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Grant a temporary premium trial from watching a rewarded ad.
+  /// This extends or sets a premium trial in Firestore.
+  Future<void> grantAdRewardTrial({int days = 3}) async {
+    if (!_firebaseEnabled) return;
+
+    final user = _auth?.currentUser;
+    if (user == null) return;
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final userDoc = firestore.collection('users').doc(user.uid);
+      final userData = await userDoc.get();
+
+      // Check existing trial end date
+      DateTime trialEnd = DateTime.now().add(Duration(days: days));
+      if (userData.exists) {
+        final existingEnd = userData.data()?['premiumTrialEnd'] as Timestamp?;
+        if (existingEnd != null &&
+            existingEnd.toDate().isAfter(DateTime.now())) {
+          // Extend existing trial
+          trialEnd = existingEnd.toDate().add(Duration(days: days));
+        }
+      }
+
+      // Update Firestore with new trial end
+      await userDoc.set({
+        'premiumTrialEnd': Timestamp.fromDate(trialEnd),
+        'lastAdRewardAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      debugPrint('✅ Granted $days day ad reward trial until $trialEnd');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Failed to grant ad reward trial: $e');
+    }
+  }
+
   Future<void> updateCityAndTenant({
     required String cityId,
     required String tenantId,

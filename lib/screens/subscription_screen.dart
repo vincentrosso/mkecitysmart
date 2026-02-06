@@ -5,6 +5,7 @@ import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
 import '../services/subscription_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/paywall_widget.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -138,6 +139,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 12),
+                // Try Premium for free via rewarded ad
+                WatchAdButton(
+                  rewardDescription: 'Try Premium for free',
+                  buttonText: 'Watch to Unlock',
+                  rewardText: '3 Days Premium Trial',
+                  onReward: () => provider.grantAdRewardTrial(days: 3),
                 ),
                 const SizedBox(height: 12),
                 // Upgrade prompt

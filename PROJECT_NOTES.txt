@@ -177,6 +177,26 @@ Architecture flow (text diagram)
 
 Future Enhancements (to implement if users request)
 ---------------------------------------
+- Multi-State Expansion (LONG-TERM ROADMAP):
+  * Current state: App supports multi-city data collection via MunicipalityService
+  * All citation/sighting data is tagged with municipalityId, city, state
+  * Wisconsin cities are currently the focus with _knownWisconsinCities list
+  * Phase 1 (Current): Wisconsin cities - Milwaukee metro focus, data collection from any WI city
+  * Phase 2 (Future): Midwest expansion - Illinois, Minnesota, Michigan, Iowa
+  * Phase 3 (Long-term): National expansion - Major metro areas across US
+  * Technical foundation already in place:
+    - MunicipalityService detects city/state from GPS coordinates
+    - citation_analytics organized by municipalityId
+    - municipality_stats tracks data per city
+    - sighting_stats tracks sightings per city
+  * When expanding to new state:
+    1. Add state's cities to known cities list
+    2. Source city parking rules/regulations
+    3. Build city-specific rule packs (like CityRulePack)
+    4. Partner with local users for beta testing
+    5. Launch when sufficient data collected (500+ citations for predictions)
+  * Monetization scales with cities - each new metro is a new market
+
 - Full App Localization (i18n):
   * Current state: Language setting in City Settings changes the app locale for date/time formats and
     Material widget text (calendar, date pickers, dialog buttons), but custom app UI text (like "Save",

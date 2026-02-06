@@ -163,6 +163,113 @@ const chunk = <T>(arr: T[], size: number): T[][] => {
   return out;
 };
 
+// --- Municipality detection for multi-city data organization ---
+// Detects city from coordinates using simple bounding boxes
+// This is server-side detection for when we can't use reverse geocoding
+
+interface MunicipalityBounds {
+  id: string;
+  city: string;
+  state: string;
+  latMin: number;
+  latMax: number;
+  lngMin: number;
+  lngMax: number;
+}
+
+const MUNICIPALITY_BOUNDS: MunicipalityBounds[] = [
+  // Wisconsin cities
+  {id: "milwaukee_wisconsin", city: "Milwaukee", state: "Wisconsin", latMin: 42.92, latMax: 43.20, lngMin: -88.07, lngMax: -87.82},
+  {id: "waukesha_wisconsin", city: "Waukesha", state: "Wisconsin", latMin: 42.95, latMax: 43.05, lngMin: -88.28, lngMax: -88.18},
+  {id: "madison_wisconsin", city: "Madison", state: "Wisconsin", latMin: 43.01, latMax: 43.17, lngMin: -89.55, lngMax: -89.25},
+  {id: "green_bay_wisconsin", city: "Green Bay", state: "Wisconsin", latMin: 44.48, latMax: 44.56, lngMin: -88.10, lngMax: -87.90},
+  {id: "kenosha_wisconsin", city: "Kenosha", state: "Wisconsin", latMin: 42.54, latMax: 42.62, lngMin: -87.88, lngMax: -87.78},
+  {id: "racine_wisconsin", city: "Racine", state: "Wisconsin", latMin: 42.70, latMax: 42.78, lngMin: -87.84, lngMax: -87.74},
+  {id: "appleton_wisconsin", city: "Appleton", state: "Wisconsin", latMin: 44.24, latMax: 44.32, lngMin: -88.46, lngMax: -88.36},
+  {id: "oshkosh_wisconsin", city: "Oshkosh", state: "Wisconsin", latMin: 43.98, latMax: 44.06, lngMin: -88.60, lngMax: -88.50},
+  // Chicago area
+  {id: "chicago_illinois", city: "Chicago", state: "Illinois", latMin: 41.64, latMax: 42.02, lngMin: -87.94, lngMax: -87.52},
+  {id: "evanston_illinois", city: "Evanston", state: "Illinois", latMin: 42.02, latMax: 42.08, lngMin: -87.72, lngMax: -87.66},
+  // Minnesota
+  {id: "minneapolis_minnesota", city: "Minneapolis", state: "Minnesota", latMin: 44.89, latMax: 45.06, lngMin: -93.35, lngMax: -93.19},
+  {id: "st_paul_minnesota", city: "St. Paul", state: "Minnesota", latMin: 44.88, latMax: 45.01, lngMin: -93.18, lngMax: -92.98},
+];
+
+const detectMunicipalityId = (lat: number, lng: number): string | null => {
+  for (const bounds of MUNICIPALITY_BOUNDS) {
+    if (
+      lat >= bounds.latMin &&
+      lat <= bounds.latMax &&
+      lng >= bounds.lngMin &&
+      lng <= bounds.lngMax
+    ) {
+      return bounds.id;
+    }
+  }
+  // For unknown locations, create a generic ID based on approximate state
+  const state = approximateState(lat, lng);
+  if (state) {
+    return `unknown_${state.toLowerCase().replace(/\s+/g, "_")}`;
+  }
+  return null;
+};
+
+const approximateState = (lat: number, lng: number): string | null => {
+  // Wisconsin: roughly 42.5-47°N, 86.5-92.5°W
+  if (lat >= 42.5 && lat <= 47 && lng >= -92.5 && lng <= -86.5) return "Wisconsin";
+  // Illinois: roughly 37-42.5°N, 87.5-91.5°W
+  if (lat >= 37 && lat <= 42.5 && lng >= -91.5 && lng <= -87.5) return "Illinois";
+  // Minnesota: roughly 43.5-49°N, 89.5-97.5°W
+  if (lat >= 43.5 && lat <= 49 && lng >= -97.5 && lng <= -89.5) return "Minnesota";
+  // Michigan: roughly 41.5-48.5°N, 82-90.5°W
+  if (lat >= 41.5 && lat <= 48.5 && lng >= -90.5 && lng <= -82) return "Michigan";
+  // Iowa: roughly 40.4-43.5°N, 90.1-96.6°W
+  if (lat >= 40.4 && lat <= 43.5 && lng >= -96.6 && lng <= -90.1) return "Iowa";
+  return null;
+};
+
+const updateMunicipalitySightingStats = async (
+  db: admin.firestore.Firestore,
+  municipalityId: string,
+  isEnforcer: boolean
+) => {
+  try {
+    const statsRef = db.collection("municipality_stats").doc(municipalityId);
+    
+    await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(statsRef);
+      
+      if (doc.exists) {
+        transaction.update(statsRef, {
+          totalSightings: FieldValue.increment(1),
+          enforcerSightings: isEnforcer ? FieldValue.increment(1) : FieldValue.increment(0),
+          towSightings: isEnforcer ? FieldValue.increment(0) : FieldValue.increment(1),
+          lastSightingAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Extract city/state from the bounds if available
+        const bounds = MUNICIPALITY_BOUNDS.find((b) => b.id === municipalityId);
+        transaction.set(statsRef, {
+          municipalityId,
+          city: bounds?.city ?? municipalityId.split("_")[0],
+          state: bounds?.state ?? municipalityId.split("_")[1],
+          totalSightings: 1,
+          totalCitations: 0,
+          enforcerSightings: isEnforcer ? 1 : 0,
+          towSightings: isEnforcer ? 0 : 1,
+          createdAt: FieldValue.serverTimestamp(),
+          lastSightingAt: FieldValue.serverTimestamp(),
+        });
+      }
+    });
+    
+    logger.info("Updated municipality sighting stats", {municipalityId, isEnforcer});
+  } catch (err) {
+    logger.warn("Failed to update municipality sighting stats", {municipalityId, error: err});
+    // Non-fatal
+  }
+};
+
 const determineApprovalTier = (report: {
   reporterUid: string;
   notes: string;
@@ -592,7 +699,17 @@ export const submitSighting = onCall(async (request) => {
     softApproveAfter: approvalTier === "soft"
       ? Timestamp.fromMillis(Date.now() + SOFT_AUTO_APPROVE_DELAY_MINUTES * 60 * 1000)
       : null,
+    // Municipality tracking for multi-city expansion
+    municipalityId: hasGeo ? detectMunicipalityId(latitude, longitude) : null,
   });
+
+  // Update municipality sighting stats if we have geo
+  if (hasGeo) {
+    const municipalityId = detectMunicipalityId(latitude, longitude);
+    if (municipalityId) {
+      await updateMunicipalitySightingStats(db, municipalityId, isEnforcer);
+    }
+  }
 
   logger.info("submitSighting created alert", {alertId: alertRef.id, uid: uidBase});
 

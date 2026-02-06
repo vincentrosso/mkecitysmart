@@ -188,6 +188,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Municipality stats - per-city aggregated data for expansion planning
+    // Read by clients, written by backend/Cloud Functions
+    match /municipality_stats/{municipalityId} {
+      // Anyone authenticated can read municipality stats
+      allow read: if request.auth != null;
+      
+      // Create/update allowed from Cloud Functions and client transactions
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasAny(['municipalityId', 'city', 'state']);
+      
+      allow delete: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read: if false;

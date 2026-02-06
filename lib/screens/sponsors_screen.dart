@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/subscription_plan.dart';
+import '../providers/user_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
 
 /// Sponsors & Partners screen - Coming Soon placeholder
@@ -102,6 +106,25 @@ class SponsorsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              // While they wait for deals, offer premium trial via ad
+              Consumer<UserProvider>(
+                builder: (context, provider, _) {
+                  if (provider.tier != SubscriptionTier.free) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    children: [
+                      WatchAdButton(
+                        rewardDescription: 'Get Premium while you wait',
+                        buttonText: 'Watch Ad',
+                        rewardText: '3 Days Premium',
+                        onReward: () => provider.grantAdRewardTrial(days: 3),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
               Text(
                 'Are you a business interested in partnering with us?',
                 textAlign: TextAlign.center,

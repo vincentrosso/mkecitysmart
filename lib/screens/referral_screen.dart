@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../models/subscription_plan.dart';
+import '../providers/user_provider.dart';
 import '../services/referral_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_widgets.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -129,6 +133,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
                     // How it works
                     _HowItWorksSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Bonus premium days via rewarded ad (for free users only)
+                    _BonusPremiumAdSection(onReward: _loadData),
 
                     const SizedBox(height: 24),
 
@@ -651,6 +660,37 @@ class _ActiveRewardBadge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Optional rewarded ad section - only shows for free users
+/// Provides value: watch a short ad to earn bonus premium days
+class _BonusPremiumAdSection extends StatelessWidget {
+  const _BonusPremiumAdSection({required this.onReward});
+
+  final VoidCallback onReward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, provider, _) {
+        // Only show for free tier users
+        if (provider.tier != SubscriptionTier.free) {
+          return const SizedBox.shrink();
+        }
+
+        return WatchAdButton(
+          rewardDescription: 'Earn bonus Premium time',
+          buttonText: 'Watch Ad',
+          rewardText: '3 Days Premium',
+          onReward: () {
+            // Grant the 3-day premium trial
+            provider.grantAdRewardTrial(days: 3);
+            onReward();
+          },
+        );
+      },
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import 'municipality_service.dart';
+
 /// Anonymized citation data point for analytics
 /// This is what gets stored in Firestore for the risk/predictive engines
 class CitationDataPoint {
@@ -16,6 +18,9 @@ class CitationDataPoint {
     this.hourOfDay,
     this.streetName,
     this.neighborhood,
+    this.municipalityId,
+    this.city,
+    this.state,
   });
 
   /// Type of violation (normalized to match our known types)
@@ -46,6 +51,15 @@ class CitationDataPoint {
   /// Neighborhood/area for zone analysis
   final String? neighborhood;
 
+  /// Municipality ID for multi-city data organization
+  final String? municipalityId;
+
+  /// City name
+  final String? city;
+
+  /// State name
+  final String? state;
+
   Map<String, dynamic> toFirestore() {
     return {
       'violationType': violationType,
@@ -58,6 +72,9 @@ class CitationDataPoint {
       'hourOfDay': hourOfDay ?? issuedAt.hour,
       'streetName': streetName,
       'neighborhood': neighborhood,
+      'municipalityId': municipalityId,
+      'city': city,
+      'state': state,
       // Geohash for efficient geo queries (simple version)
       'geoHash': _simpleGeoHash(latitude, longitude),
       'submittedAt': FieldValue.serverTimestamp(),
@@ -86,6 +103,9 @@ class CitationDataPoint {
       hourOfDay: data['hourOfDay'] as int?,
       streetName: data['streetName'] as String?,
       neighborhood: data['neighborhood'] as String?,
+      municipalityId: data['municipalityId'] as String?,
+      city: data['city'] as String?,
+      state: data['state'] as String?,
     );
   }
 }
@@ -134,6 +154,10 @@ class CitationAnalyticsService {
     }
 
     try {
+      // Detect municipality from coordinates
+      final municipality = await MunicipalityService.instance
+          .detectMunicipality(latitude, longitude);
+
       // 1. Store full citation in user's private collection
       final userCitationData = {
         'citationNumber': citationNumber,
@@ -147,11 +171,16 @@ class CitationAnalyticsService {
         'meterNumber': meterNumber,
         'photoPath': photoPath,
         'fromOcr': fromOcr,
+        'municipalityId': municipality.id,
+        'city': municipality.city,
+        'state': municipality.state,
         'createdAt': FieldValue.serverTimestamp(),
       };
 
       await _userCitations(userId).doc(citationNumber).set(userCitationData);
-      debugPrint('✅ User citation saved: $citationNumber');
+      debugPrint(
+        '✅ User citation saved: $citationNumber (${municipality.displayName})',
+      );
 
       // 2. Submit anonymized data to analytics collection
       // This powers the risk engine without exposing personal data
@@ -164,6 +193,9 @@ class CitationAnalyticsService {
         meterNumber: meterNumber,
         streetName: _extractStreetName(location),
         neighborhood: _detectNeighborhood(latitude, longitude),
+        municipalityId: municipality.id,
+        city: municipality.city,
+        state: municipality.state,
       );
 
       // Use a hash of citation number to prevent duplicates without storing actual number
@@ -171,10 +203,13 @@ class CitationAnalyticsService {
       await _citationAnalytics
           .doc(analyticsDocId)
           .set(analyticsData.toFirestore());
-      debugPrint('📊 Analytics data submitted for risk engine');
+      debugPrint('📊 Analytics data submitted for ${municipality.displayName}');
 
-      // 3. Update aggregated stats
-      await _updateAggregatedStats(analyticsData);
+      // 3. Update aggregated stats (now per municipality)
+      await _updateAggregatedStats(analyticsData, municipality);
+
+      // 4. Update municipality-level stats
+      await _updateMunicipalityStats(municipality);
     } catch (e, stack) {
       debugPrint('❌ Failed to submit citation: $e\n$stack');
       rethrow;
@@ -268,7 +303,10 @@ class CitationAnalyticsService {
   }
 
   /// Update aggregated statistics when new citation is added
-  Future<void> _updateAggregatedStats(CitationDataPoint citation) async {
+  Future<void> _updateAggregatedStats(
+    CitationDataPoint citation,
+    Municipality municipality,
+  ) async {
     try {
       final geoHash = CitationDataPoint._simpleGeoHash(
         citation.latitude,
@@ -309,6 +347,9 @@ class CitationAnalyticsService {
             'violationCounts': violationCounts,
             'hourCounts': hourCounts,
             'dayOfWeekCounts': dayOfWeekCounts,
+            'municipalityId': municipality.id,
+            'city': municipality.city,
+            'state': municipality.state,
             'lastUpdated': FieldValue.serverTimestamp(),
           });
         } else {
@@ -329,16 +370,70 @@ class CitationAnalyticsService {
             'violationCounts': {citation.violationType: 1},
             'hourCounts': hourCounts,
             'dayOfWeekCounts': dayOfWeekCounts,
+            'municipalityId': municipality.id,
+            'city': municipality.city,
+            'state': municipality.state,
             'createdAt': FieldValue.serverTimestamp(),
             'lastUpdated': FieldValue.serverTimestamp(),
           });
         }
       });
 
-      debugPrint('📈 Updated aggregated stats for geoHash: $geoHash');
+      debugPrint('📈 Updated stats for ${municipality.displayName}: $geoHash');
     } catch (e) {
       debugPrint('⚠️ Failed to update aggregated stats: $e');
       // Non-fatal, continue
+    }
+  }
+
+  /// Update municipality-level statistics
+  Future<void> _updateMunicipalityStats(Municipality municipality) async {
+    try {
+      final statsRef = _firestore
+          .collection('municipality_stats')
+          .doc(municipality.id);
+
+      await _firestore.runTransaction((transaction) async {
+        final statsDoc = await transaction.get(statsRef);
+
+        if (statsDoc.exists) {
+          transaction.update(statsRef, {
+            'totalCitations': FieldValue.increment(1),
+            'lastCitationAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          transaction.set(statsRef, {
+            'municipalityId': municipality.id,
+            'city': municipality.city,
+            'state': municipality.state,
+            'country': municipality.country,
+            'totalCitations': 1,
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastCitationAt': FieldValue.serverTimestamp(),
+          });
+        }
+      });
+
+      debugPrint('🏙️ Updated municipality stats: ${municipality.displayName}');
+    } catch (e) {
+      debugPrint('⚠️ Failed to update municipality stats: $e');
+      // Non-fatal
+    }
+  }
+
+  /// Get stats for all municipalities with data
+  Future<List<Map<String, dynamic>>> getMunicipalityStats() async {
+    try {
+      final snapshot = await _firestore
+          .collection('municipality_stats')
+          .orderBy('totalCitations', descending: true)
+          .limit(50)
+          .get();
+
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      debugPrint('❌ Failed to get municipality stats: $e');
+      return [];
     }
   }
 
