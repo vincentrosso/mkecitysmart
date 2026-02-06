@@ -1709,12 +1709,12 @@ export const sendHighRiskAlerts = onSchedule(
 // INACTIVE ACCOUNT CLEANUP
 // ==============================================================
 // Runs daily to:
-// 1. Find users inactive for 15 days → send reminder
-// 2. Find users inactive for 30 days → delete account
+// 1. Find users inactive for 20 days → send push notification reminder
+// 2. Find users inactive for 40 days → delete account
 // ==============================================================
 
-const INACTIVITY_REMINDER_DAYS = 15;
-const INACTIVITY_DELETE_DAYS = 30;
+const INACTIVITY_REMINDER_DAYS = 20;
+const INACTIVITY_DELETE_DAYS = 40;
 
 export const cleanupInactiveAccounts = onSchedule(
   {
@@ -1737,12 +1737,12 @@ export const cleanupInactiveAccounts = onSchedule(
     });
 
     // Track counts for logging
-    let remindersQueued = 0;
+    let remindersSent = 0;
     let accountsDeleted = 0;
     let errors = 0;
 
     try {
-      // 1. Find users who need deletion (30+ days inactive)
+      // 1. Find users who need deletion (40+ days inactive)
       const deleteQuery = await db
         .collection("users")
         .where("lastActivityAt", "<", Timestamp.fromDate(deleteCutoff))
@@ -1768,6 +1768,15 @@ export const cleanupInactiveAccounts = onSchedule(
           // Delete Firebase Auth account
           await auth.deleteUser(uid);
 
+          // Clean up device tokens for this user
+          const deviceDocs = await db
+            .collection("devices")
+            .where("uid", "==", uid)
+            .get();
+          for (const deviceDoc of deviceDocs.docs) {
+            await deviceDoc.ref.delete();
+          }
+
           accountsDeleted++;
           logger.info(`Deleted inactive account: ${uid}`);
         } catch (err) {
@@ -1776,7 +1785,7 @@ export const cleanupInactiveAccounts = onSchedule(
         }
       }
 
-      // 2. Find users who need reminders (15+ days inactive, not yet reminded)
+      // 2. Find users who need reminders (20+ days inactive, not yet reminded)
       const reminderQuery = await db
         .collection("users")
         .where("lastActivityAt", "<", Timestamp.fromDate(reminderCutoff))
@@ -1794,58 +1803,40 @@ export const cleanupInactiveAccounts = onSchedule(
         }
 
         try {
-          // Get user auth record for phone/email
-          const authUser = await auth.getUser(uid);
-          const phone = authUser.phoneNumber;
-          const email = authUser.email || userData.email;
-          const name = userData.name || "there";
-
           const daysUntilDeletion = INACTIVITY_DELETE_DAYS - INACTIVITY_REMINDER_DAYS;
-          const message = `Hi ${name}, your MKE CitySmart account will be deleted in ${daysUntilDeletion} days due to inactivity. Open the app to keep your account active.`;
 
-          // Queue reminder notifications
-          if (phone) {
-            // Queue SMS reminder
-            await db.collection("smsQueue").add({
-              to: phone,
-              message,
-              createdAt: FieldValue.serverTimestamp(),
-              status: "pending",
-              type: "inactivity_reminder",
-              userId: uid,
-            });
-            logger.info(`Queued SMS reminder for ${uid} to ${phone}`);
+          // Find device tokens for this user
+          const deviceDocs = await db
+            .collection("devices")
+            .where("uid", "==", uid)
+            .get();
+
+          if (deviceDocs.empty) {
+            logger.info(`No device tokens for user ${uid}, skipping reminder`);
+            continue;
           }
 
-          if (email) {
-            // Queue email reminder
-            await db.collection("emailQueue").add({
-              to: email,
-              subject: "Your MKE CitySmart account will be deleted soon",
-              message,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #081D19;">Your account will be deleted soon</h2>
-                  <p>Hi ${name},</p>
-                  <p>We noticed you haven't used MKE CitySmart in a while.</p>
-                  <p><strong>Your account and all data will be permanently deleted in ${daysUntilDeletion} days</strong> unless you open the app.</p>
-                  <p>To keep your account:</p>
-                  <ol>
-                    <li>Open the MKE CitySmart app</li>
-                    <li>That's it! Your account will remain active.</li>
-                  </ol>
-                  <p style="color: #666; font-size: 12px;">
-                    If you want your account deleted, no action is needed.
-                  </p>
-                </div>
-              `,
-              createdAt: FieldValue.serverTimestamp(),
-              status: "pending",
-              type: "inactivity_reminder",
-              userId: uid,
-            });
-            logger.info(`Queued email reminder for ${uid} to ${email}`);
-          }
+          // Send push notification to all user devices
+          const tokens = deviceDocs.docs.map((doc) => doc.data().token);
+          
+          const message = {
+            notification: {
+              title: "Your account will be deleted soon",
+              body: `Open MKE CitySmart to keep your account. It will be deleted in ${daysUntilDeletion} days due to inactivity.`,
+            },
+            data: {
+              type: "inactivity_warning",
+              daysRemaining: String(daysUntilDeletion),
+            },
+            tokens,
+          };
+
+          const response = await admin.messaging().sendEachForMulticast(message);
+          
+          logger.info(`Sent inactivity reminder to ${uid}`, {
+            successCount: response.successCount,
+            failureCount: response.failureCount,
+          });
 
           // Mark user as reminded
           await userDoc.ref.update({
@@ -1853,7 +1844,7 @@ export const cleanupInactiveAccounts = onSchedule(
             inactivityReminderSentAt: FieldValue.serverTimestamp(),
           });
 
-          remindersQueued++;
+          remindersSent++;
         } catch (err) {
           errors++;
           logger.error(`Failed to send reminder for ${uid}:`, err);
@@ -1861,110 +1852,12 @@ export const cleanupInactiveAccounts = onSchedule(
       }
 
       logger.info("Inactive account cleanup complete", {
-        remindersQueued,
+        remindersSent,
         accountsDeleted,
         errors,
       });
     } catch (err) {
       logger.error("Inactive account cleanup failed:", err);
-    }
-  }
-);
-
-// ==============================================================
-// SMS QUEUE PROCESSOR
-// ==============================================================
-// Processes queued SMS messages using Twilio (requires setup)
-// Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
-// in Firebase Functions config
-// ==============================================================
-
-export const processSmsQueue = onSchedule(
-  {
-    schedule: "every 5 minutes",
-    memory: "256MiB",
-  },
-  async () => {
-    const db = getFirestore();
-
-    // Check if Twilio is configured
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!twilioSid || !twilioToken || !twilioPhone) {
-      logger.warn("Twilio not configured - SMS queue processing skipped");
-      return;
-    }
-
-    const pendingSms = await db
-      .collection("smsQueue")
-      .where("status", "==", "pending")
-      .limit(10)
-      .get();
-
-    if (pendingSms.empty) {
-      return;
-    }
-
-    logger.info(`Processing ${pendingSms.size} queued SMS messages`);
-
-    // Twilio API call would go here
-    // For now, mark as processed with a note to configure Twilio
-    for (const smsDoc of pendingSms.docs) {
-      await smsDoc.ref.update({
-        status: "requires_twilio_setup",
-        processedAt: FieldValue.serverTimestamp(),
-        note: "Configure Twilio credentials to send SMS",
-      });
-    }
-  }
-);
-
-// ==============================================================
-// EMAIL QUEUE PROCESSOR
-// ==============================================================
-// Processes queued emails using SendGrid (requires setup)
-// Set SENDGRID_API_KEY, SENDGRID_FROM_EMAIL in Firebase Functions config
-// ==============================================================
-
-export const processEmailQueue = onSchedule(
-  {
-    schedule: "every 5 minutes",
-    memory: "256MiB",
-  },
-  async () => {
-    const db = getFirestore();
-
-    // Check if SendGrid is configured
-    const sendgridKey = process.env.SENDGRID_API_KEY;
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL;
-
-    if (!sendgridKey || !fromEmail) {
-      logger.warn("SendGrid not configured - email queue processing skipped");
-      return;
-    }
-
-    const pendingEmails = await db
-      .collection("emailQueue")
-      .where("status", "==", "pending")
-      .limit(10)
-      .get();
-
-    if (pendingEmails.empty) {
-      return;
-    }
-
-    logger.info(`Processing ${pendingEmails.size} queued emails`);
-
-    // SendGrid API call would go here
-    // For now, mark as processed with a note to configure SendGrid
-    for (const emailDoc of pendingEmails.docs) {
-      await emailDoc.ref.update({
-        status: "requires_sendgrid_setup",
-        processedAt: FieldValue.serverTimestamp(),
-        note: "Configure SendGrid credentials to send emails",
-      });
     }
   }
 );
