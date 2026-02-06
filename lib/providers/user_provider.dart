@@ -30,6 +30,7 @@ import '../data/sample_tickets.dart';
 import '../services/ad_service.dart';
 import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
+import '../services/device_binding_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../services/parking_history_service.dart';
@@ -85,6 +86,12 @@ class UserProvider extends ChangeNotifier {
   Future<void>? _googleSignInInit;
   String? _lastAuthError;
 
+  /// Owner/admin email addresses - these get full Pro access with no ads
+  static const List<String> _ownerEmails = [
+    'dwaynesampson263@gmail.com', // Main owner account
+    'mkeparkapp@gmail.com', // App account
+  ];
+
   /// Whether Firebase-backed auth features are enabled for this build/run.
   bool get firebaseEnabled => _firebaseEnabled && _auth != null;
 
@@ -100,6 +107,14 @@ class UserProvider extends ChangeNotifier {
   bool get isLoggedIn => _profile != null;
   bool get isGuest => _guestMode;
   UserProfile? get profile => _profile;
+
+  /// Check if current user is an owner/admin (full access, no ads)
+  bool get isOwner {
+    final email = _auth?.currentUser?.email?.toLowerCase();
+    if (email == null) return false;
+    return _ownerEmails.any((e) => e.toLowerCase() == email);
+  }
+
   List<Permit> get permits => _profile?.permits ?? _guestPermits;
   List<Reservation> get reservations =>
       _profile?.reservations ?? _guestReservations;
@@ -110,7 +125,11 @@ class UserProvider extends ChangeNotifier {
   DateTime? get alertsMutedUntil => _alertsMutedUntil;
   List<PaymentReceipt> get receipts => _receipts;
   AdPreferences get adPreferences => _profile?.adPreferences ?? _adPreferences;
-  SubscriptionTier get tier => _profile?.tier ?? _tier;
+
+  /// Returns Pro tier for owners, otherwise the user's actual tier
+  SubscriptionTier get tier =>
+      isOwner ? SubscriptionTier.pro : (_profile?.tier ?? _tier);
+
   SubscriptionPlan get subscriptionPlan => _planForTier(tier);
   double get maxAlertRadiusMiles => subscriptionPlan.maxAlertRadiusMiles;
   int get maxAlertsPerDay => subscriptionPlan.alertVolumePerDay;
@@ -243,8 +262,8 @@ class UserProvider extends ChangeNotifier {
     _receipts = await _repository.loadReceipts();
     _adPreferences = _profile?.adPreferences ?? _adPreferences;
     _tier = _profile?.tier ?? _tier;
-    // Update AdService with user's subscription tier
-    AdService.instance.updateUserState(tier: _tier);
+    // Update AdService with user's subscription tier (owner-aware)
+    AdService.instance.updateUserState(tier: tier);
     _maintenanceReports = await _repository.loadMaintenanceReports();
     _garbageSchedules = sampleSchedules(
       _profile?.address ?? '1234 E Sample St',
@@ -885,6 +904,12 @@ class UserProvider extends ChangeNotifier {
   Future<void> logout() async {
     // Log before signing out (while we still have permissions)
     unawaited(CloudLogService.instance.logEvent('user_logout'));
+
+    // Stop device binding listener
+    final userId = _auth?.currentUser?.uid;
+    if (userId != null) {
+      await DeviceBindingService.instance.clearDeviceBinding(userId);
+    }
 
     await _auth?.signOut();
     _profile = null;
@@ -1765,6 +1790,66 @@ class UserProvider extends ChangeNotifier {
     _profile = stored;
     _guestMode = false;
     await _hydrateFromStorage();
+
+    // Register this device and start listening for kicks (Option A: new device takes over)
+    await _setupDeviceBinding(user.uid);
+
+    notifyListeners();
+  }
+
+  /// Set up device binding for the current user.
+  /// Registers this device and listens for sign-outs from other devices.
+  Future<void> _setupDeviceBinding(String userId) async {
+    try {
+      // Register this device (will kick out any other device)
+      await DeviceBindingService.instance.registerDevice(userId);
+
+      // Start listening for when another device kicks us out
+      DeviceBindingService.instance.startListening(userId, () {
+        debugPrint(
+          'UserProvider: Kicked out by another device, signing out...',
+        );
+        _handleRemoteSignOut();
+      });
+    } catch (e) {
+      debugPrint('UserProvider: Device binding error: $e');
+      // Don't block login on device binding errors
+    }
+  }
+
+  /// Handle being signed out by another device
+  Future<void> _handleRemoteSignOut() async {
+    // Stop listening to prevent loops
+    DeviceBindingService.instance.stopListening();
+
+    // Sign out locally
+    await _auth?.signOut();
+
+    // Clear local state
+    _profile = null;
+    _guestMode = true;
+    _guestPermits = const [];
+    _guestReservations = const [];
+    _guestSweepingSchedules = const [];
+    _tickets = const [];
+    _sightings = const [];
+    _adPreferences = const AdPreferences();
+    _tier = SubscriptionTier.free;
+    AdService.instance.updateUserState(tier: SubscriptionTier.free);
+    _receipts = const [];
+    _maintenanceReports = const [];
+    _garbageSchedules = const [];
+    _rulePack = defaultRulePack;
+    _cityId = 'default';
+    _tenantId = 'default';
+    _languageCode = 'en';
+
+    // Set error message so user knows what happened
+    _setLastAuthError(
+      'Your account was signed in on another device. '
+      'If this wasn\'t you, please change your password.',
+    );
+
     notifyListeners();
   }
 
