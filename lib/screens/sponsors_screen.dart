@@ -14,12 +14,13 @@ class SponsorsScreen extends StatelessWidget {
     return CitySmartScaffold(
       title: 'Deals & Partners',
       currentIndex: -1,
-      body: Center(
-        child: Padding(
+      body: SafeArea(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -123,6 +124,7 @@ class SponsorsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

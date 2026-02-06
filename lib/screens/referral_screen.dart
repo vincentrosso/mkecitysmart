@@ -107,43 +107,48 @@ class _ReferralScreenState extends State<ReferralScreen> {
       appBar: AppBar(title: const Text('Invite Friends')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Hero section
-                  _HeroSection(
-                    referralCode: _referralCode ?? 'LOADING',
-                    onCopy: _copyCode,
-                    onShare: _shareCode,
-                  ),
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Hero section
+                    _HeroSection(
+                      referralCode: _referralCode ?? 'LOADING',
+                      onCopy: _copyCode,
+                      onShare: _shareCode,
+                    ),
 
-                  const SizedBox(height: 24),
-
-                  // Stats section
-                  if (_stats != null) _StatsSection(stats: _stats!),
-
-                  const SizedBox(height: 24),
-
-                  // How it works
-                  _HowItWorksSection(),
-
-                  const SizedBox(height: 24),
-
-                  // Apply code section
-                  _ApplyCodeSection(
-                    controller: _codeController,
-                    applying: _applying,
-                    onApply: _applyCode,
-                  ),
-
-                  // Active reward badge
-                  if (_stats?.hasActiveReward == true) ...[
                     const SizedBox(height: 24),
-                    _ActiveRewardBadge(expiresAt: _stats!.premiumTrialEnd!),
+
+                    // Stats section
+                    if (_stats != null) _StatsSection(stats: _stats!),
+
+                    const SizedBox(height: 24),
+
+                    // How it works
+                    _HowItWorksSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Apply code section
+                    _ApplyCodeSection(
+                      controller: _codeController,
+                      applying: _applying,
+                      onApply: _applyCode,
+                    ),
+
+                    // Active reward badge
+                    if (_stats?.hasActiveReward == true) ...[
+                      const SizedBox(height: 24),
+                      _ActiveRewardBadge(expiresAt: _stats!.premiumTrialEnd!),
+                    ],
+
+                    // Bottom padding
+                    const SizedBox(height: 40),
                   ],
-                ],
+                ),
               ),
             ),
     );

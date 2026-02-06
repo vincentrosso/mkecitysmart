@@ -125,6 +125,39 @@ service cloud.firestore {
         && request.auth.token.admin == true;
     }
 
+    // Referral codes - public read (to validate codes), write only by owner
+    match /referral_codes/{codeId} {
+      // Anyone can read to check if a code is valid
+      allow read: if request.auth != null;
+      
+      // Only the owner can create their code (via ReferralService)
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      
+      // Updates allowed by owner or for incrementing uses
+      allow update: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses', 'lastUsedAt']));
+      
+      allow delete: if false;
+    }
+
+    // Referrals collection - tracks who referred whom
+    match /referrals/{referralId} {
+      // Users can read referrals where they are the referrer or referred
+      allow read: if request.auth != null
+        && (resource.data.referrerId == request.auth.uid
+            || resource.data.referredId == request.auth.uid);
+      
+      // Create allowed for authenticated users recording their referral
+      allow create: if request.auth != null
+        && request.resource.data.referredId == request.auth.uid
+        && request.resource.data.keys().hasAll(['referrerId', 'referredId', 'code', 'createdAt', 'status']);
+      
+      // No updates or deletes from clients
+      allow update, delete: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read: if false;
