@@ -116,18 +116,22 @@ street sweeping schedules, saved places — and so much more. All built for
 Milwaukee drivers."
 
 
-=== SCENE 11 (0:53–1:00) — CALL TO ACTION ===
+=== SCENE 11 (0:53–1:00) — GROWING & CALL TO ACTION ===
 IMAGE: 01_onboarding.png (or app icon)
-VISUAL: App icon animates to center screen with a glowing gold pulse.
-App Store and Google Play badges slide in below. Milwaukee skyline silhouette
-fades in behind. Confetti particles drift down. Text fades in bold.
+VISUAL: A map of Wisconsin highlights Milwaukee, then expands outward —
+city by city, state by state — with gold dots lighting up across the Midwest.
+Transition to app icon center screen with a glowing gold pulse. App Store and
+Google Play badges slide in below. Milwaukee skyline silhouette fades in.
+Confetti particles drift down.
 TEXT ON SCREEN:
+  "Growing city by city. State by state."
   "MKE CitySmart"
   "Free Download"
   [App Store badge]  [Google Play badge]
-  "Because in Milwaukee, we look out for each other."
-VOICE-OVER: "Download MKE CitySmart free today. Because in Milwaukee, we look
-out for each other."
+VOICE-OVER: "And we're just getting started. Growing city by city, state by
+state. With your help, we can put money back in your pocket. Download MKE
+CitySmart free today. Because in Milwaukee — and beyond — we look out for
+each other."
 
 
 ================================================
