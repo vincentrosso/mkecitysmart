@@ -11,7 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket.dart';
 import '../models/user_preferences.dart';
 import '../providers/user_provider.dart';
+import '../services/citation_analytics_service.dart';
 import '../services/notification_service.dart';
+import '../services/ticket_ocr_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
 
@@ -1171,8 +1173,11 @@ class _AddTicketFormState extends State<_AddTicketForm> {
   DateTime _dueDate = DateTime.now().add(const Duration(days: 14));
   File? _photoFile;
   bool _useManualPlate = false;
+  bool _isScanning = false;
+  TicketOcrResult? _ocrResult;
 
   final _picker = ImagePicker();
+  final _ocrService = TicketOcrService.instance;
 
   @override
   void dispose() {
@@ -1187,15 +1192,14 @@ class _AddTicketFormState extends State<_AddTicketForm> {
     try {
       final photo = await _picker.pickImage(source: ImageSource.camera);
       if (photo != null) {
-        setState(() => _photoFile = File(photo.path));
-        // Future enhancement: Use ML Kit OCR to extract ticket details from photo
-        if (mounted) {
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Photo captured! Enter details manually.'),
-            ),
-          );
-        }
+        final file = File(photo.path);
+        setState(() {
+          _photoFile = file;
+          _isScanning = true;
+        });
+
+        // Run OCR to extract ticket data
+        await _scanAndAutoFill(file, messenger);
       }
     } catch (e) {
       debugPrint('❌ Camera error: $e');
@@ -1213,10 +1217,18 @@ class _AddTicketFormState extends State<_AddTicketForm> {
   }
 
   Future<void> _pickPhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final photo = await _picker.pickImage(source: ImageSource.gallery);
       if (photo != null) {
-        setState(() => _photoFile = File(photo.path));
+        final file = File(photo.path);
+        setState(() {
+          _photoFile = file;
+          _isScanning = true;
+        });
+
+        // Run OCR to extract ticket data
+        await _scanAndAutoFill(file, messenger);
       }
     } catch (e) {
       debugPrint('❌ Gallery error: $e');
@@ -1227,6 +1239,88 @@ class _AddTicketFormState extends State<_AddTicketForm> {
               'Unable to access photo library. Check permissions in Settings.',
             ),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Scan ticket photo with OCR and auto-fill form fields
+  Future<void> _scanAndAutoFill(
+    File photoFile,
+    ScaffoldMessengerState messenger,
+  ) async {
+    try {
+      final result = await _ocrService.scanTicket(photoFile);
+
+      if (!mounted) return;
+
+      setState(() {
+        _ocrResult = result;
+        _isScanning = false;
+      });
+
+      if (result.hasData) {
+        // Auto-fill extracted fields
+        if (result.citationNumber != null) {
+          _ticketIdController.text = result.citationNumber!;
+        }
+        if (result.amount != null) {
+          _amountController.text = result.amount!.toStringAsFixed(2);
+        }
+        if (result.location != null) {
+          _locationController.text = result.location!;
+        }
+        if (result.violationType != null) {
+          // Find matching violation in our list
+          final matchedViolation = kMilwaukeeViolationTypes.firstWhere(
+            (v) =>
+                v.toUpperCase().contains(result.violationType!.toUpperCase()) ||
+                result.violationType!.toUpperCase().contains(v.toUpperCase()),
+            orElse: () => result.violationType!,
+          );
+          setState(() => _selectedViolation = matchedViolation);
+        }
+        if (result.issuedDate != null) {
+          setState(() {
+            _issuedDate = result.issuedDate!;
+            _dueDate = result.issuedDate!.add(const Duration(days: 14));
+          });
+        }
+        if (result.licensePlate != null) {
+          setState(() {
+            _manualPlate = result.licensePlate!;
+            _useManualPlate = true;
+          });
+        }
+
+        // Show success feedback
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ Auto-filled ${result.fieldsExtracted} fields from photo! Review & submit.',
+            ),
+            backgroundColor: kCitySmartGreen,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not read ticket details. Please enter manually.',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ OCR scan failed: $e');
+      if (mounted) {
+        setState(() => _isScanning = false);
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Scan failed. Please enter details manually.'),
           ),
         );
       }
@@ -1317,11 +1411,28 @@ class _AddTicketFormState extends State<_AddTicketForm> {
       );
       widget.onSubmit(ticket);
 
-      // Log citation data for risk engine improvement
+      // Submit citation data to analytics service for risk engine learning
       if (latitude != null && longitude != null) {
-        debugPrint(
-          '🎯 Citation data logged for risk engine: $locationText ($latitude, $longitude) - $_selectedViolation',
-        );
+        try {
+          await CitationAnalyticsService.instance.submitCitation(
+            citationNumber: ticketId,
+            violationType: _selectedViolation ?? 'OTHER',
+            latitude: latitude,
+            longitude: longitude,
+            issuedAt: _issuedDate,
+            licensePlate: plate,
+            amount: double.tryParse(_amountController.text),
+            location: locationText,
+            photoPath: savedPhotoPath,
+            fromOcr: _ocrResult?.hasData ?? false,
+          );
+          debugPrint(
+            '🎯 Citation submitted to analytics: $locationText ($latitude, $longitude) - $_selectedViolation',
+          );
+        } catch (e) {
+          debugPrint('⚠️ Failed to submit citation analytics: $e');
+          // Non-fatal, continue
+        }
       }
 
       // Clear form
@@ -1330,6 +1441,7 @@ class _AddTicketFormState extends State<_AddTicketForm> {
       _locationController.clear();
       setState(() {
         _photoFile = null;
+        _ocrResult = null;
         _selectedViolation = null;
         _selectedVehicleId = null;
         _manualPlate = '';
@@ -1350,47 +1462,121 @@ class _AddTicketFormState extends State<_AddTicketForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Photo capture section
+            // Photo capture section with OCR
             Card(
               color: kCitySmartCard,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.document_scanner,
+                          color: kCitySmartGreen,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Snap a photo to auto-fill',
+                          style: TextStyle(
+                            color: kCitySmartText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     const Text(
-                      'Snap a photo of your ticket',
-                      style: TextStyle(
-                        color: kCitySmartText,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      'We\'ll read your ticket and fill in the details',
+                      style: TextStyle(color: kCitySmartMuted, fontSize: 12),
                     ),
                     const SizedBox(height: 12),
-                    if (_photoFile != null)
-                      Stack(
+                    if (_isScanning)
+                      const Column(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              _photoFile!,
-                              height: 150,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                          SizedBox(height: 20),
+                          CircularProgressIndicator(color: kCitySmartGreen),
+                          SizedBox(height: 12),
+                          Text(
+                            'Scanning ticket...',
+                            style: TextStyle(color: kCitySmartMuted),
                           ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.white,
+                          SizedBox(height: 20),
+                        ],
+                      )
+                    else if (_photoFile != null)
+                      Column(
+                        children: [
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  _photoFile!,
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              onPressed: () =>
-                                  setState(() => _photoFile = null),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.black54,
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () => setState(() {
+                                    _photoFile = null;
+                                    _ocrResult = null;
+                                  }),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.black54,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (_ocrResult?.hasData ?? false)
+                                Positioned(
+                                  bottom: 4,
+                                  left: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: kCitySmartGreen,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${_ocrResult!.fieldsExtracted} fields detected',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: _takePhoto,
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Rescan'),
                           ),
                         ],
                       )

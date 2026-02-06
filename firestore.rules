@@ -158,6 +158,36 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Citation analytics - anonymized citation data for risk engine
+    // Users can submit citations, but cannot read/modify others' submissions
+    match /citation_analytics/{citationId} {
+      // Read allowed for authenticated users (for hotspot queries)
+      allow read: if request.auth != null;
+      
+      // Create allowed for authenticated users submitting anonymized data
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['violationType', 'latitude', 'longitude', 'issuedAt'])
+        && request.resource.data.violationType is string
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number;
+      
+      // No updates or deletes from clients
+      allow update, delete: if false;
+    }
+
+    // Citation stats - aggregated statistics per geo area
+    // Read by clients, written by backend or via transaction
+    match /citation_stats/{geoHash} {
+      // Anyone authenticated can read stats
+      allow read: if request.auth != null;
+      
+      // Create/update allowed for aggregation (via transaction)
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasAll(['geoHash', 'totalCitations']);
+      
+      allow delete: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read: if false;

@@ -1861,3 +1861,229 @@ export const cleanupInactiveAccounts = onSchedule(
     }
   }
 );
+
+// ============================================================================
+// CITATION ANALYTICS - Process user-submitted citations for risk engine
+// ============================================================================
+
+/**
+ * When a new citation is submitted to citation_analytics,
+ * update the real-time risk zone data.
+ */
+export const processCitationAnalytics = onDocumentCreated(
+  {document: "citation_analytics/{citationId}", region: "us-central1"},
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const db = getFirestore();
+
+    try {
+      const {
+        violationType,
+        latitude,
+        longitude,
+        issuedAt,
+        geoHash,
+        dayOfWeek,
+        hourOfDay,
+      } = data;
+
+      logger.info("Processing new citation for risk engine", {
+        violationType,
+        geoHash,
+      });
+
+      // Update citation_risk_zones collection with this new data point
+      // Find the nearest zone or create a new micro-zone
+      const zoneId = geoHash || `zone_${Math.floor(latitude * 100)}_${Math.floor(longitude * 100)}`;
+      const zoneRef = db.collection("citation_risk_zones").doc(zoneId);
+
+      await db.runTransaction(async (transaction) => {
+        const zoneDoc = await transaction.get(zoneRef);
+
+        if (zoneDoc.exists) {
+          const zoneData = zoneDoc.data() || {};
+          const newTotalCitations = (zoneData.totalCitations || 0) + 1;
+
+          // Update violation counts
+          const violationCounts = {...(zoneData.violationCounts || {})};
+          violationCounts[violationType] = (violationCounts[violationType] || 0) + 1;
+
+          // Update hour distribution
+          const hourCounts = [...(zoneData.hourCounts || Array(24).fill(0))];
+          const hour = hourOfDay ?? new Date(issuedAt?.toDate?.() || issuedAt).getHours();
+          if (hour >= 0 && hour < 24) hourCounts[hour]++;
+
+          // Update day of week distribution
+          const dayOfWeekCounts = [...(zoneData.dayOfWeekCounts || Array(7).fill(0))];
+          const dow = (dayOfWeek ?? new Date(issuedAt?.toDate?.() || issuedAt).getDay()) - 1;
+          if (dow >= 0 && dow < 7) dayOfWeekCounts[dow]++;
+
+          // Calculate new risk score (citations per area factor)
+          // Higher citations = higher risk
+          const riskScore = Math.min(100, Math.floor(newTotalCitations / 5) + 20);
+
+          // Determine top violations
+          const sortedViolations = Object.entries(violationCounts)
+            .sort((a, b) => (b[1] as number) - (a[1] as number))
+            .slice(0, 5)
+            .map(([v]) => v);
+
+          // Determine peak hours (hours with above-average citations)
+          const avgHourCount = hourCounts.reduce((a, b) => a + b, 0) / 24;
+          const peakHours = hourCounts
+            .map((count, i) => ({hour: i, count}))
+            .filter((h) => h.count > avgHourCount * 1.2)
+            .map((h) => h.hour);
+
+          transaction.update(zoneRef, {
+            totalCitations: newTotalCitations,
+            violationCounts,
+            hourCounts,
+            dayOfWeekCounts,
+            riskScore,
+            topViolations: sortedViolations,
+            peakHours,
+            lastCitationAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+            // Track data source
+            userSubmittedCount: FieldValue.increment(1),
+          });
+        } else {
+          // Create new zone
+          const hour = hourOfDay ?? new Date(issuedAt?.toDate?.() || issuedAt).getHours();
+          const dow = (dayOfWeek ?? new Date(issuedAt?.toDate?.() || issuedAt).getDay()) - 1;
+
+          const hourCounts = Array(24).fill(0);
+          if (hour >= 0 && hour < 24) hourCounts[hour] = 1;
+
+          const dayOfWeekCounts = Array(7).fill(0);
+          if (dow >= 0 && dow < 7) dayOfWeekCounts[dow] = 1;
+
+          transaction.set(zoneRef, {
+            geoHash: zoneId,
+            latitude,
+            longitude,
+            totalCitations: 1,
+            violationCounts: {[violationType]: 1},
+            hourCounts,
+            dayOfWeekCounts,
+            riskScore: 25, // Initial moderate risk
+            topViolations: [violationType],
+            peakHours: [hour],
+            lastCitationAt: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+            userSubmittedCount: 1,
+            source: "user_submitted",
+          });
+        }
+      });
+
+      logger.info("Citation processed for risk zone", {zoneId, violationType});
+    } catch (err) {
+      logger.error("Failed to process citation analytics:", err);
+    }
+  }
+);
+
+/**
+ * Get citation analytics summary for a location
+ * Used by the Flutter app to display risk info
+ */
+export const getCitationAnalytics = onCall(
+  {region: "us-central1"},
+  async (request) => {
+    const {latitude, longitude, radiusKm = 1} = request.data;
+
+    if (!latitude || !longitude) {
+      throw new HttpsError("invalid-argument", "latitude and longitude are required");
+    }
+
+    const db = getFirestore();
+
+    try {
+      // Get nearby zones
+      const latDelta = radiusKm / 111; // ~111km per degree latitude
+      const lngDelta = radiusKm / (111 * Math.cos((latitude * Math.PI) / 180));
+
+      const zonesSnapshot = await db
+        .collection("citation_risk_zones")
+        .where("latitude", ">=", latitude - latDelta)
+        .where("latitude", "<=", latitude + latDelta)
+        .limit(50)
+        .get();
+
+      // Filter by longitude in memory (Firestore can only filter on one field with range)
+      const nearbyZones = zonesSnapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          return (
+            data.longitude >= longitude - lngDelta &&
+            data.longitude <= longitude + lngDelta
+          );
+        })
+        .map((doc) => doc.data());
+
+      // Aggregate data from nearby zones
+      let totalCitations = 0;
+      const violationCounts: Record<string, number> = {};
+      const hourCounts = Array(24).fill(0);
+      let highestRiskScore = 0;
+
+      for (const zone of nearbyZones) {
+        totalCitations += zone.totalCitations || 0;
+        highestRiskScore = Math.max(highestRiskScore, zone.riskScore || 0);
+
+        // Aggregate violations
+        for (const [v, count] of Object.entries(zone.violationCounts || {})) {
+          violationCounts[v] = (violationCounts[v] || 0) + (count as number);
+        }
+
+        // Aggregate hours
+        const zoneHours = zone.hourCounts || [];
+        for (let i = 0; i < 24; i++) {
+          hourCounts[i] += zoneHours[i] || 0;
+        }
+      }
+
+      // Get top violations
+      const topViolations = Object.entries(violationCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([v]) => v);
+
+      // Get peak hours
+      const avgHour = hourCounts.reduce((a, b) => a + b, 0) / 24 || 1;
+      const peakHours = hourCounts
+        .map((count, i) => ({hour: i, count}))
+        .filter((h) => h.count > avgHour)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map((h) => h.hour);
+
+      // Calculate risk level
+      let riskLevel: "low" | "medium" | "high" = "low";
+      if (highestRiskScore >= 70) riskLevel = "high";
+      else if (highestRiskScore >= 40) riskLevel = "medium";
+
+      return {
+        totalCitations,
+        riskScore: highestRiskScore,
+        riskLevel,
+        topViolations,
+        peakHours,
+        zonesAnalyzed: nearbyZones.length,
+        message: riskLevel === "high"
+          ? "High citation activity in this area. Check parking signs carefully!"
+          : riskLevel === "medium"
+            ? "Moderate citation activity. Be aware of restrictions."
+            : "Low citation activity nearby.",
+      };
+    } catch (err) {
+      logger.error("getCitationAnalytics failed:", err);
+      throw new HttpsError("internal", "Failed to get citation analytics");
+    }
+  }
+);

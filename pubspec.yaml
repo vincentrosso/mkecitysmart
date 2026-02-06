@@ -72,6 +72,7 @@ dependencies:
   path_provider: any
   path: any
   web: any
+  google_mlkit_text_recognition: ^0.15.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
