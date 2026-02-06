@@ -356,4 +356,24 @@ NEXT STEPS WHEN READY:
 
 ===============================================
 
+TODO: MARKETING VIDEO PROMPT WITH APP SCREENSHOTS
+===============================================
+Need to capture these screenshots from the app and update the AI video creator prompt
+with references to actual app visuals:
+
+Screenshots needed:
+1. Home/Dashboard - main dashboard screen
+2. Interactive Map - parking heatmap/risk map
+3. OCR Scanner Active - camera scanning a parking sign
+4. OCR Result - interpreted sign text
+5. Push Notification - alert on lock screen
+6. Report Sighting Screen - form with enforcer/tow toggle
+7. Feed Screen - community sightings feed with cards
+8. Referral Screen - "Give 7 Days, Get 7 Days" section
+9. Subscription/Pro Screen - premium features paywall
+
+Full video prompt is saved in conversation history. Once screenshots are captured,
+update the prompt to reference each image at the appropriate scene timestamp.
+===============================================
+
 

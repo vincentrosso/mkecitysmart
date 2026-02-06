@@ -1543,17 +1543,35 @@ export const getRiskForLocation = onCall(async (request) => {
   const baseRiskScore = zoneData.riskScore ?? 10;
   
   // Get hourly risk multiplier
-  const byHour = (zoneData.byHour as Record<string, number>) ?? {};
-  const hourlyCount = byHour[hour.toString()] ?? 0;
-  const maxHourlyCount = Math.max(...Object.values(byHour), 1);
+  // byHour can be an array indexed by hour (0-23) or an object with hour keys
+  const rawByHour = zoneData.byHour;
+  let hourlyCount = 0;
+  let maxHourlyCount = 1;
+  if (Array.isArray(rawByHour)) {
+    hourlyCount = rawByHour[hour] ?? 0;
+    maxHourlyCount = Math.max(...rawByHour.filter((v: unknown) => typeof v === "number"), 1);
+  } else if (rawByHour && typeof rawByHour === "object") {
+    const byHour = rawByHour as Record<string, number>;
+    hourlyCount = byHour[hour.toString()] ?? 0;
+    maxHourlyCount = Math.max(...Object.values(byHour), 1);
+  }
   const hourlyMultiplier = 0.7 + (0.6 * hourlyCount / maxHourlyCount); // 0.7 to 1.3x
   
   // Get day-of-week risk multiplier
-  const byDay = (zoneData.byDayOfWeek as Record<string, number>) ?? {};
-  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const dayName = dayNames[dayOfWeek];
-  const dayCount = byDay[dayName] ?? 0;
-  const maxDayCount = Math.max(...Object.values(byDay), 1);
+  // byDayOfWeek can be an array indexed 0-6 (Sun-Sat) or an object with day name keys
+  const rawByDay = zoneData.byDayOfWeek;
+  let dayCount = 0;
+  let maxDayCount = 1;
+  if (Array.isArray(rawByDay)) {
+    dayCount = rawByDay[dayOfWeek] ?? 0;
+    maxDayCount = Math.max(...rawByDay.filter((v: unknown) => typeof v === "number"), 1);
+  } else if (rawByDay && typeof rawByDay === "object") {
+    const byDay = rawByDay as Record<string, number>;
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const dayName = dayNames[dayOfWeek];
+    dayCount = byDay[dayName] ?? 0;
+    maxDayCount = Math.max(...Object.values(byDay), 1);
+  }
   const dayMultiplier = 0.8 + (0.4 * dayCount / maxDayCount); // 0.8 to 1.2x
   
   // Calculate final risk score
