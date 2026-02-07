@@ -34,6 +34,82 @@ emerald background with MKE written on it."
 For video purposes: When animating the icon, have it glow with a soft gold
 pulse radiating outward from the pin, as if it's actively tracking and
 protecting the user's parking location.
+
+
+================================================
+DASHBOARD & APP UI — DETAILED VISUAL DESCRIPTION
+================================================
+OVERALL THEME:
+The entire app uses a premium dark theme. The main background is a very deep
+dark green (#081D19) — almost black with a green undertone, like looking into
+a deep forest at night. It feels luxurious and modern, not just "dark mode."
+
+APP BAR:
+- Top left: Hamburger menu icon (3 horizontal lines) in gold (#E0C164)
+- Center-left: App title "MKE CitySmart" in gold text, bold, modern sans-serif
+- Top right: User avatar circle (gold with initial letter "D") followed by
+  username "Dwayne" with a dropdown arrow, all in gold
+
+CITATION RISK BANNER (below app bar):
+- Full-width card with dark green background and a thin gold/green border
+- Left side: Green circle with white checkmark icon
+- Center: Gold badge pill reading "LOW RISK" followed by white text
+  "18% citation probability"
+- Below: Muted gray text "Your current location • Based on 466K+ citations"
+- The banner has a subtle gradient glow effect
+
+DASHBOARD TILES (main content):
+- Layout: 2-column grid, evenly spaced with 16px gaps
+- Each tile is a rounded rectangle (20px border radius)
+- Tile background: Dark forest green (#0D2A26) with a slightly lighter
+  green border (#174139), 1px thin border
+- Tile padding: 16px horizontal, 14px vertical
+- Each tile contains:
+  - TOP: A gold/amber icon (#F8C660), 36px size, using Material Design icons
+    (e.g., arrows for Alt-side, bell for Risk, map for Heatmap, warning
+    triangle for Report)
+  - BOTTOM: White title text, 16px bold (e.g., "Alt-side parking",
+    "Risk & reminders", "Parking heatmap", "Report sighting")
+  - Some tiles have a muted gray subtitle below (e.g., "Odd/Even side",
+    "Plans & perks")
+- Tiles visible in the dashboard screenshot:
+  Row 1: Alt-side parking | Risk & reminders
+  Row 2: Parking heatmap | Report sighting
+  Row 3: My tickets | Subscriptions (partially visible)
+
+BOTTOM NAVIGATION BAR:
+- Background: Same deep dark green (#081D19)
+- 3 tabs with icons above labels:
+  - "Dashboard" (grid icon) — selected state: gold icon + gold text
+  - "Map" (map/book icon) — unselected: muted gray-green (#9BA59C)
+  - "Feed" (list icon) — unselected: muted gray-green
+- Selected tab has gold (#E0C164) icon and text
+- Clean divider line above the nav bar
+
+WELCOME MESSAGE (above bottom nav):
+- Small waving hand emoji 👋 followed by gold text
+  "Welcome back, Dwayne Sampson!" in italics
+- Feels personal and warm
+
+BUTTONS THROUGHOUT APP:
+- Primary buttons: Gold/amber (#E0C164) background with dark green text
+- Rounded corners (12px radius), full width, 52px height
+- Text is bold, centered, 16px
+
+OVERALL FEEL:
+Think premium sports car dashboard meets city navigation app. Dark, sleek,
+gold accents everywhere. Clean typography, generous spacing, no clutter.
+Every element breathes. The gold on dark green color combo feels like money,
+trust, and sophistication.
+
+
+================================================
+PERSON IN VIDEO — CHARACTER DESCRIPTION
+================================================
+[WAITING FOR PHOTOS — Will add detailed description of Dwayne's appearance
+including build, skin tone, facial features, hairstyle, tattoos, and style
+so the AI video generator creates scenes with a character that looks like him]
+
 ================================================
 
 

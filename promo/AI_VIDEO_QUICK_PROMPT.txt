@@ -1,5 +1,9 @@
 APP ICON: A rounded square with a deep dark green background (#081D19), almost black-green. In the center is a gold metallic location pin (#E0C164) — the classic teardrop map marker shape. Below or inside the pin are bold white capital letters "MKE" in a clean modern sans-serif font. The feel is premium and minimal, like a luxury GPS tool. Dark emerald background + gold pin + white "MKE" text. When animating, the icon glows with a soft gold pulse.
 
+DASHBOARD UI DETAIL: Premium dark theme — deep dark green (#081D19) background. Gold app bar with hamburger menu, "MKE CitySmart" title, and user avatar. Citation risk banner with green checkmark, gold "LOW RISK" badge, "18% probability." Below: 2-column grid of rounded tiles (20px corners), dark forest green (#0D2A26) with thin green borders (#174139). Each tile has a gold icon (36px) on top and bold white title below. Tiles: Alt-side parking, Risk & reminders, Parking heatmap, Report sighting, My tickets, Subscriptions. Bottom nav: 3 tabs (Dashboard/Map/Feed), gold selected state. Welcome message: "Welcome back, Dwayne Sampson!" with waving hand emoji. Overall feel: luxury sports car dashboard meets city navigation. Dark, sleek, gold accents, generous spacing.
+
+PERSON IN VIDEO: [WAITING FOR PHOTOS — Will describe Dwayne's appearance for AI character generation]
+
 Create a cinematic 60-second app promo video for MKE CitySmart, a community-powered parking app for Milwaukee. Style: modern, sleek, dark green and gold color theme. Music: upbeat urban confidence. Add smooth zoom and pan motion to each screenshot. Add text overlays for each scene:
 
 Image 1: "Welcome to MKE CitySmart" — Your smart parking companion for Milwaukee.
