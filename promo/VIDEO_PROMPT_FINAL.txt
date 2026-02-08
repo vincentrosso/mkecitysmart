@@ -77,6 +77,19 @@ DASHBOARD TILES (main content):
   Row 2: Parking heatmap | Report sighting
   Row 3: My tickets | Subscriptions (partially visible)
 
+LIVE PARKING BANNER (between risk badge and tiles):
+- A compact card with dark green (#0C241F) background and thin colored border
+- Left side: Pulsing colored dot (green = good, orange = limited, red = scarce)
+- Center: Availability text — Free users see labels like "Good" or "Limited";
+  Pro users see exact counts like "~12 spots open"
+- Below: Muted gray text "5 reports nearby • Live" showing real-time data
+- Right side: Small gold report button (📍 icon) — tapping it opens a bottom
+  sheet where users can report: Open Spot, Full Area, Enforcement Spotted, etc.
+- If no reports nearby yet: Shows "Be the first to report!" with a tap CTA
+- The banner auto-updates via Firestore stream — truly live, always current
+- This is the heart of the community feature: neighbors helping neighbors
+  find parking in real time
+
 BOTTOM NAVIGATION BAR:
 - Background: Same deep dark green (#081D19)
 - 3 tabs with icons above labels:
@@ -206,12 +219,13 @@ Milwaukee."
 === SCENE 4 (0:15–0:20) — THE DASHBOARD ===
 IMAGE: 02_dashboard.png
 VISUAL: App transitions to the Dashboard. The "LOW RISK — 18% citation
-probability" banner is highlighted. Feature tiles appear: Alt-side parking,
-Risk & reminders, Parking heatmap, Report sighting. The "Welcome back, Dwayne!"
-message shows at bottom.
+probability" banner is highlighted. Below it, the live parking availability
+banner pulses with a green dot showing "Good — 5 reports nearby • Live."
+Feature tiles appear: Alt-side parking, Risk & reminders, Parking heatmap,
+Report sighting. The "Welcome back, Dwayne!" message shows at bottom.
 TEXT ON SCREEN: "Your parking command center"
-VOICE-OVER: "Your personal parking command center. Citation risk, alt-side
-parking, community alerts — all in one place."
+VOICE-OVER: "Your personal parking command center. Citation risk, live parking
+availability, community alerts — all in one place."
 
 
 === SCENE 5 (0:20–0:26) — CITATION RISK HEATMAP ===
@@ -248,7 +262,21 @@ VOICE-OVER: "When someone spots an enforcer or tow truck, they report it.
 Instantly, every nearby driver gets warned. Real people, real-time protection."
 
 
-=== SCENE 8 (0:38–0:43) — LIVE FEED ===
+=== SCENE 8 (0:38–0:44) — CROWDSOURCE SPOT REPORTING ===
+IMAGE: 02_dashboard.png (zoomed on the live parking banner)
+VISUAL: Close-up of the live availability banner on the Dashboard. The green
+pulsing dot is prominent. User taps the report button — the bottom sheet
+slides up showing report options: "Open Spot ✅", "Full Area 🚫",
+"Enforcement Spotted 🚨." User selects "Open Spot" and taps submit. The banner
+updates with a brief pulse animation. Cut to another phone nearby — their
+banner now shows "~1 spot open" with an orange glow. Warm, community feel.
+TEXT ON SCREEN: "Leaving your spot? Help a neighbor find one."
+VOICE-OVER: "Leaving your parking spot? One tap tells every nearby driver
+it's open. That's the power of community. When we look out for each other,
+everyone saves time, money, and stress."
+
+
+=== SCENE 9 (0:44–0:49) — LIVE FEED ===
 IMAGE: 07_feed.png
 VISUAL: The community feed scrolls in. Filter buttons show "5 mi" and "Last
 2 hrs." A Tow Sighting card appears: "Just now • < 0.1 mi — 8305 N 107th St,
@@ -258,18 +286,19 @@ VOICE-OVER: "Check the live feed to see what's happening near you. Filter by
 distance and time."
 
 
-=== SCENE 9 (0:43–0:48) — PREMIUM & REFERRALS ===
-IMAGE: 08_subscription.png (first 2.5s) + 09_referral.png (last 2.5s)
+=== SCENE 10 (0:49–0:55) — PREMIUM & REFERRALS ===
+IMAGE: 08_subscription.png (first 3s) + 09_referral.png (last 3s)
 VISUAL: Quick showcase of the Subscription screen — Pro plan with 15-mile
-radius, unlimited alerts, 365 days history, ad-free, heatmaps. Smooth
-transition to the Referral screen: "Give 7 Days, Get 7 Days" with referral
-code MKETPZN4V and "Share with Friends" button. Referral stats visible.
+radius, unlimited alerts, 365 days history, ad-free, heatmaps, live spot
+counts, AI parking finder, tow recovery helper. Smooth transition to the
+Referral screen: "Give 7 Days, Get 7 Days" with referral code MKETPZN4V
+and "Share with Friends" button. Referral stats visible.
 TEXT ON SCREEN: "Go Pro. Share with friends. Everyone wins."
 VOICE-OVER: "Upgrade to Pro for unlimited alerts and full heatmap access.
 Share with friends — you both get 7 days of Premium free."
 
 
-=== SCENE 10 (0:48–0:53) — AND SO MUCH MORE ===
+=== SCENE 11 (0:55–1:00) — AND SO MUCH MORE ===
 IMAGE: 02_dashboard.png (zoomed/panned to show more tiles)
 VISUAL: Quick-cut montage zooming into different dashboard tiles — parking
 finder, EV chargers, tow helper, saved places, street sweeping, vehicles.
@@ -281,7 +310,7 @@ street sweeping schedules, saved places — and so much more. All built for
 Milwaukee drivers."
 
 
-=== SCENE 11 (0:53–1:00) — GROWING & CALL TO ACTION ===
+=== SCENE 12 (1:00–1:10) — GROWING & CALL TO ACTION ===
 IMAGE: 01_onboarding.png (or app icon)
 VISUAL: A map of Wisconsin highlights Milwaukee, then expands outward —
 city by city, state by state — with gold dots lighting up across the Midwest.
@@ -289,12 +318,14 @@ Transition to app icon center screen with a glowing gold pulse. App Store and
 Google Play badges slide in below. Milwaukee skyline silhouette fades in.
 Confetti particles drift down.
 TEXT ON SCREEN:
+  "Every spot you report helps a neighbor."
   "Growing city by city. State by state."
   "MKE CitySmart"
   "Free Download"
   [App Store badge]  [Google Play badge]
-VOICE-OVER: "And we're just getting started. Growing city by city, state by
-state. With your help, we can put money back in your pocket. Download MKE
+VOICE-OVER: "Every time you report an open spot, you're helping a neighbor
+avoid a ticket, find parking faster, and keep money in their pocket. We're
+just getting started — growing city by city, state by state. Download MKE
 CitySmart free today. Because in Milwaukee — and beyond — we look out for
 each other."
 
@@ -305,26 +336,27 @@ IMAGE FILE REFERENCE (in scene order)
 Scene 1:  (no app screenshot — stock drone footage of Milwaukee)
 Scene 2:  (no app screenshot — stock ticket/tow footage)
 Scene 3:  01_onboarding.png      — Welcome screen with city icon
-Scene 4:  02_dashboard.png       — Dashboard with risk banner + tiles
+Scene 4:  02_dashboard.png       — Dashboard with risk banner + live parking banner + tiles
 Scene 5:  03_heatmap.png         — Citation Risk Map with 44 zones
 Scene 6:  04_ticket_tracker.png  — My Tickets with overdue $65 ticket
 Scene 7:  05_report_sighting.png — Report form + 06_push_notification.png
-Scene 8:  07_feed.png            — Community sightings feed
-Scene 9:  08_subscription.png    — Pro plan + 09_referral.png — Give 7 Get 7
-Scene 10: 02_dashboard.png       — Dashboard tiles montage
-Scene 11: 01_onboarding.png      — App icon / closing CTA
+Scene 8:  02_dashboard.png       — Zoomed on live parking banner + report sheet
+Scene 9:  07_feed.png            — Community sightings feed
+Scene 10: 08_subscription.png    — Pro plan + 09_referral.png — Give 7 Get 7
+Scene 11: 02_dashboard.png       — Dashboard tiles montage
+Scene 12: 01_onboarding.png      — App icon / closing CTA
 
 
 ================================================
 15-SECOND CUT (Instagram/TikTok Ad)
 ================================================
 0–3s:  Ticket on windshield → "Tired of this?" (stock footage)
-3–6s:  02_dashboard.png → Dashboard with risk banner
+3–6s:  02_dashboard.png → Dashboard with risk banner + live parking banner
 6–9s:  03_heatmap.png → Color-coded risk map
-9–12s: 06_push_notification.png → Lock screen alert pops up
+9–12s: 02_dashboard.png → Tap report button → "Help a neighbor find a spot"
 12–15s: App icon + "Free Download" + App Store/Play badges
-VOICE-OVER: "Stop getting surprised by parking tickets. MKE CitySmart warns
-you before it happens. Download free."
+VOICE-OVER: "Stop getting surprised by parking tickets. Report open spots,
+warn your neighbors. MKE CitySmart — download free."
 
 
 ================================================
@@ -333,10 +365,11 @@ you before it happens. Download free."
 0–5s:   Hook — "Still getting parking tickets in Milwaukee?" (stock footage)
 5–10s:  02_dashboard.png + 03_heatmap.png — Dashboard and risk map walkthrough
 10–15s: 04_ticket_tracker.png — "Never pay a late fee again"
-15–22s: 05_report_sighting.png + 06_push_notification.png + 07_feed.png —
-        Community alerts flow: report → notify → feed
-22–27s: "Plus parking finder, EV chargers, tow helper, and so much more"
-27–30s: App icon + "Download MKE CitySmart free today" + store badges
+15–20s: 05_report_sighting.png + 06_push_notification.png —
+        Community alerts flow: report → notify nearby drivers
+20–25s: 02_dashboard.png — Live parking banner: "Leaving? Report your spot."
+25–28s: "Plus parking finder, EV chargers, tow helper, and so much more"
+28–30s: App icon + "Download MKE CitySmart free today" + store badges
 
 
 ================================================
@@ -347,23 +380,29 @@ INSTAGRAM / TIKTOK:
 POV: You never get a parking ticket in Milwaukee again 🚗💨
 MKE CitySmart → community-powered parking alerts.
 Your neighbors warn you before enforcers reach your block.
+🅿️ NEW: Report when you leave a spot → nearby drivers see it's open instantly.
 Plus: citation heatmaps, ticket tracker, parking finder, and so much more.
+Every spot you report helps a neighbor. That's community. 💛
 🔗 Link in bio | Free download
-#Milwaukee #MKE #ParkingHack #MKECitySmart #WisconsinLife
+#Milwaukee #MKE #ParkingHack #MKECitySmart #WisconsinLife #CommunityFirst
 
 TWITTER / X:
 Milwaukee drivers are saving each other from parking tickets with
 @MKECitySmart 🚨 Real-time enforcer alerts, citation heatmaps, ticket
-tracking & more. Free on iOS & Android. #Milwaukee #MKE
+tracking & more. NEW: report when you leave a spot — nearby drivers see
+it's open instantly. That's community. Free on iOS & Android. #Milwaukee #MKE
 
 FACEBOOK:
 Tired of surprise parking tickets? 😤
 MKE CitySmart connects Milwaukee drivers to warn each other when enforcers
 and tow trucks are spotted.
 
+🅿️ NEW: Report when you leave your spot — nearby drivers instantly
+   see it's open. Help a neighbor find parking in seconds.
 📍 Real-time citation heatmap (466K+ citations analyzed)
 🔔 Instant community alerts
 🎫 Ticket tracker with payment reminders
 🅿️ Parking finder, EV chargers, tow helper & more
 
+Every spot you report helps a neighbor avoid a ticket. 💛
 Download free → [link]
