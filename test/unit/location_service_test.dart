@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'package:mkeparkapp_flutter/models/parking_zone.dart';
-import 'package:mkeparkapp_flutter/services/location_service.dart';
+import 'package:mkecitysmart/models/parking_zone.dart';
+import 'package:mkecitysmart/services/location_service.dart';
 
 void main() {
   group('LocationService', () {

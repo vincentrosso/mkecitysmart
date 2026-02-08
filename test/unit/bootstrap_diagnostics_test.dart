@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mkeparkapp_flutter/services/bootstrap_diagnostics.dart';
+import 'package:mkecitysmart/services/bootstrap_diagnostics.dart';
 
 void main() {
   group('BootstrapDiagnostics', () {

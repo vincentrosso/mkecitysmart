@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mkeparkapp_flutter/data/local/local_database.dart';
-import 'package:mkeparkapp_flutter/models/user_profile.dart';
-import 'package:mkeparkapp_flutter/models/user_preferences.dart';
-import 'package:mkeparkapp_flutter/models/vehicle.dart';
+import 'package:mkecitysmart/data/local/local_database.dart';
+import 'package:mkecitysmart/models/user_profile.dart';
+import 'package:mkecitysmart/models/user_preferences.dart';
+import 'package:mkecitysmart/models/vehicle.dart';
 
 void main() {
   group('LocalDatabase', () {

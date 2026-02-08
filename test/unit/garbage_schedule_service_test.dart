@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:mkeparkapp_flutter/models/garbage_schedule.dart';
-import 'package:mkeparkapp_flutter/services/garbage_schedule_service.dart';
+import 'package:mkecitysmart/models/garbage_schedule.dart';
+import 'package:mkecitysmart/services/garbage_schedule_service.dart';
 
 void main() {
   group('GarbageScheduleService', () {

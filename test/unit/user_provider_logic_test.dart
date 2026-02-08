@@ -74,7 +74,20 @@ class FakeUserRepository implements UserRepository {
   Future<void> syncPending() async {}
 
   @override
-  Future<void> reportSightingGlobal(String sightingId) async {}
+  Future<void> incrementAlertCount() async {}
+
+  @override
+  Future<int> getCurrentAlertCount() async => 0;
+
+  @override
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  @override
+  Future<void> updateLastActivity() async {}
 }
 
 void main() {
@@ -376,9 +389,9 @@ void main() {
     });
 
     test('subscriptionPlan reflects tier settings', () async {
-      await userProvider.updateSubscriptionTier(SubscriptionTier.plus);
+      await userProvider.updateSubscriptionTier(SubscriptionTier.pro);
 
-      expect(userProvider.subscriptionPlan.tier, SubscriptionTier.plus);
+      expect(userProvider.subscriptionPlan.tier, SubscriptionTier.pro);
       expect(userProvider.maxAlertRadiusMiles, greaterThan(3));
     });
 

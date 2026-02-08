@@ -3,7 +3,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
-import '../services/alternate_side_parking_service.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
 import '../theme/app_theme.dart';

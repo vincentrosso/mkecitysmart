@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mkeparkapp_flutter/models/ad_preferences.dart';
-import 'package:mkeparkapp_flutter/models/city_rule_pack.dart';
-import 'package:mkeparkapp_flutter/models/maintenance_report.dart';
-import 'package:mkeparkapp_flutter/models/payment_receipt.dart';
-import 'package:mkeparkapp_flutter/models/permit.dart';
-import 'package:mkeparkapp_flutter/models/reservation.dart';
-import 'package:mkeparkapp_flutter/models/sighting_report.dart';
-import 'package:mkeparkapp_flutter/models/street_sweeping.dart';
-import 'package:mkeparkapp_flutter/models/subscription_plan.dart';
-import 'package:mkeparkapp_flutter/models/ticket.dart';
-import 'package:mkeparkapp_flutter/models/user_preferences.dart';
-import 'package:mkeparkapp_flutter/models/vehicle.dart';
-import 'package:mkeparkapp_flutter/models/garbage_schedule.dart';
+import 'package:mkecitysmart/models/ad_preferences.dart';
+import 'package:mkecitysmart/models/city_rule_pack.dart';
+import 'package:mkecitysmart/models/maintenance_report.dart';
+import 'package:mkecitysmart/models/payment_receipt.dart';
+import 'package:mkecitysmart/models/permit.dart';
+import 'package:mkecitysmart/models/reservation.dart';
+import 'package:mkecitysmart/models/sighting_report.dart';
+import 'package:mkecitysmart/models/street_sweeping.dart';
+import 'package:mkecitysmart/models/subscription_plan.dart';
+import 'package:mkecitysmart/models/ticket.dart';
+import 'package:mkecitysmart/models/user_preferences.dart';
+import 'package:mkecitysmart/models/vehicle.dart';
+import 'package:mkecitysmart/models/garbage_schedule.dart';
 
 void main() {
   group('Model serialization', () {

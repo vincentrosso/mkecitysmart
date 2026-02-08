@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 
-import 'package:mkeparkapp_flutter/services/api_client.dart';
+import 'package:mkecitysmart/services/api_client.dart';
 
 @GenerateMocks([ApiClient])
 void main() {

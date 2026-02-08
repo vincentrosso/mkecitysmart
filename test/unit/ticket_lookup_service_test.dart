@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:mkeparkapp_flutter/models/ticket.dart';
-import 'package:mkeparkapp_flutter/services/ticket_lookup_service.dart';
+import 'package:mkecitysmart/models/ticket.dart';
+import 'package:mkecitysmart/services/ticket_lookup_service.dart';
 
 void main() {
   group('TicketLookupService', () {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:mkeparkapp_flutter/services/open_charge_map_service.dart';
+import 'package:mkecitysmart/services/open_charge_map_service.dart';
 
 void main() {
   group('OpenChargeMapService', () {

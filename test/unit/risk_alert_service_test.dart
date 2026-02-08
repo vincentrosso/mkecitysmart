@@ -3,15 +3,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:mkeparkapp_flutter/models/ticket.dart';
-import 'package:mkeparkapp_flutter/models/user_preferences.dart';
-import 'package:mkeparkapp_flutter/models/user_profile.dart';
-import 'package:mkeparkapp_flutter/providers/user_provider.dart';
-import 'package:mkeparkapp_flutter/services/city_ticket_stats_service.dart';
-import 'package:mkeparkapp_flutter/services/location_service.dart';
-import 'package:mkeparkapp_flutter/services/notification_service.dart';
-import 'package:mkeparkapp_flutter/services/risk_alert_service.dart';
-import 'package:mkeparkapp_flutter/services/ticket_risk_prediction_service.dart';
+import 'package:mkecitysmart/models/ticket.dart';
+import 'package:mkecitysmart/models/user_preferences.dart';
+import 'package:mkecitysmart/models/user_profile.dart';
+import 'package:mkecitysmart/providers/user_provider.dart';
+import 'package:mkecitysmart/services/city_ticket_stats_service.dart';
+import 'package:mkecitysmart/services/location_service.dart';
+import 'package:mkecitysmart/services/notification_service.dart';
+import 'package:mkecitysmart/services/risk_alert_service.dart';
+import 'package:mkecitysmart/services/ticket_risk_prediction_service.dart';
 
 import 'risk_alert_service_test.mocks.dart';
 
