@@ -62,3 +62,7 @@ web/firebase-config.json
 AuthKey_937GPQ4M9B.p8
 ios/build/
 ios/api_key.json
+
+# Android signing
+android/key.properties
+android/upload-keystore.jks
