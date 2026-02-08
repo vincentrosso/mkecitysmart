@@ -1024,6 +1024,178 @@ export const simulateNearbyWarning = onCall(
 });
 
 
+// ---------------------------------------------------------------------------
+// Server-side moderation for crowdsourced parking reports.
+// Runs on every new document in /parkingReports. Validates content, enforces
+// server-side rate limits, detects spam, and flags/deletes bad reports.
+// ---------------------------------------------------------------------------
+
+const PARKING_REPORT_RATE_LIMIT_MAX = 15; // per uid per hour
+const PARKING_REPORT_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const PARKING_REPORT_DUPLICATE_MAX = 3; // same reportType in same geohash7 per uid in 1hr
+
+const VALID_REPORT_TYPES = [
+  "leavingSpot",
+  "parkedHere",
+  "spotAvailable",
+  "spotTaken",
+  "enforcementSpotted",
+  "towTruckSpotted",
+  "streetSweepingActive",
+  "parkingBlocked",
+];
+
+/**
+ * Check if the note text looks spammy. Reuses the same heuristics as
+ * determineApprovalTier so enforcement is consistent across collections.
+ */
+const noteIsSpammy = (note: string): {spammy: boolean; reason?: string} => {
+  if (!note || note.length === 0) return {spammy: false};
+  const hasUrl = /http(s)?:\/\//i.test(note);
+  if (hasUrl) return {spammy: true, reason: "contains_url"};
+  const repeatedChars = /(.)\1{6,}/.test(note);
+  if (repeatedChars) return {spammy: true, reason: "repeated_characters"};
+  const emojiRatio =
+    ((note.match(/[\u{1F300}-\u{1FAFF}]/gu) ?? []).length) /
+    Math.max(1, note.length);
+  if (emojiRatio > 0.1) return {spammy: true, reason: "emoji_heavy"};
+  // Simple profanity check (add more terms as needed)
+  const profanity = /\b(fuck|shit|ass|bitch|damn|dick|piss)\b/i;
+  if (profanity.test(note)) return {spammy: true, reason: "profanity"};
+  return {spammy: false};
+};
+
+export const moderateParkingReport = onDocumentCreated(
+  "parkingReports/{reportId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const data = snap.data() as Record<string, any>;
+    const reportId = event.params.reportId as string;
+    const db = getFirestore();
+    const docRef = db.collection("parkingReports").doc(reportId);
+
+    // --- 1. Schema validation ---
+    const userId = (data.userId ?? "").toString();
+    const reportType = (data.reportType ?? "").toString();
+    const lat = Number(data.latitude);
+    const lon = Number(data.longitude);
+    const geohash = (data.geohash ?? "").toString();
+    const note = (data.note ?? "").toString();
+
+    if (
+      !userId ||
+      !VALID_REPORT_TYPES.includes(reportType) ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon) ||
+      lat < -90 || lat > 90 ||
+      lon < -180 || lon > 180 ||
+      geohash.length < 5
+    ) {
+      logger.warn("moderateParkingReport: invalid schema, deleting", {reportId, reportType, lat, lon});
+      await docRef.delete().catch(() => {});
+      return;
+    }
+
+    // --- 2. Note content moderation ---
+    const spamCheck = noteIsSpammy(note);
+    if (spamCheck.spammy) {
+      logger.warn("moderateParkingReport: spam detected, flagging", {
+        reportId,
+        reason: spamCheck.reason,
+        note: note.slice(0, 100),
+      });
+      // Flag it rather than hard-delete so the user doesn't notice immediate removal
+      await docRef.update({
+        "flagged": true,
+        "flagReason": spamCheck.reason,
+        "isExpired": true, // Hide from active queries immediately
+      }).catch((e) => logger.error("Failed to flag report", {reportId, error: e}));
+      return;
+    }
+
+    // --- 3. Server-side rate limit (per uid, last 1 hour) ---
+    const oneHourAgo = Timestamp.fromMillis(Date.now() - PARKING_REPORT_RATE_WINDOW_MS);
+    try {
+      const recentSnap = await db
+        .collection("parkingReports")
+        .where("userId", "==", userId)
+        .where("timestamp", ">=", oneHourAgo)
+        .limit(PARKING_REPORT_RATE_LIMIT_MAX + 1)
+        .get();
+
+      if (recentSnap.size > PARKING_REPORT_RATE_LIMIT_MAX) {
+        logger.warn("moderateParkingReport: rate limit exceeded", {
+          reportId,
+          userId,
+          count: recentSnap.size,
+        });
+        await docRef.update({
+          "flagged": true,
+          "flagReason": "rate_limit_exceeded",
+          "isExpired": true,
+        }).catch(() => {});
+        return;
+      }
+    } catch (e) {
+      logger.error("Rate limit check failed (non-blocking)", {reportId, error: e});
+      // Non-fatal — let the report through rather than block on a query failure
+    }
+
+    // --- 4. Duplicate detection (same user, same type, same geohash7 in 1hr) ---
+    try {
+      const geohash7 = geohash.slice(0, 7);
+      const dupSnap = await db
+        .collection("parkingReports")
+        .where("userId", "==", userId)
+        .where("reportType", "==", reportType)
+        .where("geohash", ">=", geohash7)
+        .where("geohash", "<", geohash7 + "~")
+        .where("timestamp", ">=", oneHourAgo)
+        .limit(PARKING_REPORT_DUPLICATE_MAX + 1)
+        .get();
+
+      if (dupSnap.size > PARKING_REPORT_DUPLICATE_MAX) {
+        logger.warn("moderateParkingReport: duplicate flood detected", {
+          reportId,
+          userId,
+          reportType,
+          geohash7,
+          count: dupSnap.size,
+        });
+        await docRef.update({
+          "flagged": true,
+          "flagReason": "duplicate_flood",
+          "isExpired": true,
+        }).catch(() => {});
+        return;
+      }
+    } catch (e) {
+      logger.error("Duplicate check failed (non-blocking)", {reportId, error: e});
+    }
+
+    // --- 5. GPS accuracy sanity check ---
+    const accuracy = Number(data.accuracyMeters);
+    if (Number.isFinite(accuracy) && accuracy > 500) {
+      logger.warn("moderateParkingReport: low GPS accuracy, flagging", {
+        reportId,
+        accuracy,
+      });
+      await docRef.update({
+        "flagged": true,
+        "flagReason": "low_gps_accuracy",
+        "isExpired": true,
+      }).catch(() => {});
+      return;
+    }
+
+    // Report is clean — no action needed
+    logger.info("moderateParkingReport: report OK", {reportId, reportType, userId: userId.slice(0, 8)});
+  }
+);
+
+
 // Server-driven tier processing for alerts that may be created by other paths.
 // Ensures fields are consistent even if something writes into /alerts directly.
 export const applyApprovalTierOnAlertCreate = onDocumentCreated(

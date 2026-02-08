@@ -113,24 +113,29 @@ service cloud.firestore {
 
     // Crowdsourced parking reports
     match /parkingReports/{reportId} {
-      // Any authenticated user can read nearby reports
+      // Any authenticated user can read non-flagged reports
       allow read: if request.auth != null;
 
-      // Authenticated users can create reports with required fields
+      // Authenticated users can create reports with required fields.
+      // Clients must NOT set server-owned moderation fields (flagged, flagReason).
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasAll([
           'userId', 'reportType', 'latitude', 'longitude',
           'geohash', 'timestamp', 'expiresAt'
         ])
+        && !request.resource.data.keys().hasAny(['flagged', 'flagReason'])
         && request.resource.data.latitude is number
         && request.resource.data.longitude is number
         && request.resource.data.geohash is string;
 
-      // Only upvotes/downvotes can be incremented (via FieldValue.increment)
+      // Only upvotes/downvotes/isExpired can be changed by clients.
+      // Clients must NOT touch server-owned moderation fields.
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['upvotes', 'downvotes', 'isExpired']);
+            .hasOnly(['upvotes', 'downvotes', 'isExpired'])
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['flagged', 'flagReason']);
 
       // Only the owner can delete their own report
       allow delete: if request.auth != null

@@ -126,6 +126,10 @@ class ParkingReport {
   final int downvotes;
   final bool isExpired;
 
+  /// Whether this report has been flagged by server-side moderation.
+  /// Flagged reports are hidden from the live feed.
+  final bool flagged;
+
   /// Region this report belongs to (e.g. "wi/milwaukee").
   /// Enables multi-region partitioning for scaling to other cities/states.
   final String region;
@@ -148,6 +152,7 @@ class ParkingReport {
     this.upvotes = 0,
     this.downvotes = 0,
     this.isExpired = false,
+    this.flagged = false,
     this.region = 'wi/milwaukee',
     this.zoneId,
   });
@@ -174,6 +179,7 @@ class ParkingReport {
       upvotes: (data['upvotes'] as num?)?.toInt() ?? 0,
       downvotes: (data['downvotes'] as num?)?.toInt() ?? 0,
       isExpired: data['isExpired'] as bool? ?? false,
+      flagged: data['flagged'] as bool? ?? false,
       region: data['region'] as String? ?? 'wi/milwaukee',
       zoneId: data['zoneId'] as String?,
     );
@@ -198,6 +204,7 @@ class ParkingReport {
       upvotes: (json['upvotes'] as num?)?.toInt() ?? 0,
       downvotes: (json['downvotes'] as num?)?.toInt() ?? 0,
       isExpired: json['isExpired'] as bool? ?? false,
+      flagged: json['flagged'] as bool? ?? false,
       region: json['region'] as String? ?? 'wi/milwaukee',
       zoneId: json['zoneId'] as String?,
     );
@@ -218,6 +225,7 @@ class ParkingReport {
       'upvotes': upvotes,
       'downvotes': downvotes,
       'isExpired': isExpired,
+      'flagged': flagged,
       'region': region,
       'zoneId': zoneId,
     };
@@ -239,6 +247,7 @@ class ParkingReport {
       'upvotes': upvotes,
       'downvotes': downvotes,
       'isExpired': isExpired,
+      'flagged': flagged,
       'region': region,
       'zoneId': zoneId,
     };
@@ -268,6 +277,7 @@ class ParkingReport {
     int? upvotes,
     int? downvotes,
     bool? isExpired,
+    bool? flagged,
     String? region,
     String? zoneId,
   }) {
@@ -285,6 +295,7 @@ class ParkingReport {
       upvotes: upvotes ?? this.upvotes,
       downvotes: downvotes ?? this.downvotes,
       isExpired: isExpired ?? this.isExpired,
+      flagged: flagged ?? this.flagged,
       region: region ?? this.region,
       zoneId: zoneId ?? this.zoneId,
     );

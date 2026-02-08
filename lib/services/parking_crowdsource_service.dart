@@ -33,6 +33,15 @@ class ParkingCrowdsourceService {
   /// Max reports a user can submit per hour (rate-limit client-side)
   static const int _maxReportsPerHour = 10;
 
+  /// Minimum reliability score to show a report (0.0–1.0).
+  /// Reports with ≥ [_minVotesForFilter] total votes AND a reliability score
+  /// below this threshold are hidden from the feed.
+  static const double _minReliabilityScore = 0.3;
+
+  /// Minimum total votes before the reliability filter kicks in.
+  /// Prevents brand-new reports from being hidden by a single downvote.
+  static const int _minVotesForFilter = 3;
+
   /// Cache of recent user submissions for rate limiting
   final List<DateTime> _recentSubmissions = [];
 
@@ -105,9 +114,7 @@ class ParkingCrowdsourceService {
       );
 
       // Fire-and-forget zone aggregation update
-      _zoneService
-          .updateZoneForReport(report, region: region)
-          .catchError((e) {
+      _zoneService.updateZoneForReport(report, region: region).catchError((e) {
         debugPrint('[Crowdsource] Zone aggregation failed (non-blocking): $e');
       });
 
@@ -116,6 +123,33 @@ class ParkingCrowdsourceService {
       debugPrint('[Crowdsource] Failed to submit report: $e');
       return null;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reliability Filter
+  // ---------------------------------------------------------------------------
+
+  /// Filter out low-reliability and server-flagged reports.
+  ///
+  /// A report is hidden if:
+  /// - It has been flagged by server-side moderation (`flagged == true`), OR
+  /// - It has ≥ [_minVotesForFilter] total votes AND a [reliabilityScore]
+  ///   below [_minReliabilityScore] (heavily downvoted by the community).
+  static List<ParkingReport> _applyReliabilityFilter(
+    List<ParkingReport> reports,
+  ) {
+    return reports.where((r) {
+      // Server-flagged reports are always hidden
+      if (r.flagged) return false;
+
+      // Community reliability filter — only kicks in with enough votes
+      final totalVotes = r.upvotes + r.downvotes;
+      if (totalVotes >= _minVotesForFilter &&
+          r.reliabilityScore < _minReliabilityScore) {
+        return false;
+      }
+      return true;
+    }).toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -147,10 +181,12 @@ class ParkingCrowdsourceService {
           .limit(100)
           .get();
 
-      return snapshot.docs
-          .map((doc) => ParkingReport.fromFirestore(doc))
-          .where((r) => now.isBefore(r.expiresAt)) // Client-side TTL check
-          .toList();
+      return _applyReliabilityFilter(
+        snapshot.docs
+            .map((doc) => ParkingReport.fromFirestore(doc))
+            .where((r) => now.isBefore(r.expiresAt)) // Client-side TTL check
+            .toList(),
+      );
     } catch (e) {
       debugPrint('[Crowdsource] Failed to query nearby reports: $e');
       return [];
@@ -179,10 +215,12 @@ class ParkingCrowdsourceService {
         .snapshots()
         .map((snapshot) {
           final now = DateTime.now();
-          return snapshot.docs
-              .map((doc) => ParkingReport.fromFirestore(doc))
-              .where((r) => now.isBefore(r.expiresAt))
-              .toList();
+          return _applyReliabilityFilter(
+            snapshot.docs
+                .map((doc) => ParkingReport.fromFirestore(doc))
+                .where((r) => now.isBefore(r.expiresAt))
+                .toList(),
+          );
         });
   }
 
@@ -207,10 +245,12 @@ class ParkingCrowdsourceService {
         .listen(
           (snapshot) {
             final now = DateTime.now();
-            final reports = snapshot.docs
-                .map((doc) => ParkingReport.fromFirestore(doc))
-                .where((r) => now.isBefore(r.expiresAt))
-                .toList();
+            final reports = _applyReliabilityFilter(
+              snapshot.docs
+                  .map((doc) => ParkingReport.fromFirestore(doc))
+                  .where((r) => now.isBefore(r.expiresAt))
+                  .toList(),
+            );
             onUpdate(reports);
           },
           onError: (e) {

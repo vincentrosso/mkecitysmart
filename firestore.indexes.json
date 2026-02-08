@@ -37,6 +37,28 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "reportType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "geohash",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "parkingReports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "region",
           "order": "ASCENDING"
         },
