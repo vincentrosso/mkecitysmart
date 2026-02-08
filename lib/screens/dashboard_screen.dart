@@ -85,7 +85,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     double lng = -87.9065;
 
     try {
-      final loc = await LocationService().getCurrentPosition();
+      final loc = await LocationService().getCurrentPosition().timeout(
+        const Duration(seconds: 8),
+      );
       if (loc != null) {
         lat = loc.latitude;
         lng = loc.longitude;

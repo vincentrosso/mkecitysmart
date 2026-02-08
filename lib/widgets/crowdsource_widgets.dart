@@ -397,7 +397,9 @@ class _CrowdsourceAvailabilityBannerState
   Future<void> _startStream() async {
     try {
       debugPrint('[CrowdsourceBanner] Starting stream...');
-      final pos = await _locationService.getCurrentPosition();
+      final pos = await _locationService.getCurrentPosition().timeout(
+        const Duration(seconds: 8),
+      );
       if (pos == null || !mounted) {
         debugPrint('[CrowdsourceBanner] Location unavailable or not mounted');
         if (mounted) setState(() => _loading = false);
