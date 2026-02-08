@@ -21,11 +21,17 @@ class AdService {
   static const _testNativeAdUnitId = 'ca-app-pub-3940256099942544/2247696110';
 
   // Production IDs - MKE CitySmart AdMob
+  // Create these ad units at https://admob.google.com → Apps → MKE CitySmart → Ad units
   static const _prodBannerAdUnitId = 'ca-app-pub-2009498889741048/5020898555';
+  // TODO(ads): Replace with a real Interstitial ad unit ID from AdMob.
+  //   The current value is the banner ID and will fail to load as interstitial.
+  //   Create: AdMob → Ad units → + Add ad unit → Interstitial → copy ID here.
   static const _prodInterstitialAdUnitId =
-      'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create interstitial in AdMob
-  static const _prodRewardedAdUnitId =
-      'ca-app-pub-2009498889741048/5020898555'; // Using banner for now - create rewarded in AdMob
+      'ca-app-pub-2009498889741048/5020898555';
+  // TODO(ads): Replace with a real Rewarded ad unit ID from AdMob.
+  //   The current value is the banner ID and will fail to load as rewarded.
+  //   Create: AdMob → Ad units → + Add ad unit → Rewarded → copy ID here.
+  static const _prodRewardedAdUnitId = 'ca-app-pub-2009498889741048/5020898555';
   static const _prodNativeAdUnitId =
       'ca-app-pub-2009498889741048/3072178018'; // Feed Screen native ad
 
