@@ -335,6 +335,16 @@ class MKEParkApp extends StatelessWidget {
       )..initialize(),
       child: Consumer<UserProvider>(
         builder: (context, provider, _) {
+          // Sync alternate-side parking notification schedule whenever
+          // the user profile is available (runs once on load + on changes).
+          if (!provider.isInitializing && provider.profile != null) {
+            final prefs = provider.profile!.preferences;
+            NotificationService.instance.syncAspNotifications(
+              morningEnabled: prefs.aspMorningReminder,
+              eveningEnabled: prefs.aspEveningWarning,
+              midnightEnabled: prefs.aspMidnightAlert,
+            );
+          }
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'MKE CitySmart',

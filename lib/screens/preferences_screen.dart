@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/vehicle.dart';
 import '../providers/user_provider.dart';
+import '../services/notification_service.dart';
 
 class PreferencesScreen extends StatelessWidget {
   const PreferencesScreen({super.key});
@@ -81,6 +82,61 @@ class PreferencesScreen extends StatelessWidget {
                 value: prefs.ticketDueDateReminders,
                 onChanged: (value) =>
                     provider.updatePreferences(ticketDueDateReminders: value),
+              ),
+              const Divider(height: 32),
+              Text(
+                'Alternate Side Parking Reminders',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Get notified which side of the street to park on',
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
+              SwitchListTile(
+                title: const Text('Morning reminder'),
+                subtitle: const Text('Daily at 7:00 AM'),
+                secondary: const Icon(Icons.wb_sunny, color: Colors.orange),
+                value: prefs.aspMorningReminder,
+                onChanged: (value) {
+                  provider.updatePreferences(aspMorningReminder: value);
+                  NotificationService.instance.syncAspNotifications(
+                    morningEnabled: value,
+                    eveningEnabled: prefs.aspEveningWarning,
+                    midnightEnabled: prefs.aspMidnightAlert,
+                  );
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Evening warning'),
+                subtitle: const Text('Daily at 9:00 PM (before side changes)'),
+                secondary: const Icon(
+                  Icons.nightlight_round,
+                  color: Colors.indigo,
+                ),
+                value: prefs.aspEveningWarning,
+                onChanged: (value) {
+                  provider.updatePreferences(aspEveningWarning: value);
+                  NotificationService.instance.syncAspNotifications(
+                    morningEnabled: prefs.aspMorningReminder,
+                    eveningEnabled: value,
+                    midnightEnabled: prefs.aspMidnightAlert,
+                  );
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Midnight alert'),
+                subtitle: const Text('At 12:00 AM when side changes'),
+                secondary: const Icon(Icons.alarm, color: Colors.red),
+                value: prefs.aspMidnightAlert,
+                onChanged: (value) {
+                  provider.updatePreferences(aspMidnightAlert: value);
+                  NotificationService.instance.syncAspNotifications(
+                    morningEnabled: prefs.aspMorningReminder,
+                    eveningEnabled: prefs.aspEveningWarning,
+                    midnightEnabled: value,
+                  );
+                },
               ),
               const Divider(height: 32),
               Text(

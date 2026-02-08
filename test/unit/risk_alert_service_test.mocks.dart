@@ -182,6 +182,23 @@ class MockNotificationService extends _i1.Mock
           as _i11.Future<void>);
 
   @override
+  _i11.Future<void> syncAspNotifications({
+    required bool? morningEnabled,
+    required bool? eveningEnabled,
+    required bool? midnightEnabled,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#syncAspNotifications, [], {
+              #morningEnabled: morningEnabled,
+              #eveningEnabled: eveningEnabled,
+              #midnightEnabled: midnightEnabled,
+            }),
+            returnValue: _i11.Future<void>.value(),
+            returnValueForMissingStub: _i11.Future<void>.value(),
+          )
+          as _i11.Future<void>);
+
+  @override
   void setAlertLimitCallback(_i11.Future<bool> Function()? callback) =>
       super.noSuchMethod(
         Invocation.method(#setAlertLimitCallback, [callback]),
@@ -1116,6 +1133,9 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
     int? geoRadiusMiles,
     bool? ticketRiskAlerts,
     bool? ticketDueDateReminders,
+    bool? aspMorningReminder,
+    bool? aspEveningWarning,
+    bool? aspMidnightAlert,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#updatePreferences, [], {
@@ -1126,6 +1146,9 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #geoRadiusMiles: geoRadiusMiles,
               #ticketRiskAlerts: ticketRiskAlerts,
               #ticketDueDateReminders: ticketDueDateReminders,
+              #aspMorningReminder: aspMorningReminder,
+              #aspEveningWarning: aspEveningWarning,
+              #aspMidnightAlert: aspMidnightAlert,
             }),
             returnValue: _i11.Future<void>.value(),
             returnValueForMissingStub: _i11.Future<void>.value(),

@@ -1907,6 +1907,9 @@ class UserProvider extends ChangeNotifier {
     int? geoRadiusMiles,
     bool? ticketRiskAlerts,
     bool? ticketDueDateReminders,
+    bool? aspMorningReminder,
+    bool? aspEveningWarning,
+    bool? aspMidnightAlert,
   }) async {
     if (_profile == null) return;
     final prefs = _profile!.preferences.copyWith(
@@ -1917,6 +1920,9 @@ class UserProvider extends ChangeNotifier {
       geoRadiusMiles: geoRadiusMiles,
       ticketRiskAlerts: ticketRiskAlerts,
       ticketDueDateReminders: ticketDueDateReminders,
+      aspMorningReminder: aspMorningReminder,
+      aspEveningWarning: aspEveningWarning,
+      aspMidnightAlert: aspMidnightAlert,
     );
     _profile = _profile!.copyWith(preferences: prefs);
     await _repository.saveProfile(_profile!);

@@ -181,6 +181,126 @@ class NotificationService {
     await _local.cancel(id);
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  //  Alternate Side Parking – daily scheduled notifications
+  // ──────────────────────────────────────────────────────────────────────
+
+  /// Stable IDs so we can cancel/replace without leaking notifications.
+  static const int _aspMorningId = 900001;
+  static const int _aspEveningId = 900002;
+  static const int _aspMidnightId = 900003;
+
+  /// Schedule (or reschedule) the three alternate-side parking notifications
+  /// based on the user's current toggle states.  Call this at startup and
+  /// whenever the user changes a toggle.
+  Future<void> syncAspNotifications({
+    required bool morningEnabled,
+    required bool eveningEnabled,
+    required bool midnightEnabled,
+  }) async {
+    // Cancel existing ASP notifications first
+    await _local.cancel(_aspMorningId);
+    await _local.cancel(_aspEveningId);
+    await _local.cancel(_aspMidnightId);
+
+    const aspDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'asp_reminders',
+        'Alternate Side Parking',
+        channelDescription: 'Daily alternate side parking reminders',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    try {
+      if (morningEnabled) {
+        final morning = _nextOccurrence(hour: 7, minute: 0);
+        await _local.zonedSchedule(
+          _aspMorningId,
+          '☀️ Morning Parking Reminder',
+          _aspBodyForDate(morning),
+          morning,
+          aspDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+        );
+      }
+
+      if (eveningEnabled) {
+        final evening = _nextOccurrence(hour: 21, minute: 0);
+        await _local.zonedSchedule(
+          _aspEveningId,
+          '🌙 Evening Parking Warning',
+          _aspEveningBody(evening),
+          evening,
+          aspDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
+      }
+
+      if (midnightEnabled) {
+        final midnight = _nextOccurrence(hour: 0, minute: 0);
+        await _local.zonedSchedule(
+          _aspMidnightId,
+          '🚨 Parking Side Changed!',
+          _aspBodyForDate(midnight),
+          midnight,
+          aspDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
+      }
+
+      log(
+        'ASP notifications synced – morning:$morningEnabled '
+        'evening:$eveningEnabled midnight:$midnightEnabled',
+      );
+    } catch (e) {
+      log('Failed to schedule ASP notifications: $e');
+    }
+  }
+
+  /// Returns the next [tz.TZDateTime] for the given hour/minute.
+  tz.TZDateTime _nextOccurrence({required int hour, required int minute}) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return scheduled;
+  }
+
+  /// Build a body string for the morning/midnight notification.
+  String _aspBodyForDate(tz.TZDateTime date) {
+    final isOdd = date.day % 2 == 1;
+    final side = isOdd ? 'odd' : 'even';
+    return 'Today is day ${date.day} ($side). '
+        'Park on the $side-numbered side of the street.';
+  }
+
+  /// Build a body string for the evening warning.
+  String _aspEveningBody(tz.TZDateTime date) {
+    final tomorrow = date.add(const Duration(days: 1));
+    final isOdd = tomorrow.day % 2 == 1;
+    final side = isOdd ? 'odd' : 'even';
+    return 'Tomorrow is day ${tomorrow.day} ($side). '
+        'Move your car to the $side-numbered side before midnight.';
+  }
+
   Future<void> _requestPermissions() async {
     if (_messaging == null) return;
     final settings = await _messaging!.requestPermission(

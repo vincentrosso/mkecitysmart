@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../services/alternate_side_parking_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/alternate_side_parking_card.dart';
 
 /// Full screen for alternate side parking information
@@ -230,134 +233,170 @@ class AlternateSideParkingScreen extends StatelessWidget {
     BuildContext context,
     AlternateSideParkingService service,
   ) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Consumer<UserProvider>(
+      builder: (context, provider, _) {
+        final prefs = provider.profile?.preferences;
+        final morningOn = prefs?.aspMorningReminder ?? true;
+        final eveningOn = prefs?.aspEveningWarning ?? true;
+        final midnightOn = prefs?.aspMidnightAlert ?? false;
+
+        return Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.notifications_active,
-                    color: Colors.blue,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Notifications',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Get reminders to help you remember which side to park on:',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                _buildNotificationToggle(
+                  icon: Icons.wb_sunny,
+                  title: 'Morning Reminder',
+                  description: 'Daily at 7:00 AM',
+                  enabled: morningOn,
+                  color: Colors.orange,
+                  onChanged: (value) {
+                    provider.updatePreferences(aspMorningReminder: value);
+                    NotificationService.instance.syncAspNotifications(
+                      morningEnabled: value,
+                      eveningEnabled: eveningOn,
+                      midnightEnabled: midnightOn,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildNotificationToggle(
+                  icon: Icons.nightlight_round,
+                  title: 'Evening Warning',
+                  description: 'Daily at 9:00 PM (before side changes)',
+                  enabled: eveningOn,
+                  color: Colors.indigo,
+                  onChanged: (value) {
+                    provider.updatePreferences(aspEveningWarning: value);
+                    NotificationService.instance.syncAspNotifications(
+                      morningEnabled: morningOn,
+                      eveningEnabled: value,
+                      midnightEnabled: midnightOn,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildNotificationToggle(
+                  icon: Icons.alarm,
+                  title: 'Midnight Alert',
+                  description: 'At 12:00 AM when side changes',
+                  enabled: midnightOn,
+                  color: Colors.red,
+                  onChanged: (value) {
+                    provider.updatePreferences(aspMidnightAlert: value);
+                    NotificationService.instance.syncAspNotifications(
+                      morningEnabled: morningOn,
+                      eveningEnabled: eveningOn,
+                      midnightEnabled: value,
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/preferences');
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Configure Notifications'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Notifications',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await service.sendParkingNotification(
+                        type: NotificationType.morningReminder,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Test notification sent!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.send),
+                    label: const Text('Send Test Notification'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Get reminders to help you remember which side to park on:',
-              style: TextStyle(color: Colors.grey[700], fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            _buildNotificationOption(
-              icon: Icons.wb_sunny,
-              title: 'Morning Reminder',
-              description: 'Daily at 7:00 AM',
-              enabled: true,
-            ),
-            const SizedBox(height: 12),
-            _buildNotificationOption(
-              icon: Icons.nightlight_round,
-              title: 'Evening Warning',
-              description: 'Daily at 9:00 PM (before side changes)',
-              enabled: true,
-            ),
-            const SizedBox(height: 12),
-            _buildNotificationOption(
-              icon: Icons.alarm,
-              title: 'Midnight Alert',
-              description: 'At 12:00 AM when side changes',
-              enabled: false,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/preferences');
-                },
-                icon: const Icon(Icons.settings),
-                label: const Text('Configure Notifications'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await service.sendParkingNotification(
-                    type: NotificationType.morningReminder,
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Test notification sent!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.send),
-                label: const Text('Send Test Notification'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildNotificationOption({
+  Widget _buildNotificationToggle({
     required IconData icon,
     required String title,
     required String description,
     required bool enabled,
+    required Color color,
+    required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: enabled ? Colors.green[50] : Colors.grey[100],
+        color: enabled ? color.withValues(alpha: 0.08) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: enabled ? Colors.green[200]! : Colors.grey[300]!,
+          color: enabled ? color.withValues(alpha: 0.3) : Colors.grey[300]!,
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: enabled ? Colors.green[700] : Colors.grey[500],
-            size: 24,
-          ),
+          Icon(icon, color: enabled ? color : Colors.grey[500], size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -368,7 +407,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: enabled ? Colors.green[900] : Colors.grey[700],
+                    color: enabled ? color : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -376,15 +415,19 @@ class AlternateSideParkingScreen extends StatelessWidget {
                   description,
                   style: TextStyle(
                     fontSize: 12,
-                    color: enabled ? Colors.green[700] : Colors.grey[600],
+                    color: enabled
+                        ? color.withValues(alpha: 0.7)
+                        : Colors.grey[600],
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            enabled ? Icons.check_circle : Icons.cancel,
-            color: enabled ? Colors.green : Colors.grey,
+          Switch.adaptive(
+            value: enabled,
+            onChanged: onChanged,
+            activeTrackColor: color.withValues(alpha: 0.4),
+            activeThumbColor: color,
           ),
         ],
       ),

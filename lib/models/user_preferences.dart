@@ -5,6 +5,9 @@ class UserPreferences {
     required this.reminderNotifications,
     this.ticketRiskAlerts = true,
     this.ticketDueDateReminders = true,
+    this.aspMorningReminder = true,
+    this.aspEveningWarning = true,
+    this.aspMidnightAlert = false,
     this.geoRadiusMiles = 5,
     this.defaultVehicleId,
   });
@@ -14,6 +17,9 @@ class UserPreferences {
   final bool reminderNotifications;
   final bool ticketRiskAlerts;
   final bool ticketDueDateReminders; // Privacy option for ticket reminders
+  final bool aspMorningReminder; // Alternate side parking – 7 AM
+  final bool aspEveningWarning; // Alternate side parking – 9 PM
+  final bool aspMidnightAlert; // Alternate side parking – 12 AM
   final int geoRadiusMiles;
   final String? defaultVehicleId;
 
@@ -23,6 +29,9 @@ class UserPreferences {
     reminderNotifications: true,
     ticketRiskAlerts: true,
     ticketDueDateReminders: true,
+    aspMorningReminder: true,
+    aspEveningWarning: true,
+    aspMidnightAlert: false,
     geoRadiusMiles: 5,
   );
 
@@ -32,6 +41,9 @@ class UserPreferences {
     bool? reminderNotifications,
     bool? ticketRiskAlerts,
     bool? ticketDueDateReminders,
+    bool? aspMorningReminder,
+    bool? aspEveningWarning,
+    bool? aspMidnightAlert,
     int? geoRadiusMiles,
     String? defaultVehicleId,
   }) {
@@ -43,6 +55,9 @@ class UserPreferences {
       ticketRiskAlerts: ticketRiskAlerts ?? this.ticketRiskAlerts,
       ticketDueDateReminders:
           ticketDueDateReminders ?? this.ticketDueDateReminders,
+      aspMorningReminder: aspMorningReminder ?? this.aspMorningReminder,
+      aspEveningWarning: aspEveningWarning ?? this.aspEveningWarning,
+      aspMidnightAlert: aspMidnightAlert ?? this.aspMidnightAlert,
       geoRadiusMiles: geoRadiusMiles ?? this.geoRadiusMiles,
       defaultVehicleId: defaultVehicleId ?? this.defaultVehicleId,
     );
@@ -55,6 +70,9 @@ class UserPreferences {
       reminderNotifications: json['reminderNotifications'] as bool? ?? true,
       ticketRiskAlerts: json['ticketRiskAlerts'] as bool? ?? true,
       ticketDueDateReminders: json['ticketDueDateReminders'] as bool? ?? true,
+      aspMorningReminder: json['aspMorningReminder'] as bool? ?? true,
+      aspEveningWarning: json['aspEveningWarning'] as bool? ?? true,
+      aspMidnightAlert: json['aspMidnightAlert'] as bool? ?? false,
       geoRadiusMiles: json['geoRadiusMiles'] as int? ?? 5,
       defaultVehicleId: json['defaultVehicleId'] as String?,
     );
@@ -66,6 +84,9 @@ class UserPreferences {
     'reminderNotifications': reminderNotifications,
     'ticketRiskAlerts': ticketRiskAlerts,
     'ticketDueDateReminders': ticketDueDateReminders,
+    'aspMorningReminder': aspMorningReminder,
+    'aspEveningWarning': aspEveningWarning,
+    'aspMidnightAlert': aspMidnightAlert,
     'geoRadiusMiles': geoRadiusMiles,
     'defaultVehicleId': defaultVehicleId,
   };
