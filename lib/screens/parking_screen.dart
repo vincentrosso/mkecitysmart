@@ -9,6 +9,7 @@ import '../services/location_service.dart';
 import '../services/parking_prediction_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_widgets.dart';
+import '../widgets/crowdsource_widgets.dart';
 
 class ParkingScreen extends StatelessWidget {
   const ParkingScreen({super.key});
@@ -25,7 +26,10 @@ class ParkingScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 8),
             _AltSideCard(provider: provider),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            // Real-time crowdsource availability banner
+            const CrowdsourceAvailabilityBanner(),
+            const SizedBox(height: 12),
             const _NearbyParkingCard(),
             const SizedBox(height: 16),
             Text('Predict & Find', style: textTheme.titleLarge),

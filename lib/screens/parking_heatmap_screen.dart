@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/parking_report.dart';
 import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
+import '../services/parking_crowdsource_service.dart';
 import '../services/parking_prediction_service.dart';
 import '../services/parking_risk_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/ad_widgets.dart';
+import '../widgets/crowdsource_widgets.dart';
 import '../widgets/feature_gate.dart';
 import '../widgets/parking_risk_badge.dart';
 
@@ -21,6 +27,7 @@ class ParkingHeatmapScreen extends StatefulWidget {
 class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   final _riskService = ParkingRiskService.instance;
   final _predictionService = ParkingPredictionService.instance;
+  final _crowdsourceService = ParkingCrowdsourceService.instance;
   final _mapController = MapController();
 
   double _centerLat = 43.0389; // Milwaukee default
@@ -36,6 +43,12 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   // Prediction data
   List<SafeParkingSpot> _safestSpots = [];
   bool _showSafestSpots = false;
+
+  // Crowdsource data — real-time
+  StreamSubscription<List<ParkingReport>>? _crowdsourceSub;
+  List<ParkingReport> _nearbyReports = [];
+  final bool _showCrowdsource = true;
+  ParkingReport? _selectedReport;
 
   @override
   void initState() {
@@ -106,6 +119,30 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
       _centerLng = lng;
       _loading = false;
     });
+
+    // Start the crowdsource real-time stream once we know the location
+    _startCrowdsourceStream(lat, lng);
+  }
+
+  void _startCrowdsourceStream(double lat, double lng) {
+    _crowdsourceSub?.cancel();
+    _crowdsourceSub = _crowdsourceService
+        .nearbyReportsStream(latitude: lat, longitude: lng)
+        .listen(
+      (reports) {
+        if (!mounted) return;
+        setState(() => _nearbyReports = reports);
+      },
+      onError: (e) {
+        debugPrint('[HeatmapCrowdsource] Stream error: $e');
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _crowdsourceSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _findSafestSpots() async {
@@ -170,11 +207,40 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
         ],
       ),
       floatingActionButton: hasAccess && !_loading
-          ? FloatingActionButton.extended(
-              onPressed: _findSafestSpots,
-              backgroundColor: const Color(0xFF4CAF50),
-              icon: const Icon(Icons.verified_user),
-              label: const Text('Find Safest'),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Report parking info FAB
+                FloatingActionButton.small(
+                  heroTag: 'reportFab',
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final report = await showReportSheet(context);
+                    if (report != null && mounted) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '✓ ${report.reportType.displayName} reported!',
+                          ),
+                          backgroundColor: const Color(0xFF4CAF50),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  backgroundColor: kCitySmartYellow,
+                  child: const Icon(Icons.campaign, color: Colors.black),
+                ),
+                const SizedBox(height: 10),
+                // Find Safest FAB
+                FloatingActionButton.extended(
+                  heroTag: 'findSafestFab',
+                  onPressed: _findSafestSpots,
+                  backgroundColor: const Color(0xFF4CAF50),
+                  icon: const Icon(Icons.verified_user),
+                  label: const Text('Find Safest'),
+                ),
+              ],
             )
           : null,
       body: !hasAccess
@@ -273,7 +339,10 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                           minZoom: 9,
                           maxZoom: 18,
                           onTap: (tapPosition, point) {
-                            setState(() => _selectedZone = null);
+                            setState(() {
+                              _selectedZone = null;
+                              _selectedReport = null;
+                            });
                           },
                         ),
                         children: [
@@ -406,6 +475,64 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                               }).toList(),
                             ),
 
+                          // Crowdsource report markers (real-time)
+                          if (_showCrowdsource && _nearbyReports.isNotEmpty)
+                            MarkerLayer(
+                              markers: _nearbyReports.map((report) {
+                                final isSelected = _selectedReport == report;
+                                final color = report.reportType.isPositiveSignal
+                                    ? const Color(0xFF4CAF50)
+                                    : report.reportType ==
+                                                ReportType.enforcementSpotted ||
+                                            report.reportType ==
+                                                ReportType.towTruckSpotted
+                                        ? const Color(0xFFE53935)
+                                        : const Color(0xFFFF9800);
+                                return Marker(
+                                  point:
+                                      LatLng(report.latitude, report.longitude),
+                                  width: isSelected ? 44 : 34,
+                                  height: isSelected ? 44 : 34,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedZone = null;
+                                        _selectedReport = report;
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: isSelected ? 3 : 2,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: color.withValues(
+                                                    alpha: 0.6,
+                                                  ),
+                                                  blurRadius: 10,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          report.reportType.icon,
+                                          color: Colors.white,
+                                          size: isSelected ? 22 : 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
                           // Current location marker
                           MarkerLayer(
                             markers: [
@@ -486,6 +613,35 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                                 label: 'Low (<30%)',
                                 textColor: Colors.black87,
                               ),
+                              if (_nearbyReports.isNotEmpty) ...[
+                                const Divider(height: 16),
+                                const Text(
+                                  'Live Reports',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                _LegendItem(
+                                  color: const Color(0xFF4CAF50),
+                                  label: 'Spot available',
+                                  textColor: Colors.black87,
+                                ),
+                                const SizedBox(height: 4),
+                                _LegendItem(
+                                  color: const Color(0xFFFF9800),
+                                  label: 'Spot taken',
+                                  textColor: Colors.black87,
+                                ),
+                                const SizedBox(height: 4),
+                                _LegendItem(
+                                  color: const Color(0xFFE53935),
+                                  label: 'Enforcement',
+                                  textColor: Colors.black87,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -564,6 +720,26 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                           child: _ZoneDetailCard(
                             zone: _selectedZone!,
                             onClose: () => setState(() => _selectedZone = null),
+                          ),
+                        ),
+
+                      // Selected crowdsource report card
+                      if (_selectedReport != null && _selectedZone == null)
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 50,
+                          child: _ReportDetailCard(
+                            report: _selectedReport!,
+                            onClose: () =>
+                                setState(() => _selectedReport = null),
+                            onUpvote: () {
+                              _crowdsourceService.upvote(_selectedReport!.id);
+                            },
+                            onDownvote: () {
+                              _crowdsourceService
+                                  .downvote(_selectedReport!.id);
+                            },
                           ),
                         ),
 
@@ -1071,6 +1247,180 @@ class _SafestSpotsCardState extends State<_SafestSpotsCard> {
                       ),
                     ),
                   ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card showing details of a tapped crowdsource report on the map.
+class _ReportDetailCard extends StatelessWidget {
+  const _ReportDetailCard({
+    required this.report,
+    required this.onClose,
+    required this.onUpvote,
+    required this.onDownvote,
+  });
+
+  final ParkingReport report;
+  final VoidCallback onClose;
+  final VoidCallback onUpvote;
+  final VoidCallback onDownvote;
+
+  Color get _color {
+    if (report.reportType.isPositiveSignal) return const Color(0xFF4CAF50);
+    if (report.reportType == ReportType.enforcementSpotted ||
+        report.reportType == ReportType.towTruckSpotted) {
+      return const Color(0xFFE53935);
+    }
+    return const Color(0xFFFF9800);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final age = report.ageMinutes;
+    final ageLabel = age < 1
+        ? 'Just now'
+        : age < 60
+            ? '${age}m ago'
+            : '${age ~/ 60}h ago';
+
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _color,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(report.reportType.icon,
+                          color: Colors.white, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        report.reportType.displayName.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  ageLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            if (report.note != null && report.note!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                report.note!,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                // Upvote
+                _VoteChip(
+                  icon: Icons.thumb_up_outlined,
+                  count: report.upvotes,
+                  onTap: onUpvote,
+                  color: const Color(0xFF4CAF50),
+                ),
+                const SizedBox(width: 8),
+                // Downvote
+                _VoteChip(
+                  icon: Icons.thumb_down_outlined,
+                  count: report.downvotes,
+                  onTap: onDownvote,
+                  color: Colors.redAccent,
+                ),
+                const Spacer(),
+                // TTL indicator
+                Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(
+                  'Expires in ${report.reportType.ttlMinutes - age}m',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VoteChip extends StatelessWidget {
+  const _VoteChip({
+    required this.icon,
+    required this.count,
+    required this.onTap,
+    required this.color,
+  });
+
+  final IconData icon;
+  final int count;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            if (count > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ],
           ],
         ),

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import 'parking_crowdsource_service.dart';
 import 'parking_risk_service.dart';
 
 /// Parking prediction service powered by real Milwaukee citation data.
@@ -26,6 +27,7 @@ class ParkingPredictionService {
   static ParkingPredictionService get instance => _instance;
 
   final _riskService = ParkingRiskService.instance;
+  final _crowdsourceService = ParkingCrowdsourceService.instance;
 
   /// Cache for location risk
   LocationRisk? _cachedLocationRisk;
@@ -77,6 +79,36 @@ class ParkingPredictionService {
     // Apply event penalty
     if (eventLoad > 0) {
       safetyScore = safetyScore * (1 - eventLoad * 0.3);
+    }
+
+    // Incorporate real-time crowdsource data
+    try {
+      final nearbyReports = await _crowdsourceService.getNearbyReports(
+        latitude: latitude,
+        longitude: longitude,
+        geohashPrecision: 6, // ~1.2km radius for prediction
+      );
+      if (nearbyReports.isNotEmpty) {
+        final availability =
+            _crowdsourceService.aggregateAvailability(nearbyReports);
+        // Crowdsource availability shifts the safety score by up to ±15%
+        // Score > 0.5 means users report spots available → boost safety
+        // Score < 0.5 means users report spots taken → reduce safety
+        final crowdsourceDelta =
+            (availability.availabilityScore - 0.5) * 0.3;
+        safetyScore += crowdsourceDelta;
+        // Enforcement penalty from crowdsource
+        if (availability.hasEnforcement) {
+          safetyScore -= 0.1;
+        }
+        debugPrint(
+          'ParkingPredictionService: Crowdsource delta=$crowdsourceDelta '
+          '(${nearbyReports.length} reports, enforcement=${availability.hasEnforcement})',
+        );
+      }
+    } catch (e) {
+      // Crowdsource is optional — degrade gracefully
+      debugPrint('ParkingPredictionService: Crowdsource unavailable: $e');
     }
 
     safetyScore = safetyScore.clamp(0.0, 1.0);
