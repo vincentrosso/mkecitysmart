@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/subscription_plan.dart';
 import '../services/analytics_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
+import '../widgets/feature_gate.dart';
 
 /// Tow Helper Screen - Guidance for vehicle recovery
 ///
@@ -19,10 +21,13 @@ class TowHelperScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CitySmartScaffold(
+    return CitySmartScaffold(
       title: 'Tow Helper',
       currentIndex: -1,
-      body: _TowHelperBody(),
+      body: FeatureGate(
+        feature: PremiumFeature.towHelper,
+        child: const _TowHelperBody(),
+      ),
     );
   }
 }

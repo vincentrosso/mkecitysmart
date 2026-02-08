@@ -385,17 +385,27 @@ check fees, navigate there.
 a paywall, and AdMob ads for free-tier users.
 
 **Tiers:**
-| Feature | Free | Pro |
-|---------|------|-----|
+| Feature | Free | Pro ($4.99/mo) |
+|---------|------|----------------|
 | Basic parking info | ✅ | ✅ |
 | Street sweeping reminders | ✅ | ✅ |
-| Citation Risk Heat Map | ❌ | ✅ |
+| Crowdsource parking reports | ✅ | ✅ |
+| Live spot counts | ❌ | ✅ |
+| Citation Risk Heat Map | ❌ (7-day trial) | ✅ |
+| AI Parking Finder | ❌ | ✅ |
+| Tow Recovery Helper | ❌ | ✅ |
 | Smart Alerts | ❌ | ✅ |
 | Ad-Free Experience | ❌ | ✅ |
-| Extended History | ❌ | ✅ |
+| Extended History (1 yr) | ❌ | ✅ |
 | Priority Support | ❌ | ✅ |
-| Expanded Radius | ❌ | ✅ |
+| Expanded Radius (15 mi) | ❌ | ✅ |
 | Unlimited Alerts | ❌ | ✅ |
+
+**Gating implementation:**
+- `FeatureGate` widget wraps premium screen bodies (heatmap, parking finder, tow helper)
+- `FeatureGate.hasAccess()` static method used for inline checks (spot counts in banner)
+- `PremiumFeature` enum (10 values) mapped to display names, icons, and minimum tiers
+- `SubscriptionPlan.hasFeature()` checks plan booleans per feature
 
 **Files:**
 - `lib/services/subscription_service.dart` — RevenueCat integration

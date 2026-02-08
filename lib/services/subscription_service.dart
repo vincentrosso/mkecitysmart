@@ -295,6 +295,7 @@ class SubscriptionService extends ChangeNotifier {
             '3 alerts per day',
             '7 days of history',
             'Basic parking info',
+            'Crowdsource reports',
           ],
         );
       case SubscriptionTier.pro:
@@ -316,6 +317,9 @@ class SubscriptionService extends ChangeNotifier {
             '1 year of history',
             'Citation heatmaps',
             'Smart alerts',
+            'Live spot counts',
+            'AI parking finder',
+            'Tow recovery helper',
             'Ad-free experience',
             'Zero processing fees',
             'Priority support',

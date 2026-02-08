@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/parking_report.dart';
+import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
 import '../services/parking_crowdsource_service.dart';
 import '../services/zone_aggregation_service.dart';
 import '../theme/app_theme.dart';
+import 'feature_gate.dart';
 
 // ---------------------------------------------------------------------------
 // Report Submission Bottom-Sheet
@@ -404,7 +406,9 @@ class _CrowdsourceAvailabilityBannerState
           .nearbyReportsStream(latitude: pos.latitude, longitude: pos.longitude)
           .listen((reports) {
             if (!mounted) return;
-            final avail = ParkingCrowdsourceService.aggregateAvailability(reports);
+            final avail = ParkingCrowdsourceService.aggregateAvailability(
+              reports,
+            );
             final countChanged = reports.length != _reportCount;
             setState(() {
               _availability = avail;
@@ -451,21 +455,31 @@ class _CrowdsourceAvailabilityBannerState
     }
 
     final avail = _availability!;
+    // Pro users see zone-aggregated spot counts; Free users see basic labels
+    final hasSpotAccess = FeatureGate.hasAccess(
+      context,
+      PremiumFeature.spotCounts,
+    );
+
     // Prefer zone-aggregated spot count; fall back to signal-based estimate
     final spotCount = _zoneSpotCount > 0
         ? _zoneSpotCount
         : avail.estimatedOpenSpots;
-    final displayLabel = spotCount > 0
-        ? '~$spotCount spot${spotCount == 1 ? '' : 's'} open'
-        : avail.label;
-    // Use zone color when we have zone data
-    final displayColor = spotCount >= 5
-        ? Colors.green
-        : spotCount >= 2
-            ? Colors.orange
-            : spotCount > 0
-                ? Colors.orange
-                : avail.color;
+
+    final String displayLabel;
+    final Color displayColor;
+
+    if (hasSpotAccess && spotCount > 0) {
+      displayLabel = '~$spotCount spot${spotCount == 1 ? '' : 's'} open';
+      displayColor = spotCount >= 5
+          ? Colors.green
+          : spotCount >= 2
+          ? Colors.orange
+          : Colors.orange;
+    } else {
+      displayLabel = avail.label;
+      displayColor = avail.color;
+    }
 
     return ScaleTransition(
       scale: _pulseAnim,

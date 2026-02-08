@@ -177,7 +177,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              'Upgrade to Plus or Pro',
+                              'Upgrade to Pro',
                               style: TextStyle(
                                 color: kCitySmartText.withValues(alpha: 0.7),
                                 fontSize: 13,
@@ -689,61 +689,91 @@ class _FeatureComparisonSection extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
+            // Header row
+            Row(
+              children: [
+                const Expanded(flex: 3, child: SizedBox.shrink()),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Free',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: kCitySmartText.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Pro',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: kCitySmartYellow,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
             _FeatureRow(
               feature: 'Alert radius',
               free: '3 miles',
-              plus: '8 miles',
               pro: '15 miles',
             ),
+            _FeatureRow(feature: 'Daily alerts', free: '3', pro: 'Unlimited'),
+            _FeatureRow(feature: 'History', free: '7 days', pro: '1 year'),
             _FeatureRow(
-              feature: 'Daily alerts',
-              free: '3',
-              plus: '15',
-              pro: 'Unlimited',
+              feature: 'Crowdsource reports',
+              free: '✓',
+              pro: '✓',
+              freeHighlight: true,
+              proHighlight: true,
             ),
             _FeatureRow(
-              feature: 'History',
-              free: '7 days',
-              plus: '30 days',
-              pro: '1 year',
+              feature: 'Live spot counts',
+              free: '–',
+              pro: '✓',
+              proHighlight: true,
             ),
             _FeatureRow(
               feature: 'Citation heatmaps',
               free: '–',
-              plus: '✓',
               pro: '✓',
-              plusHighlight: true,
+              proHighlight: true,
+            ),
+            _FeatureRow(
+              feature: 'AI parking finder',
+              free: '–',
+              pro: '✓',
+              proHighlight: true,
+            ),
+            _FeatureRow(
+              feature: 'Tow recovery helper',
+              free: '–',
+              pro: '✓',
               proHighlight: true,
             ),
             _FeatureRow(
               feature: 'Smart alerts',
               free: '–',
-              plus: '✓',
               pro: '✓',
-              plusHighlight: true,
               proHighlight: true,
             ),
             _FeatureRow(
               feature: 'Ad-free',
               free: '–',
-              plus: '✓',
               pro: '✓',
-              plusHighlight: true,
               proHighlight: true,
             ),
             _FeatureRow(
               feature: 'Priority support',
               free: '–',
-              plus: '–',
               pro: '✓',
-              proHighlight: true,
-            ),
-            _FeatureRow(
-              feature: 'Processing fees',
-              free: 'Standard',
-              plus: 'Zero',
-              pro: 'Zero',
-              plusHighlight: true,
               proHighlight: true,
               isLast: true,
             ),
@@ -758,18 +788,16 @@ class _FeatureRow extends StatelessWidget {
   const _FeatureRow({
     required this.feature,
     required this.free,
-    required this.plus,
     required this.pro,
-    this.plusHighlight = false,
+    this.freeHighlight = false,
     this.proHighlight = false,
     this.isLast = false,
   });
 
   final String feature;
   final String free;
-  final String plus;
   final String pro;
-  final bool plusHighlight;
+  final bool freeHighlight;
   final bool proHighlight;
   final bool isLast;
 
@@ -799,19 +827,10 @@ class _FeatureRow extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: kCitySmartText.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              plus,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: plusHighlight ? Colors.green : kCitySmartText,
-                fontWeight: plusHighlight ? FontWeight.bold : FontWeight.normal,
+                color: freeHighlight
+                    ? Colors.green
+                    : kCitySmartText.withValues(alpha: 0.7),
+                fontWeight: freeHighlight ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),

@@ -3,10 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
+import '../widgets/feature_gate.dart';
 
 /// A dedicated parking finder map that shows the user's location,
 /// nearby parking spots, and risk zones.
@@ -328,224 +330,233 @@ class _ParkingFinderScreenState extends State<ParkingFinderScreen> {
           tooltip: 'Risk heatmap',
         ),
       ],
-      body: Stack(
-        children: [
-          // Map
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentLocation,
-              initialZoom: 13.5,
-              onTap: (tapPosition, point) =>
-                  setState(() => _selectedSpot = null),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.mkecitysmart.app',
+      body: FeatureGate(
+        feature: PremiumFeature.parkingFinder,
+        child: Stack(
+          children: [
+            // Map
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _currentLocation,
+                initialZoom: 13.5,
+                onTap: (tapPosition, point) =>
+                    setState(() => _selectedSpot = null),
               ),
-              // User location marker
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _currentLocation,
-                    width: 30,
-                    height: 30,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue, width: 3),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.person, size: 16, color: Colors.blue),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // Parking spot markers
-              MarkerLayer(
-                markers: _parkingSpots.map((spot) {
-                  final isSelected = _selectedSpot?.id == spot.id;
-                  return Marker(
-                    point: LatLng(spot.lat, spot.lng),
-                    width: isSelected ? 50 : 40,
-                    height: isSelected ? 50 : 40,
-                    child: GestureDetector(
-                      onTap: () => _selectSpot(spot),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.mkecitysmart.app',
+                ),
+                // User location marker
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentLocation,
+                      width: 30,
+                      height: 30,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? _getSpotColor(spot.type)
-                              : _getSpotColor(spot.type).withValues(alpha: 0.8),
+                          color: Colors.blue.withValues(alpha: 0.3),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? Colors.white : Colors.black26,
-                            width: isSelected ? 3 : 1.5,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: _getSpotColor(
-                                      spot.type,
-                                    ).withValues(alpha: 0.5),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
+                          border: Border.all(color: Colors.blue, width: 3),
                         ),
-                        child: Icon(
-                          _getSpotIcon(spot.type),
-                          color: Colors.white,
-                          size: isSelected ? 28 : 22,
+                        child: const Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+                  ],
+                ),
+                // Parking spot markers
+                MarkerLayer(
+                  markers: _parkingSpots.map((spot) {
+                    final isSelected = _selectedSpot?.id == spot.id;
+                    return Marker(
+                      point: LatLng(spot.lat, spot.lng),
+                      width: isSelected ? 50 : 40,
+                      height: isSelected ? 50 : 40,
+                      child: GestureDetector(
+                        onTap: () => _selectSpot(spot),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? _getSpotColor(spot.type)
+                                : _getSpotColor(
+                                    spot.type,
+                                  ).withValues(alpha: 0.8),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.black26,
+                              width: isSelected ? 3 : 1.5,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: _getSpotColor(
+                                        spot.type,
+                                      ).withValues(alpha: 0.5),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            _getSpotIcon(spot.type),
+                            color: Colors.white,
+                            size: isSelected ? 28 : 22,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
 
-          // Risk badge at top
-          if (_currentRiskLevel != null)
+            // Risk badge at top
+            if (_currentRiskLevel != null)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getRiskColor(_currentRiskLevel!),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.warning_amber,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Ticket Risk: $_currentRiskLevel',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Legend
             Positioned(
               top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _getRiskColor(_currentRiskLevel!),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.warning_amber,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Ticket Risk: $_currentRiskLevel',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Legend
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: kCitySmartCard.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _LegendItem(
-                    color: Colors.blue,
-                    icon: Icons.local_parking,
-                    label: 'Garage',
-                  ),
-                  const SizedBox(height: 4),
-                  _LegendItem(
-                    color: Colors.green,
-                    icon: Icons.square_outlined,
-                    label: 'Lot',
-                  ),
-                  const SizedBox(height: 4),
-                  _LegendItem(
-                    color: kCitySmartYellow,
-                    icon: Icons.attach_money,
-                    label: 'Street',
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Loading indicator
-          if (_loadingLocation || _loadingSpots)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(),
-            ),
-
-          // Error message
-          if (_error != null)
-            Positioned(
-              top: 50,
-              left: 12,
               right: 12,
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
+                  color: kCitySmartCard.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.warning_amber, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.black87),
-                      ),
+                    _LegendItem(
+                      color: Colors.blue,
+                      icon: Icons.local_parking,
+                      label: 'Garage',
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => setState(() => _error = null),
+                    const SizedBox(height: 4),
+                    _LegendItem(
+                      color: Colors.green,
+                      icon: Icons.square_outlined,
+                      label: 'Lot',
+                    ),
+                    const SizedBox(height: 4),
+                    _LegendItem(
+                      color: kCitySmartYellow,
+                      icon: Icons.attach_money,
+                      label: 'Street',
                     ),
                   ],
                 ),
               ),
             ),
 
-          // Spot list at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _selectedSpot != null
-                ? _SpotDetailCard(
-                    spot: _selectedSpot!,
-                    distance: _distanceBetween(
-                      _currentLocation,
-                      LatLng(_selectedSpot!.lat, _selectedSpot!.lng),
-                    ),
-                    onDirections: () => _openDirections(_selectedSpot!),
-                    onClose: () => setState(() => _selectedSpot = null),
-                    spotColor: _getSpotColor(_selectedSpot!.type),
-                  )
-                : _SpotListPreview(
-                    spots: _parkingSpots.take(3).toList(),
-                    currentLocation: _currentLocation,
-                    onSelect: _selectSpot,
-                    getColor: _getSpotColor,
-                    getIcon: _getSpotIcon,
+            // Loading indicator
+            if (_loadingLocation || _loadingSpots)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(),
+              ),
+
+            // Error message
+            if (_error != null)
+              Positioned(
+                top: 50,
+                left: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-          ),
-        ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => setState(() => _error = null),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Spot list at bottom
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _selectedSpot != null
+                  ? _SpotDetailCard(
+                      spot: _selectedSpot!,
+                      distance: _distanceBetween(
+                        _currentLocation,
+                        LatLng(_selectedSpot!.lat, _selectedSpot!.lng),
+                      ),
+                      onDirections: () => _openDirections(_selectedSpot!),
+                      onClose: () => setState(() => _selectedSpot = null),
+                      spotColor: _getSpotColor(_selectedSpot!.type),
+                    )
+                  : _SpotListPreview(
+                      spots: _parkingSpots.take(3).toList(),
+                      currentLocation: _currentLocation,
+                      onSelect: _selectSpot,
+                      getColor: _getSpotColor,
+                      getIcon: _getSpotIcon,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

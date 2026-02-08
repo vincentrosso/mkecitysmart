@@ -81,6 +81,12 @@ class SubscriptionPlan {
         return maxAlertRadiusMiles > 3;
       case PremiumFeature.unlimitedAlerts:
         return alertVolumePerDay > 10;
+      case PremiumFeature.spotCounts:
+        return heatmapAccess; // Tied to heatmap/Pro access
+      case PremiumFeature.parkingFinder:
+        return heatmapAccess; // Tied to heatmap/Pro access
+      case PremiumFeature.towHelper:
+        return tier == SubscriptionTier.pro;
     }
   }
 }
@@ -94,6 +100,9 @@ enum PremiumFeature {
   prioritySupport,
   expandedRadius,
   unlimitedAlerts,
+  spotCounts, // "~X spots open nearby" zone-aggregated data
+  parkingFinder, // AI-powered safest spot finder
+  towHelper, // Tow recovery helper guide
 }
 
 extension PremiumFeatureExt on PremiumFeature {
@@ -113,6 +122,12 @@ extension PremiumFeatureExt on PremiumFeature {
         return 'Expanded Alert Radius';
       case PremiumFeature.unlimitedAlerts:
         return 'Unlimited Alerts';
+      case PremiumFeature.spotCounts:
+        return 'Live Spot Counts';
+      case PremiumFeature.parkingFinder:
+        return 'AI Parking Finder';
+      case PremiumFeature.towHelper:
+        return 'Tow Recovery Helper';
     }
   }
 
@@ -132,6 +147,12 @@ extension PremiumFeatureExt on PremiumFeature {
         return 'Receive alerts for a wider area around your location';
       case PremiumFeature.unlimitedAlerts:
         return 'No daily limit on the number of alerts you receive';
+      case PremiumFeature.spotCounts:
+        return 'See exactly how many spots are open near you';
+      case PremiumFeature.parkingFinder:
+        return 'AI-powered safest parking spot recommendations';
+      case PremiumFeature.towHelper:
+        return 'Step-by-step guidance when your car gets towed';
     }
   }
 
@@ -151,6 +172,12 @@ extension PremiumFeatureExt on PremiumFeature {
         return Icons.radar;
       case PremiumFeature.unlimitedAlerts:
         return Icons.notifications_active;
+      case PremiumFeature.spotCounts:
+        return Icons.pin_drop;
+      case PremiumFeature.parkingFinder:
+        return Icons.search;
+      case PremiumFeature.towHelper:
+        return Icons.car_crash;
     }
   }
 
@@ -169,6 +196,12 @@ extension PremiumFeatureExt on PremiumFeature {
       case PremiumFeature.expandedRadius:
         return SubscriptionTier.pro;
       case PremiumFeature.unlimitedAlerts:
+        return SubscriptionTier.pro;
+      case PremiumFeature.spotCounts:
+        return SubscriptionTier.pro;
+      case PremiumFeature.parkingFinder:
+        return SubscriptionTier.pro;
+      case PremiumFeature.towHelper:
         return SubscriptionTier.pro;
     }
   }
