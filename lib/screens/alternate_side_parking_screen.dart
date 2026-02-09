@@ -4,6 +4,7 @@ import '../providers/user_provider.dart';
 import '../services/alternate_side_parking_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/alternate_side_parking_card.dart';
+import '../widgets/data_source_attribution.dart';
 
 /// Full screen for alternate side parking information
 class AlternateSideParkingScreen extends StatelessWidget {
@@ -44,6 +45,12 @@ class AlternateSideParkingScreen extends StatelessWidget {
 
           // Notification settings
           _buildNotificationCard(context, service),
+
+          const DataSourceAttribution(
+            source: 'City of Milwaukee DPW (city.milwaukee.gov)',
+            url:
+                'https://city.milwaukee.gov/dpw/infrastructure/Street-Maintenance/Alternate-Side-Parking',
+          ),
         ],
       ),
     );

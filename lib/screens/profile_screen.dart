@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
 import '../widgets/citysmart_scaffold.dart';
+import '../widgets/data_source_attribution.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -227,6 +228,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 48),
+                    // Data sources & disclaimer (required by Google Play)
+                    const GovernmentDataDisclaimer(),
+                    const SizedBox(height: 24),
                     // Danger zone - Delete Account
                     const Divider(),
                     const SizedBox(height: 16),

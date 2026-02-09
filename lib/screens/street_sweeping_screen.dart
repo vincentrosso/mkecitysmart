@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/street_sweeping.dart';
 import '../providers/user_provider.dart';
+import '../widgets/data_source_attribution.dart';
 
 class StreetSweepingScreen extends StatefulWidget {
   const StreetSweepingScreen({super.key});
@@ -81,6 +82,11 @@ class _StreetSweepingScreenState extends State<StreetSweepingScreen> {
             _ViolationPanel(
               schedule: schedule,
               onMoved: () => provider.logVehicleMoved(schedule.id),
+            ),
+            const DataSourceAttribution(
+              source: 'City of Milwaukee DPW (city.milwaukee.gov)',
+              url:
+                  'https://city.milwaukee.gov/dpw/infrastructure/Street-Maintenance/Street-Sweeping',
             ),
           ],
         ),
