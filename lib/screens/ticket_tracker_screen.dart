@@ -16,6 +16,7 @@ import '../services/notification_service.dart';
 import '../services/ticket_ocr_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/citysmart_scaffold.dart';
+import '../widgets/data_source_attribution.dart';
 
 /// Milwaukee parking violation types from 466K citation data analysis
 /// Ordered by frequency (most common first)
@@ -167,6 +168,12 @@ class _TicketTrackerScreenState extends State<TicketTrackerScreen>
                     ],
                   ),
                 ),
+              ),
+
+              const DataSourceAttribution(
+                source: 'City of Milwaukee (city.milwaukee.gov)',
+                url: 'https://city.milwaukee.gov/parkingtickets',
+                prefix: 'Citation data',
               ),
 
               // Tabs

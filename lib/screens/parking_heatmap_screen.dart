@@ -783,6 +783,37 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                             ),
                           ),
                         ),
+
+                      // Data source attribution (Google Play policy)
+                      Positioned(
+                        right: 12,
+                        bottom: 50,
+                        child: GestureDetector(
+                          onTap: () => launchUrl(
+                            Uri.parse(
+                              'https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/',
+                            ),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Source: Milwaukee Maps (ArcGIS)',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

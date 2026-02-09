@@ -7,6 +7,7 @@ import '../providers/user_provider.dart';
 import '../services/calendar_service.dart';
 import '../services/garbage_schedule_service.dart';
 import '../services/location_service.dart';
+import '../widgets/data_source_attribution.dart';
 
 class GarbageScheduleScreen extends StatefulWidget {
   const GarbageScheduleScreen({super.key});
@@ -225,6 +226,11 @@ class _GarbageScheduleScreenState extends State<GarbageScheduleScreen> {
                     ),
                   );
                 }),
+              const DataSourceAttribution(
+                source: 'Milwaukee DPW (itmdapps.milwaukee.gov)',
+                url:
+                    'https://itmdapps.milwaukee.gov/DpwServletsPublic/garbage_day',
+              ),
             ],
           ),
         );

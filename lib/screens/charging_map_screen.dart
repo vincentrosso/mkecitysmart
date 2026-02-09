@@ -124,6 +124,21 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                   )
                 else if (!_loadingStations)
                   const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => launchUrl(
+                    Uri.parse('https://openchargemap.org'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: const Text(
+                    'Source: OpenChargeMap',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 10,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
