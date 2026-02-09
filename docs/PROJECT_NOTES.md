@@ -1,10 +1,13 @@
 # MKE CitySmart — Project Notes
 
-> **Last updated:** February 7, 2026
-> **Version:** 1.0.60+63
+> **Last updated:** February 9, 2026
+> **Version:** 1.0.67+70
 > **Package:** `mkecitysmart`
 > **Repository:** [Dwayne-26/Mke-CitySmart-app_flutter](https://github.com/Dwayne-26/Mke-CitySmart-app_flutter)
 > **Tests:** 209 passing · 0 failing · `flutter analyze` clean
+> **Apple App Store:** Submitted for review (v1.0.67, build 70)
+> **Google Play Store:** Internal testing live (release 70), closed testing pending
+> **Post-launch TODO:** See `docs/POST_LAUNCH_TODO.md`
 
 ---
 
@@ -526,4 +529,4 @@ Sign-In, Sign in with Apple. Guest mode supported.
 | Models | 23 |
 | Widgets | 14 |
 | Total commits | 544 |
-| Current version | 1.0.60+63 |
+| Current version | 1.0.67+70 |
