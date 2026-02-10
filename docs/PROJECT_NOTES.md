@@ -27,6 +27,14 @@ Notes:
 - Firebase Hosting serves from `build/web` (see `firebase.json`). When deploying Hosting, ensure `support.html` is present in `build/web/`.
 - This is a metadata fix; it should not require a new binary if the build is already uploaded.
 
+## 🤝 Storefront Support Contact (Consistency)
+
+- **Support email (Support page):** mkeparkapp@gmail.com
+- **Google Play Store listing:** Update “Developer contact” email to match the Support email so users see a single contact across platforms.
+
+Apple review note:
+- As of **2026-02-10**, App Store Connect shows **In Review**. Apple indicated review may take a few hours up to ~48 hours.
+
 ## 🏙️ What Is CitySmart?
 
 **MKE CitySmart** is a cross-platform Flutter app that helps Milwaukee drivers

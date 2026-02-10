@@ -233,6 +233,18 @@ NOTES:
 
 - 2026-02-10: Uploaded AAB 1.0.69+73 to Google Play Console (track per release plan). Pending/monitor rollout + pre-launch checks.
 
+[F-409] [NEXT] (P0) Follow up: Apple review status (build 73)
+- Apple indicated review may take a few hours up to 48 hours
+- Check App Store Connect for status changes or messages (Resolution Center)
+NOTES:
+
+[F-410] [DONE] (P0) Google Play Store: update developer contact email
+- Set the app listing “Developer contact” email to: mkeparkapp@gmail.com
+- Ensure it matches the Support page email (so users see a consistent contact)
+NOTES:
+
+- 2026-02-10: Updated Google Play Console contact email to mkeparkapp@gmail.com.
+
 ========================================================
 RUNNING NOTES (quick scratchpad)
 --------------------------------------------------------
@@ -242,6 +254,9 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-02-10 — [F-410] Google Play Store: update developer contact email
+  Result: Updated Play Console listing/developer contact email to mkeparkapp@gmail.com.
+  Evidence: User confirmed update
 2026-02-10 — [F-408] Upload Android AAB 1.0.69+73 to Google Play
   Result: Uploaded release AAB (1.0.69+73) to Google Play Console.
   Evidence: User confirmed upload in Play Console
