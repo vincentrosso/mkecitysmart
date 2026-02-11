@@ -307,6 +307,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     if (!mounted) return;
 
+    final lastError = SubscriptionService.instance.lastError;
+    if (lastError != null && lastError.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(lastError), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     // Refresh subscription status after returning from customer center
     context.read<UserProvider>().updateSubscriptionTier(
       SubscriptionService.instance.currentTier,
