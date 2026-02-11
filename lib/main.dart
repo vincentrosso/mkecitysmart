@@ -246,7 +246,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
         await diagnostics
             .recordFuture<void>(
               'SubscriptionService',
-              () => SubscriptionService.instance.initialize(),
+              () => SubscriptionService.instance.initialize(
+                userId: FirebaseAuth.instance.currentUser?.uid,
+              ),
               onSuccess: (_, entry) => entry.details = 'RevenueCat configured.',
             )
             .timeout(const Duration(seconds: 5), onTimeout: () async {});

@@ -1,15 +1,39 @@
 # MKE CitySmart — Project Notes
 
-> **Last updated:** February 9, 2026
-> **Version:** 1.0.67+70
+> **Last updated:** February 10, 2026
+> **Version:** 1.0.69+73
 > **Package:** `mkecitysmart`
 > **Repository:** [Dwayne-26/Mke-CitySmart-app_flutter](https://github.com/Dwayne-26/Mke-CitySmart-app_flutter)
 > **Tests:** 209 passing · 0 failing · `flutter analyze` clean
-> **Apple App Store:** Submitted for review (v1.0.67, build 70)
-> **Google Play Store:** Internal testing live (release 70), closed testing pending
+> **Apple App Store:** Build 73 uploaded; review resubmission pending metadata (Support URL)
+> **Google Play Store:** Internal testing live (release 70); next upload pending (AAB 1.0.69+73)
 > **Post-launch TODO:** See `docs/POST_LAUNCH_TODO.md`
 
 ---
+
+## 🧾 Change Log (Recent)
+
+- **2026-02-10 — [F-406] Support URL page shipped**: Added a hosted Support page to satisfy App Store Connect metadata requirements.
+- **2026-02-09 — [F-304] RevenueCat ↔ Google Play integration**: Play service credentials configured; RevenueCat checks all green.
+
+## 🧩 App Store Connect Metadata URLs
+
+- **Support URL:** https://mkeparkapp-1ad15.web.app/support.html
+- **Privacy Policy URL:** https://mkeparkapp-1ad15.web.app/privacy.html
+- **Terms URL:** https://mkeparkapp-1ad15.web.app/terms.html
+- **Delete Account URL:** https://mkeparkapp-1ad15.web.app/delete-account.html
+
+Notes:
+- Firebase Hosting serves from `build/web` (see `firebase.json`). When deploying Hosting, ensure `support.html` is present in `build/web/`.
+- This is a metadata fix; it should not require a new binary if the build is already uploaded.
+
+## 🤝 Storefront Support Contact (Consistency)
+
+- **Support email (Support page):** mkeparkapp@gmail.com
+- **Google Play Store listing:** Update “Developer contact” email to match the Support email so users see a single contact across platforms.
+
+Apple review note:
+- As of **2026-02-10**, App Store Connect shows **In Review**. Apple indicated review may take a few hours up to ~48 hours.
 
 ## 🏙️ What Is CitySmart?
 
@@ -387,6 +411,8 @@ check fees, navigate there.
 **What it does:** Two-tier subscription model (Free / Pro) with feature gating,
 a paywall, and AdMob ads for free-tier users.
 
+**Google Play ↔ RevenueCat credentials note (Feb 2026):** Play Console navigation for service account / API access has changed. If RevenueCat shows “Credentials need attention” for Google Play, follow RevenueCat’s current guide for creating Play service credentials: https://www.revenuecat.com/docs/service-credentials/creating-play-service-credentials
+
 **Tiers:**
 | Feature | Free | Pro ($4.99/mo) |
 |---------|------|----------------|
@@ -403,6 +429,16 @@ a paywall, and AdMob ads for free-tier users.
 | Priority Support | ❌ | ✅ |
 | Expanded Radius (15 mi) | ❌ | ✅ |
 | Unlimited Alerts | ❌ | ✅ |
+
+**Android Purchase Validation Checklist (pre-release):**
+1. RevenueCat dashboard → Google Play app credentials page shows all 3 green checks (subscriptions / inappproducts / monetization)
+2. RevenueCat Offerings include Google Play products: `citysmart_pro_monthly`, `citysmart_pro_yearly`
+3. Both products grant entitlement `pro` (or `citysmart_pro`)
+4. On Android device/emulator: open paywall → offerings load (not fallback cards)
+5. Test purchase → `SubscriptionTier.pro` activates → gated features unlock
+6. Restore purchases works cross-device (same Firebase UID → same RevenueCat app_user_id)
+7. Service account: `revenuecat-play@mkeparkapp-1ad15.iam.gserviceaccount.com`
+8. Google Play Developer API enabled in project `mkeparkapp-1ad15`
 
 **Gating implementation:**
 - `FeatureGate` widget wraps premium screen bodies (heatmap, parking finder, tow helper)
@@ -499,6 +535,11 @@ Sign-In, Sign in with Apple. Guest mode supported.
 
 ## 🚀 What's Next
 
+### Release Checklist (Immediate)
+1. **App Store Connect** — Paste Support URL and resubmit build **1.0.69 (73)** for review
+2. **Google Play Console** — Upload `app-release.aab` for **1.0.69+73** to the intended track
+3. **Sanity check** — Confirm subscription purchase flow on both platforms (RevenueCat entitlements `pro`)
+
 ### Scaling Roadmap
 1. **Cloud Function triggers** — Auto-recalculate zones when reports expire
 2. **Hourly snapshot cron** — Record hourly averages for pattern detection
@@ -529,4 +570,4 @@ Sign-In, Sign in with Apple. Guest mode supported.
 | Models | 23 |
 | Widgets | 14 |
 | Total commits | 544 |
-| Current version | 1.0.67+70 |
+| Current version | 1.0.69+73 |

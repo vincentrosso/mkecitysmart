@@ -1,5 +1,5 @@
 MKE City Smart — TODO Tracking
-Last Updated: 2026-01-31
+Last Updated: 2026-02-10
 Owner: Wayne26
 
 LEGEND
@@ -175,6 +175,12 @@ NOTES:
 NOTES:
 - 2026-02-01: Implemented referral_service.dart with Firestore tracking. Unique code generation (MKE + 6 alphanumeric). 7-day premium trial for both referrer and referred. Max 10 rewards per user. Created referral_screen.dart with share functionality, stats display, code entry.
 
+[F-304] [DONE] (P1) RevenueCat ↔ Google Play integration
+- Connect service account credentials so RevenueCat can validate Android purchases
+- Match iOS setup (already done via App Store Connect)
+NOTES:
+- 2026-02-09: Created service account revenuecat-play@mkeparkapp-1ad15.iam.gserviceaccount.com in Google Cloud. Enabled Google Play Developer API. Invited service account in Play Console with View financial data, Manage orders and subscriptions, View app information, Manage store presence. Generated JSON key and uploaded to RevenueCat. All 3 credential checks passed (subscriptions, inappproducts, monetization). Updated main.dart to pass Firebase UID to RevenueCat init for cross-device entitlement sync. flutter analyze clean, 209/209 tests pass.
+
 ========================================================
 P0/P1 — QUALITY / SECURITY / RELEASE READINESS
 --------------------------------------------------------
@@ -208,6 +214,37 @@ NOTES:
 NOTES:
 - 2026-01-31: Fixed URL case sensitivity bug in GarbageScheduleService. Milwaukee DPW API changed from `DPWServletsPublic` to `DpwServletsPublic`. Updated URL to `https://itmdapps.milwaukee.gov/DpwServletsPublic/garbage_day`.
 
+[F-406] [DONE] (P0) App Store Connect Support URL page
+- Add a Support page and deploy so App Store Connect metadata can be completed
+NOTES:
+- 2026-02-10: Added `web/support.html` and deployed Hosting at https://mkeparkapp-1ad15.web.app/support.html (Hosting serves from `build/web`).
+
+-[F-407] [DONE] (P0) Update App Store Connect metadata + resubmit iOS build
+- Paste Support URL (and confirm Privacy/Terms/Delete URLs)
+- Resubmit **1.0.69 (73)** for review (metadata-only fix; should not require a new binary)
+NOTES:
+
+- 2026-02-10: Completed in App Store Connect (Support URL set; resubmitted build 1.0.69 (73) for review).
+
+-[F-408] [DONE] (P0) Upload Android AAB 1.0.69+73 to Google Play
+- Upload `build/app/outputs/bundle/release/app-release.aab` to the intended track
+- Confirm subscription products + purchase validation after upload
+NOTES:
+
+- 2026-02-10: Uploaded AAB 1.0.69+73 to Google Play Console (track per release plan). Pending/monitor rollout + pre-launch checks.
+
+[F-409] [NEXT] (P0) Follow up: Apple review status (build 73)
+- Apple indicated review may take a few hours up to 48 hours
+- Check App Store Connect for status changes or messages (Resolution Center)
+NOTES:
+
+[F-410] [DONE] (P0) Google Play Store: update developer contact email
+- Set the app listing “Developer contact” email to: mkeparkapp@gmail.com
+- Ensure it matches the Support page email (so users see a consistent contact)
+NOTES:
+
+- 2026-02-10: Updated Google Play Console contact email to mkeparkapp@gmail.com.
+
 ========================================================
 RUNNING NOTES (quick scratchpad)
 --------------------------------------------------------
@@ -217,6 +254,21 @@ RUNNING NOTES (quick scratchpad)
 ========================================================
 DONE LOG (most recent first)
 ---------------------------------------------------------
+2026-02-10 — [F-410] Google Play Store: update developer contact email
+  Result: Updated Play Console listing/developer contact email to mkeparkapp@gmail.com.
+  Evidence: User confirmed update
+2026-02-10 — [F-408] Upload Android AAB 1.0.69+73 to Google Play
+  Result: Uploaded release AAB (1.0.69+73) to Google Play Console.
+  Evidence: User confirmed upload in Play Console
+2026-02-10 — [F-407] Update App Store Connect metadata + resubmit iOS build
+  Result: Updated App Store Connect Support URL metadata and resubmitted build 1.0.69 (73) for review.
+  Evidence: User confirmed resubmission in App Store Connect
+2026-02-10 — [F-406] App Store Connect Support URL page
+  Result: Added Support page (`web/support.html`) and deployed Firebase Hosting so a valid Support URL is available for App Store Connect metadata.
+  Evidence: https://mkeparkapp-1ad15.web.app/support.html
+2026-02-09 — [F-304] RevenueCat ↔ Google Play integration
+  Result: Created Google Cloud service account, enabled Google Play Developer API, invited service account in Play Console with financial + store permissions, uploaded JSON key to RevenueCat. All 3 credential checks passed. Updated main.dart to pass Firebase UID into RevenueCat initialization for cross-device entitlement sync. Added Android purchase validation checklist to PROJECT_NOTES.md.
+  Evidence: RevenueCat dashboard all-green; flutter analyze clean; 209/209 tests pass; git commit
 2026-01-31 — [F-006] Sightings feed: query + filters work
   Result: Implemented full feed filtering system. Created FeedFilterService for query building and radius calculations. Updated FeedScreen with filter bar UI (radius: 1mi/5mi/10mi/city-wide; time: 1hr/2hr/6hr/24hr/all). Haversine distance filtering, time window queries, pagination with Load More (20/page). Cards show relative time and distance.
   Evidence: Git commits; FeedFilterService + FeedScreen updated

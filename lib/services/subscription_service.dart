@@ -19,8 +19,8 @@ class SubscriptionService extends ChangeNotifier {
 
   // Production keys from RevenueCat dashboard
   static const _revenueCatApiKeyiOS = 'appl_nPogZtDlCliLIbcHVwxxguJacpq';
-  // Android key - add from RevenueCat when launching on Google Play
-  static const _revenueCatApiKeyAndroid = 'goog_PLACEHOLDER';
+  // Android key from RevenueCat (Google Play)
+  static const _revenueCatApiKeyAndroid = 'goog_UfVOclLbKRHTgvZmywUdbmeJEVs';
 
   // Entitlement identifier (must match RevenueCat dashboard)
   static const entitlementPro = 'pro';
@@ -32,6 +32,7 @@ class SubscriptionService extends ChangeNotifier {
 
   bool _initialized = false;
   bool _isInitializing = false;
+  Future<void>? _initFuture;
   CustomerInfo? _customerInfo;
   Offerings? _offerings;
   String? _lastError;
@@ -67,7 +68,14 @@ class SubscriptionService extends ChangeNotifier {
 
   /// Initialize RevenueCat SDK
   Future<void> initialize({String? userId}) async {
-    if (_initialized || _isInitializing) return;
+    if (_initialized) return;
+    if (_initFuture != null) return _initFuture;
+
+    _initFuture = _initializeInternal(userId: userId);
+    return _initFuture;
+  }
+
+  Future<void> _initializeInternal({String? userId}) async {
     _isInitializing = true;
 
     try {
@@ -147,6 +155,7 @@ class SubscriptionService extends ChangeNotifier {
       }
     } finally {
       _isInitializing = false;
+      _initFuture = null;
       notifyListeners();
     }
   }
@@ -337,6 +346,10 @@ class SubscriptionService extends ChangeNotifier {
   Future<bool> presentPaywall({String? offeringIdentifier}) async {
     if (!_initialized) {
       await initialize();
+      if (!_initialized) {
+        _lastError ??= 'Subscription service not initialized';
+        return false;
+      }
     }
 
     try {
@@ -366,6 +379,10 @@ class SubscriptionService extends ChangeNotifier {
   Future<bool> presentPaywallIfNeeded(String entitlementId) async {
     if (!_initialized) {
       await initialize();
+      if (!_initialized) {
+        _lastError ??= 'Subscription service not initialized';
+        return false;
+      }
     }
 
     try {
@@ -391,6 +408,10 @@ class SubscriptionService extends ChangeNotifier {
   Future<void> presentCustomerCenter() async {
     if (!_initialized) {
       await initialize();
+      if (!_initialized) {
+        _lastError ??= 'Subscription service not initialized';
+        return;
+      }
     }
 
     try {

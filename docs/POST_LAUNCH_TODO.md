@@ -1,9 +1,10 @@
 # MKE CitySmart — Post-Launch TODO
 
 > **Created:** February 9, 2026
-> **Version submitted:** 1.0.67+70
-> **Apple App Store:** Submitted for review (manual release)
-> **Google Play Store:** Internal testing live, closed testing pending (need 12 testers × 14 days)
+> **Last Updated:** February 9, 2026
+> **Current Version:** 1.0.68+72
+> **Apple App Store:** Submitted for review v1.0.67+70 (manual release)
+> **Google Play Store:** Closed testing Alpha — Release 72 (1.0.68) in review, 5 testers
 
 ---
 
@@ -84,17 +85,20 @@
 ## 🟡 2. Google Play Store — Production Launch
 
 ### Closed Testing Requirements
+- [x] **Set up closed testing Alpha track** — Release 72 (1.0.68) uploaded and in review
+- [x] **Upload AAB to closed testing** — v1.0.68+72 (75MB)
+- [x] **Opt-in link:** `https://play.google.com/apps/testing/com.mkecitysmart.app`
 - [ ] **Recruit 12 testers** — Need 12 unique Gmail accounts opted-in to closed testing
-- [ ] **Current testers (2):** `getitdonewisconsin@gmail.com`, `dwaynesampson253@gmail.com`
-- [ ] **Need 10 more testers** — Friends, family, Milwaukee community members
+- [ ] **Current testers (5):** includes `getitdonewisconsin@gmail.com`, `dwaynesampson253@gmail.com`
+- [ ] **Need 7 more testers** — Friends, family, Milwaukee community members
 - [ ] **Wait 14 days** — Google requires 14 continuous days of closed testing
 - [ ] **Earliest production eligible:** ~February 23, 2026 (if 12 testers onboarded by Feb 9)
 - [ ] **Submit for production review** — After 14 days with 12 testers
 
 ### Pending Google Play Items
+- [x] **Google Play policy fix** — Added source attributions to all 6 data screens + disclaimer on profile
+- [x] **Play Store description updated** — Disclaimer + 7 official source URLs added
 - [ ] **READ_MEDIA_IMAGES justification** — Submitted, awaiting approval
-- [ ] **Closed testing track setup** — Create closed testing track (not just internal)
-- [ ] **Upload AAB to closed testing** — Current AAB: `app-release.aab` (78.2MB)
 - [ ] **Production store listing review** — Verify all screenshots, descriptions finalized
 
 ---
@@ -160,4 +164,13 @@
 - [x] App Store Connect submitted for review
 - [x] Firebase Hosting: privacy.html + delete-account.html deployed
 - [x] Firebase Auth test account created for store reviewers
-- [x] All code committed and pushed
+- [x] Google Play REJECTED for Misleading Claims — fixed with source attributions
+- [x] Added DataSourceAttribution widget + GovernmentDataDisclaimer to 6 screens + profile
+- [x] Play Store description updated with disclaimer + 7 official source URLs
+- [x] Version bumped to 1.0.68+72, AAB rebuilt (75MB)
+- [x] Closed testing Alpha track set up — Release 72 in review
+- [x] Firebase domain verification for mkecitysmart.com — VERIFIED ✅
+- [x] Firebase Auth email templates customized (sender: noreply@mkecitysmart.com)
+- [x] Firebase "Delete User Data" extension installed (auto-cleanup on account deletion)
+- [x] APP_FEATURES.md created for sharing/AirDrop
+- [x] All code committed and pushed (latest: d6e67cf)
