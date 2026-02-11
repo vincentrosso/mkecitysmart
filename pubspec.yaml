@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.71+75
+version: 1.0.72+76
 
 environment:
   sdk: ^3.9.2
@@ -70,9 +70,9 @@ dependencies:
   share_plus: ^10.1.4
   purchases_ui_flutter: ^8.11.0
 
-  path_provider: any
-  path: any
-  web: any
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  web: ^1.1.1
   google_mlkit_text_recognition: ^0.15.1
 dev_dependencies:
   flutter_test:
@@ -94,7 +94,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-  firebase_auth_platform_interface: any
+  firebase_auth_platform_interface: ^8.1.6
 flutter:
 
   # The following line ensures that the Material Icons font is

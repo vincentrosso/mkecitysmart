@@ -31,7 +31,6 @@ class SubscriptionService extends ChangeNotifier {
   static const productYearly = 'citysmart_pro_yearly';
 
   bool _initialized = false;
-  bool _isInitializing = false;
   Future<void>? _initFuture;
   CustomerInfo? _customerInfo;
   Offerings? _offerings;
@@ -76,8 +75,6 @@ class SubscriptionService extends ChangeNotifier {
   }
 
   Future<void> _initializeInternal({String? userId}) async {
-    _isInitializing = true;
-
     try {
       // Enable debug logs in development
       if (kDebugMode) {
@@ -101,7 +98,6 @@ class SubscriptionService extends ChangeNotifier {
           'SubscriptionService: Using placeholder API key - skipping RevenueCat init',
         );
         _initialized = true;
-        _isInitializing = false;
         return;
       }
 
@@ -154,7 +150,6 @@ class SubscriptionService extends ChangeNotifier {
         debugPrint('SubscriptionService: Init failed - $e');
       }
     } finally {
-      _isInitializing = false;
       _initFuture = null;
       notifyListeners();
     }
