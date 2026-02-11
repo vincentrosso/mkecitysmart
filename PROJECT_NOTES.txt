@@ -2,6 +2,7 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-02-10 [SEC-001] GCP security reminders: Do not commit keys; move secrets to Secret Manager; audit + disable dormant service account keys (30+ days); restrict API keys by API + environment; apply least privilege with IAM recommender; enforce key rotation (iam.serviceAccountKeyExpiryHours) / optionally disable key creation (iam.managed.disableServiceAccountKeyCreation); verify Essential Contacts + billing budget/anomaly alerts.
 - 2026-01-31 [F-104] Tow Helper: Created TowHelperScreen with Recovery Guide (5-step process) and Tow Lots directory; Milwaukee tow lot data with phone/address/hours; quick-dial phone integration; Google/Apple Maps directions; fee estimator; tips to avoid future tows; dashboard tile.
 - 2026-01-31 [F-103] Saved Places: SavedPlace model + SavedPlacesService with Firestore persistence, local caching, geohash encoding; SavedPlacesScreen with home/work cards, favorites list, place editor sheet; per-place notification radius; linked from Profile screen.
 - 2026-01-31 [F-403] Analytics Instrumentation: Added firebase_analytics + firebase_crashlytics; AnalyticsService with screen/event/error tracking; FlutterError.onError and PlatformDispatcher.onError handlers; user ID binding; tracking in FeedScreen, SavedPlacesScreen, TowHelperScreen.
