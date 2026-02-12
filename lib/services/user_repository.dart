@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../data/local/local_database.dart'
     if (dart.library.html) '../data/local/local_database_stub.dart';
@@ -43,7 +44,17 @@ class UserRepository {
     if (userId == null) return null;
 
     // 1) Local first for offline experience.
-    UserProfile? localProfile = await _localDb.fetchProfile(userId);
+    UserProfile? localProfile;
+    try {
+      localProfile = await _localDb.fetchProfile(userId);
+    } catch (e) {
+      // Guardrail: local cache corruption/migrations should not block auth.
+      debugPrint('[UserRepository] Local profile read failed: $e');
+      try {
+        await _localDb.clearProfile(userId);
+      } catch (_) {}
+      localProfile = null;
+    }
 
     // 2) Try to refresh from Firestore; update local cache if it succeeds.
     try {
@@ -62,7 +73,12 @@ class UserRepository {
 
   Future<void> saveProfile(UserProfile profile) async {
     // Persist locally first (offline-first).
-    await _localDb.upsertProfile(profile);
+    try {
+      await _localDb.upsertProfile(profile);
+    } catch (e) {
+      // Don't block sign-in if local persistence fails; Firebase may still work.
+      debugPrint('[UserRepository] Local profile write failed: $e');
+    }
 
     try {
       await _userDocument().set(profile.toJson());
@@ -74,10 +90,18 @@ class UserRepository {
   }
 
   Future<void> clearProfile() async {
-    if (_activeUserId != null) {
-      await _localDb.clearProfile(_activeUserId!);
+    final userId = _activeUserId;
+    if (userId == null) return;
+
+    try {
+      await _localDb.clearProfile(userId);
+    } catch (_) {}
+
+    try {
+      await _userCollection().doc(userId).delete();
+    } catch (_) {
+      // Ignore remote failures (offline/permissions/etc).
     }
-    await _userDocument().delete();
   }
 
   Future<List<T>> _loadSubCollection<T>({

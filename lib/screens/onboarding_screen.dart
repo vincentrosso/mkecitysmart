@@ -56,31 +56,88 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: kCitySmartYellow,
     ),
     _OnboardingPage(
-      icon: Icons.warning_amber_rounded,
-      title: 'Avoid Parking Tickets',
+      icon: Icons.map_outlined,
+      title: 'Your Dashboard',
       description:
-          'Get real-time risk alerts based on 466,000+ citation records. Know where tickets happen most.',
+          'The home screen gives you everything at a glance — parking risk level, '
+          'alt-side status, garbage day, and quick access to all features.',
+      color: const Color(0xFF4FC3F7),
+      tips: [
+        'Tap any tile to jump to that feature',
+        'Your risk badge updates based on your location',
+        'Scroll down to see all 16+ features',
+      ],
+    ),
+    _OnboardingPage(
+      icon: Icons.warning_amber_rounded,
+      title: 'Parking Risk Heatmap',
+      description:
+          'See citation hotspots across Milwaukee built from 466,000+ real ticket records. '
+          'Tap any zone to see the risk level and most common violations.',
       color: const Color(0xFFE53935),
+      tips: [
+        'Red zones = highest ticket risk',
+        'Tap "Navigate to Safe Spot" for directions',
+        'Uses Google Maps on Android, Apple Maps on iOS',
+      ],
     ),
     _OnboardingPage(
       icon: Icons.swap_horiz,
       title: 'Alternate Side Parking',
       description:
-          'Never forget which side to park on. Get daily reminders before the rules change at midnight.',
+          'Milwaukee requires parking on the odd-numbered side on odd days, '
+          'and the even side on even days. The switch happens at midnight.',
       color: const Color(0xFF4FC3F7),
+      tips: [
+        'Today\'s side is shown right on your dashboard',
+        'Enable morning & evening reminders',
+        'Check street signs — some areas have exceptions',
+      ],
+    ),
+    _OnboardingPage(
+      icon: Icons.receipt_long,
+      title: 'Ticket Tracking',
+      description:
+          'Search for tickets by license plate, track payment status, '
+          'and view your complete citation history in one place.',
+      color: const Color(0xFFFF9800),
+      tips: [
+        'Add your vehicles for automatic ticket lookups',
+        'Get notified when a new ticket is written',
+        'View ticket details, photos, and due dates',
+      ],
     ),
     _OnboardingPage(
       icon: Icons.notifications_active,
       title: 'Smart Notifications',
       description:
-          'Receive alerts for street sweeping, garbage day, high-risk zones, and more.',
+          'Set up custom alerts for street sweeping, garbage day, '
+          'high-risk zones, and alternate-side parking changes.',
       color: const Color(0xFF66BB6A),
+      tips: [
+        'Morning reminders before the parking side changes',
+        'Street sweeping alerts save you from tickets',
+        'Customize timing in Preferences',
+      ],
+    ),
+    _OnboardingPage(
+      icon: Icons.star_rounded,
+      title: 'Pro Tips',
+      description: 'A few quick tips to get the most out of CitySmart.',
+      color: kCitySmartYellow,
+      tips: [
+        'Save frequent spots with "Saved Places"',
+        'Report parking availability for others nearby',
+        'Invite friends to earn free Premium access',
+        'Check "EV Chargers" for charging station locations',
+      ],
     ),
     _OnboardingPage(
       icon: Icons.person_add,
-      title: 'Create Your Account',
+      title: 'Ready to Go!',
       description:
-          'Sign up to save your preferences, track tickets, and get personalized alerts.',
+          'Create an account to save preferences, track tickets, and get '
+          'personalized alerts — or explore as a guest first.',
       color: kCitySmartYellow,
       isLastPage: true,
     ),
@@ -106,6 +163,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding({bool createAccount = false}) async {
     await OnboardingService.instance.setOnboardingComplete();
     if (!mounted) return;
+
+    // If we can pop (e.g. came from "Take a Tour"), just go back
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+      return;
+    }
 
     if (createAccount) {
       Navigator.pushReplacementNamed(context, '/register');
@@ -189,44 +252,116 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildPage(_OnboardingPage page) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icon container
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              color: page.color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 16),
+            // Icon container
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: page.color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(page.icon, size: 60, color: page.color),
             ),
-            child: Icon(page.icon, size: 70, color: page.color),
-          ),
-          const SizedBox(height: 48),
+            const SizedBox(height: 32),
 
-          // Title
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: kCitySmartText,
+            // Title
+            Text(
+              page.title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: kCitySmartText,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-          // Description
-          Text(
-            page.description,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: kCitySmartMuted,
-              height: 1.5,
+            // Description
+            Text(
+              page.description,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: kCitySmartMuted,
+                height: 1.5,
+              ),
             ),
-          ),
-        ],
+
+            // Tips section (if present)
+            if (page.tips != null && page.tips!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: page.color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: page.color.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 18,
+                          color: page.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Quick Tips',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: page.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...page.tips!.map(
+                      (tip) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 6),
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: page.color.withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                tip,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: kCitySmartText,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -336,6 +471,7 @@ class _OnboardingPage {
   final String description;
   final Color color;
   final bool isLastPage;
+  final List<String>? tips;
 
   _OnboardingPage({
     required this.icon,
@@ -343,5 +479,6 @@ class _OnboardingPage {
     required this.description,
     required this.color,
     this.isLastPage = false,
+    this.tips,
   });
 }

@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/parking_report.dart';
 import 'parking_crowdsource_service.dart';
 import 'parking_risk_service.dart';
+import 'zone_aggregation_service.dart';
 
 /// Parking prediction service powered by real Milwaukee citation data.
 ///
@@ -28,6 +30,7 @@ class ParkingPredictionService {
 
   final _riskService = ParkingRiskService.instance;
   final _crowdsourceService = ParkingCrowdsourceService.instance;
+  final _zoneService = ZoneAggregationService.instance;
 
   /// Cache for location risk
   LocationRisk? _cachedLocationRisk;
@@ -231,6 +234,259 @@ class ParkingPredictionService {
     }).toList();
   }
 
+  // ---------------------------------------------------------------------------
+  // Recommended Open Spot (combines all data sources)
+  // ---------------------------------------------------------------------------
+
+  /// Find the best open parking spot nearby by combining:
+  /// 1. Real-time crowdsource reports (leavingSpot / spotAvailable) — exact GPS
+  /// 2. Zone-level availability (CrowdsourceZone.estimatedOpenSpots) — ~150m areas
+  /// 3. Zone historical patterns (hourlyAvgOpenSpots) — time-of-day prediction
+  /// 4. Citation risk zones — safety scoring
+  ///
+  /// Results are ranked by: data freshness → availability → safety → distance.
+  Future<List<RecommendedSpot>> findBestOpenSpots({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 1.5,
+    int maxResults = 5,
+  }) async {
+    debugPrint(
+      'ParkingPredictionService: Finding best open spots near $latitude, $longitude',
+    );
+
+    final now = DateTime.now();
+    final candidates = <RecommendedSpot>[];
+
+    // ── Layer 1: Real-time crowdsource reports (highest priority) ─────────
+    try {
+      final nearbyReports = await _crowdsourceService.getNearbyReports(
+        latitude: latitude,
+        longitude: longitude,
+        geohashPrecision: 5, // ~4.9km to cast a wider net
+      );
+
+      for (final report in nearbyReports) {
+        if (!report.reportType.isPositiveSignal) continue;
+        if (!report.isStillRelevant) continue;
+
+        final dist = _haversineDistance(
+          latitude,
+          longitude,
+          report.latitude,
+          report.longitude,
+        );
+        if (dist > radiusKm) continue;
+
+        final ageMinutes = now.difference(report.timestamp).inMinutes;
+        // Freshness score: 1.0 at 0 min, decays toward 0 at TTL
+        final ttl = report.reportType.ttlMinutes;
+        final freshness = ((ttl - ageMinutes) / ttl).clamp(0.0, 1.0);
+
+        String reason;
+        if (report.reportType == ReportType.leavingSpot) {
+          if (ageMinutes <= 1) {
+            reason = 'Someone is leaving this spot now';
+          } else {
+            reason = 'Spot opened $ageMinutes min ago';
+          }
+        } else {
+          reason = 'Open spot reported $ageMinutes min ago';
+        }
+
+        candidates.add(
+          RecommendedSpot(
+            latitude: report.latitude,
+            longitude: report.longitude,
+            distanceKm: dist,
+            walkingMinutes: (dist / 0.08).round(),
+            reason: reason,
+            source: SpotSource.crowdsourceReport,
+            confidence: (0.7 + 0.3 * freshness).clamp(0.0, 1.0),
+            safetyScore: null, // filled in below
+            freshness: freshness,
+            reportType: report.reportType,
+            reportAge: Duration(minutes: ageMinutes),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('ParkingPredictionService: Crowdsource layer failed: $e');
+    }
+
+    // ── Layer 2: Zone-level availability ──────────────────────────────────
+    try {
+      final zones = await _zoneService.getNearbyZones(
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      for (final zone in zones) {
+        if (zone.enforcementActive ||
+            zone.sweepingActive ||
+            zone.parkingBlocked) {
+          continue;
+        }
+
+        final dist = _haversineDistance(
+          latitude,
+          longitude,
+          zone.latitude,
+          zone.longitude,
+        );
+        if (dist > radiusKm) continue;
+
+        // Check live open spots
+        if (zone.estimatedOpenSpots > 0) {
+          final spotsText = zone.estimatedOpenSpots == 1
+              ? '1 spot'
+              : '${zone.estimatedOpenSpots} spots';
+          final nameText = zone.name != null ? ' near ${zone.name}' : '';
+
+          candidates.add(
+            RecommendedSpot(
+              latitude: zone.latitude,
+              longitude: zone.longitude,
+              distanceKm: dist,
+              walkingMinutes: (dist / 0.08).round(),
+              reason: '~$spotsText reported open$nameText',
+              source: SpotSource.zoneAvailability,
+              confidence: zone.confidenceScore.clamp(0.0, 1.0),
+              safetyScore: null,
+              freshness: 0.5,
+              estimatedOpenSpots: zone.estimatedOpenSpots,
+            ),
+          );
+          continue;
+        }
+
+        // Check historical hourly pattern as fallback
+        final hourAvg = zone.hourlyAvgOpenSpots[now.hour];
+        if (hourAvg != null && hourAvg >= 1.0) {
+          final nameText = zone.name != null ? ' near ${zone.name}' : '';
+
+          candidates.add(
+            RecommendedSpot(
+              latitude: zone.latitude,
+              longitude: zone.longitude,
+              distanceKm: dist,
+              walkingMinutes: (dist / 0.08).round(),
+              reason:
+                  'Usually ~${hourAvg.round()} spots open at this hour$nameText',
+              source: SpotSource.historicalPattern,
+              confidence: (zone.confidenceScore * 0.6).clamp(0.0, 1.0),
+              safetyScore: null,
+              freshness: 0.2,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('ParkingPredictionService: Zone layer failed: $e');
+    }
+
+    // ── Layer 3: Safest risk zones as fallback ────────────────────────────
+    if (candidates.length < maxResults) {
+      try {
+        final safeSpots = await findSafestSpotsNearby(
+          latitude: latitude,
+          longitude: longitude,
+          radiusKm: radiusKm,
+          maxResults: maxResults,
+        );
+
+        for (final spot in safeSpots) {
+          // Skip if we already have a candidate very close to this location
+          final isDuplicate = candidates.any(
+            (c) =>
+                _haversineDistance(
+                  c.latitude,
+                  c.longitude,
+                  spot.latitude,
+                  spot.longitude,
+                ) <
+                0.05,
+          );
+          if (isDuplicate) continue;
+
+          candidates.add(
+            RecommendedSpot(
+              latitude: spot.latitude,
+              longitude: spot.longitude,
+              distanceKm: spot.distanceKm,
+              walkingMinutes: spot.walkingMinutes,
+              reason:
+                  '${(spot.safetyScore * 100).round()}% safe zone — low citation risk',
+              source: SpotSource.riskZone,
+              confidence: 0.3,
+              safetyScore: spot.safetyScore,
+              freshness: 0.1,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('ParkingPredictionService: Risk zone layer failed: $e');
+      }
+    }
+
+    // ── Enrich candidates with safety scores where missing ───────────────
+    for (var i = 0; i < candidates.length; i++) {
+      if (candidates[i].safetyScore == null) {
+        try {
+          final pred = await predict(
+            when: now,
+            latitude: candidates[i].latitude,
+            longitude: candidates[i].longitude,
+          );
+          candidates[i] = candidates[i].withSafetyScore(pred.safetyScore);
+        } catch (_) {
+          candidates[i] = candidates[i].withSafetyScore(0.5);
+        }
+      }
+    }
+
+    // ── Rank: source priority → freshness → safety → distance ────────────
+    candidates.sort((a, b) {
+      // Primary: source priority (crowdsource > zone > historical > risk)
+      final srcCompare = a.source.index.compareTo(b.source.index);
+      if (srcCompare != 0) return srcCompare;
+      // Secondary: fresher is better
+      final freshCompare = b.freshness.compareTo(a.freshness);
+      if (freshCompare != 0) return freshCompare;
+      // Tertiary: safer is better
+      final safeCompare = (b.safetyScore ?? 0.5).compareTo(
+        a.safetyScore ?? 0.5,
+      );
+      if (safeCompare != 0) return safeCompare;
+      // Quaternary: closer is better
+      return a.distanceKm.compareTo(b.distanceKm);
+    });
+
+    // De-duplicate close spots (within 50m)
+    final deduped = <RecommendedSpot>[];
+    for (final c in candidates) {
+      final tooClose = deduped.any(
+        (d) =>
+            _haversineDistance(
+              c.latitude,
+              c.longitude,
+              d.latitude,
+              d.longitude,
+            ) <
+            0.05,
+      );
+      if (!tooClose) deduped.add(c);
+      if (deduped.length >= maxResults) break;
+    }
+
+    debugPrint(
+      'ParkingPredictionService: Found ${deduped.length} recommended spots '
+      '(${candidates.length} candidates before dedup)',
+    );
+
+    return deduped;
+  }
+
   String _getViolationWarning(String violation) {
     final lower = violation.toLowerCase();
     if (lower.contains('night')) {
@@ -379,4 +635,140 @@ class PredictedPoint {
   final double latitude;
   final double longitude;
   final double score;
+}
+
+// ---------------------------------------------------------------------------
+// Recommended Spot (composite result from all data sources)
+// ---------------------------------------------------------------------------
+
+/// How this spot was discovered — ordered by priority (best first).
+enum SpotSource {
+  /// Exact GPS from a leavingSpot/spotAvailable crowdsource report.
+  crowdsourceReport,
+
+  /// Zone with estimatedOpenSpots > 0 from live aggregation.
+  zoneAvailability,
+
+  /// Zone with good historical hourlyAvgOpenSpots at this hour.
+  historicalPattern,
+
+  /// Low-citation risk zone (fallback when no crowdsource data).
+  riskZone,
+}
+
+extension SpotSourceExt on SpotSource {
+  String get label {
+    switch (this) {
+      case SpotSource.crowdsourceReport:
+        return 'Live Report';
+      case SpotSource.zoneAvailability:
+        return 'Zone Data';
+      case SpotSource.historicalPattern:
+        return 'Historical';
+      case SpotSource.riskZone:
+        return 'Safe Zone';
+    }
+  }
+
+  /// Icon code point for display.
+  int get iconCodePoint {
+    switch (this) {
+      case SpotSource.crowdsourceReport:
+        return 0xe1e0; // Icons.person_pin_circle
+      case SpotSource.zoneAvailability:
+        return 0xe55b; // Icons.location_on
+      case SpotSource.historicalPattern:
+        return 0xe8b5; // Icons.schedule
+      case SpotSource.riskZone:
+        return 0xe8e8; // Icons.verified_user
+    }
+  }
+}
+
+/// A recommended parking spot combining all prediction signals.
+class RecommendedSpot {
+  RecommendedSpot({
+    required this.latitude,
+    required this.longitude,
+    required this.distanceKm,
+    required this.walkingMinutes,
+    required this.reason,
+    required this.source,
+    required this.confidence,
+    required this.freshness,
+    this.safetyScore,
+    this.reportType,
+    this.reportAge,
+    this.estimatedOpenSpots,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double distanceKm;
+  final int walkingMinutes;
+
+  /// Human-readable explanation (e.g. "Spot opened 3 min ago").
+  final String reason;
+
+  /// How this spot was discovered.
+  final SpotSource source;
+
+  /// Confidence in this recommendation (0.0–1.0).
+  final double confidence;
+
+  /// Safety score from citation risk (0.0–1.0, higher = safer). May be null
+  /// until enriched.
+  final double? safetyScore;
+
+  /// Freshness of the signal (1.0 = just now, 0.0 = stale).
+  final double freshness;
+
+  /// Original report type if source is crowdsourceReport.
+  final ReportType? reportType;
+
+  /// Age of the report if source is crowdsourceReport.
+  final Duration? reportAge;
+
+  /// Number of estimated open spots if source is zoneAvailability.
+  final int? estimatedOpenSpots;
+
+  /// Create a copy with the safety score filled in.
+  RecommendedSpot withSafetyScore(double score) => RecommendedSpot(
+    latitude: latitude,
+    longitude: longitude,
+    distanceKm: distanceKm,
+    walkingMinutes: walkingMinutes,
+    reason: reason,
+    source: source,
+    confidence: confidence,
+    safetyScore: score,
+    freshness: freshness,
+    reportType: reportType,
+    reportAge: reportAge,
+    estimatedOpenSpots: estimatedOpenSpots,
+  );
+
+  /// Distance label for display.
+  String get distanceLabel {
+    if (distanceKm < 0.1) return 'Here';
+    if (distanceKm < 1) return '${(distanceKm * 1000).round()}m away';
+    return '${distanceKm.toStringAsFixed(1)}km away';
+  }
+
+  /// Color value based on source type.
+  int get colorValue {
+    switch (source) {
+      case SpotSource.crowdsourceReport:
+        return 0xFF66BB6A; // Green — live data
+      case SpotSource.zoneAvailability:
+        return 0xFF42A5F5; // Blue — zone data
+      case SpotSource.historicalPattern:
+        return 0xFFFFA726; // Orange — historical
+      case SpotSource.riskZone:
+        return 0xFF78909C; // Gray-blue — risk-based fallback
+    }
+  }
+
+  /// Badge text for the source.
+  String get sourceBadge => source.label;
 }

@@ -66,19 +66,19 @@ class DefaultFirebaseOptions {
     apiKey: _androidApiKey,
     appId: const String.fromEnvironment(
       'FIREBASE_ANDROID_APP_ID',
-      defaultValue: '1:802081773281:android:55de0e46223bddcf0009a0',
+      defaultValue: '1:418926446148:android:3e196b7206c0c5f0631e11',
     ),
     messagingSenderId: const String.fromEnvironment(
       'FIREBASE_ANDROID_MSG_SENDER_ID',
-      defaultValue: '802081773281',
+      defaultValue: '418926446148',
     ),
     projectId: const String.fromEnvironment(
       'FIREBASE_ANDROID_PROJECT_ID',
-      defaultValue: 'mkeparkapp-6edc3',
+      defaultValue: 'mkeparkapp-1ad15',
     ),
     storageBucket: const String.fromEnvironment(
       'FIREBASE_ANDROID_STORAGE_BUCKET',
-      defaultValue: 'mkeparkapp-6edc3.firebasestorage.app',
+      defaultValue: 'mkeparkapp-1ad15.firebasestorage.app',
     ),
   );
 

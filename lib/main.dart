@@ -378,6 +378,21 @@ class MKEParkApp extends StatelessWidget {
               return const Locale('en');
             },
             initialRoute: '/',
+            onGenerateRoute: (settings) {
+              final name = settings.name ?? '';
+              // Absorb Firebase Auth reCAPTCHA callback deep links
+              if (name.startsWith('/link') ||
+                  name.contains('__/auth/') ||
+                  name.contains('firebaseapp.com') ||
+                  name.contains('recaptcha')) {
+                developer.log('Absorbed Firebase Auth callback: $name');
+                return MaterialPageRoute(
+                  builder: (_) => const SizedBox.shrink(),
+                  settings: settings,
+                );
+              }
+              return null; // Let routes table handle everything else
+            },
             onUnknownRoute: (settings) => MaterialPageRoute(
               builder: (context) => Scaffold(
                 body: Center(child: Text('Route not found: ${settings.name}')),

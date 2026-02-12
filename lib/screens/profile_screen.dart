@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../widgets/data_source_attribution.dart';
+import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -180,6 +181,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () =>
                             Navigator.pushNamed(context, '/saved-places'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Take a Tour
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.explore_outlined),
+                        title: const Text('Take a Tour'),
+                        subtitle: const Text('Replay the app walkthrough'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () async {
+                          await OnboardingService.instance.resetOnboarding();
+                          if (!context.mounted) return;
+                          Navigator.pushNamed(context, '/onboarding');
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),

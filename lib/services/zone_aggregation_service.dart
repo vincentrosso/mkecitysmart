@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/crowdsource_zone.dart';
@@ -380,6 +381,12 @@ class ZoneAggregationService {
     String region = defaultRegion,
     int? precision,
   }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      debugPrint('[ZoneAggregation] No authenticated user, skipping query');
+      return [];
+    }
+
     final p = precision ?? queryPrecision;
     final prefix = ParkingCrowdsourceService.encodeGeohash(
       latitude,
@@ -402,6 +409,30 @@ class ZoneAggregationService {
           .map((doc) => CrowdsourceZone.fromFirestore(doc))
           .toList();
     } catch (e) {
+      // If permission-denied, force a token refresh and retry once.
+      if ('$e'.contains('permission-denied')) {
+        debugPrint(
+          '[ZoneAggregation] Permission denied — refreshing auth token and retrying',
+        );
+        try {
+          await user.getIdToken(true);
+          final snapshot = await _firestore
+              .collection(_collection)
+              .where(FieldPath.documentId, isGreaterThanOrEqualTo: docPrefix)
+              .where(FieldPath.documentId, isLessThan: upperBound)
+              .orderBy(FieldPath.documentId)
+              .limit(200)
+              .get();
+          return snapshot.docs
+              .map((doc) => CrowdsourceZone.fromFirestore(doc))
+              .toList();
+        } catch (retryErr) {
+          debugPrint(
+            '[ZoneAggregation] Retry after token refresh also failed: $retryErr',
+          );
+          return [];
+        }
+      }
       debugPrint('[ZoneAggregation] Failed to query nearby zones: $e');
       return [];
     }

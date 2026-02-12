@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -854,7 +855,21 @@ class UserProvider extends ChangeNotifier {
       final name = appleId.givenName?.isNotEmpty == true
           ? '${appleId.givenName} ${appleId.familyName ?? ''}'.trim()
           : user.displayName ?? 'Apple user';
-      await _ensureProfileForUser(user, fallbackName: name);
+      try {
+        await _ensureProfileForUser(user, fallbackName: name);
+      } catch (e, st) {
+        debugPrint('[AppleAuth] Post-auth profile setup failed: $e');
+        unawaited(
+          CloudLogService.instance.recordError(
+            'apple_post_auth_setup_error',
+            e,
+            st,
+          ),
+        );
+        const msg = 'Signed in, but account setup failed. Please try again.';
+        _setLastAuthError(msg);
+        return msg;
+      }
 
       // Re-register FCM token with the new UID after successful sign-in
       unawaited(NotificationService.instance.reregisterTokenAfterSignIn());
@@ -883,6 +898,23 @@ class UserProvider extends ChangeNotifier {
       final msg = 'Apple sign-in failed (${e.code.name}).';
       _setLastAuthError(msg);
       return msg;
+    } on PlatformException catch (e) {
+      debugPrint(
+        '[AppleAuth] PlatformException: code=${e.code} message=${e.message}',
+      );
+      unawaited(
+        CloudLogService.instance.recordError(
+          'apple_platform_exception',
+          e,
+          StackTrace.current,
+        ),
+      );
+      // Keep message user-friendly; codes vary by iOS/plugin version.
+      final msg = e.code.toLowerCase().contains('canceled')
+          ? 'Sign-in was canceled.'
+          : 'Apple sign-in failed. Please try again.';
+      _setLastAuthError(msg);
+      return msg;
     } on FirebaseAuthException catch (e) {
       unawaited(
         CloudLogService.instance.recordError(
@@ -894,8 +926,16 @@ class UserProvider extends ChangeNotifier {
       final msg = _mapAuthError(e);
       _setLastAuthError(msg);
       return msg;
-    } catch (_) {
-      const msg = 'Apple sign-in failed. Try again.';
+    } catch (e, st) {
+      debugPrint('[AppleAuth] Unknown error: ${e.runtimeType}: $e');
+      unawaited(
+        CloudLogService.instance.recordError(
+          'apple_sign_in_unknown_error',
+          e,
+          st,
+        ),
+      );
+      const msg = 'Apple sign-in failed. Please try again.';
       _setLastAuthError(msg);
       return msg;
     }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -397,6 +398,26 @@ class _CrowdsourceAvailabilityBannerState
   Future<void> _startStream() async {
     try {
       debugPrint('[CrowdsourceBanner] Starting stream...');
+
+      // Wait for Firebase Auth to hydrate before starting Firestore streams.
+      // Starting listeners without auth poisons the gRPC channel and causes
+      // permission-denied errors on all subsequent queries.
+      if (FirebaseAuth.instance.currentUser == null) {
+        debugPrint('[CrowdsourceBanner] Waiting for auth...');
+        await FirebaseAuth.instance
+            .authStateChanges()
+            .firstWhere((u) => u != null)
+            .timeout(const Duration(seconds: 10), onTimeout: () => null);
+      }
+      if (FirebaseAuth.instance.currentUser == null) {
+        debugPrint('[CrowdsourceBanner] Auth unavailable, skipping streams');
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+      debugPrint(
+        '[CrowdsourceBanner] Auth ready: ${FirebaseAuth.instance.currentUser!.uid}',
+      );
+
       final pos = await _locationService.getCurrentPosition().timeout(
         const Duration(seconds: 8),
       );

@@ -244,7 +244,20 @@ NOTES:
 NOTES:
 
 - 2026-02-10: Updated Google Play Console contact email to mkeparkapp@gmail.com.
-
+[F-411] [TODO] (P2) Upgrade iOS Ruby toolchain + fix Faraday SSRF vulnerability
+- Dependabot alert: Faraday <= 2.14.0 has SSRF via protocol-relative URL (moderate severity)
+- Only affects the fastlane build/deploy pipeline, NOT the shipped app or end users
+- Current blocker: system Ruby is 2.6 (macOS default), too old for modern bundler/gems
+- Steps to fix:
+  1. Install rbenv or rvm and set up Ruby 3.2+ for the ios/ directory
+  2. Run `gem install bundler` under the new Ruby
+  3. Update ios/Gemfile to pin fastlane to a version that supports faraday ~> 2.x
+  4. Run `bundle update fastlane` — this will pull faraday >= 2.14.1
+  5. Verify `bundle exec fastlane` still works for iOS builds/deploys
+  6. Commit updated Gemfile.lock and dismiss the Dependabot alert
+- Ref: https://github.com/Dwayne-26/Mke-CitySmart-app_flutter/security/dependabot/5
+NOTES:
+- 2026-02-10: Identified during push. Low real-world risk (build-time only). Deferred.
 ========================================================
 RUNNING NOTES (quick scratchpad)
 --------------------------------------------------------

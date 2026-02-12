@@ -1021,24 +1021,37 @@ class _SafestSpotsCardState extends State<_SafestSpotsCard> {
   bool _minimized = false;
 
   Future<void> _navigateToSpot(SafeParkingSpot spot) async {
-    final url = Uri.parse(
-      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
-    );
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      final googleUrl = Uri.parse(
+    // Prefer Google Maps on Android, Apple Maps on iOS
+    final Uri primaryUrl;
+    final Uri fallbackUrl;
+
+    if (isIOS) {
+      primaryUrl = Uri.parse(
+        'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+      );
+      fallbackUrl = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
       );
-      if (await canLaunchUrl(googleUrl)) {
-        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open maps app')),
-          );
-        }
+    } else {
+      primaryUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      fallbackUrl = Uri.parse(
+        'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+      );
+    }
+
+    if (await canLaunchUrl(primaryUrl)) {
+      await launchUrl(primaryUrl, mode: LaunchMode.externalApplication);
+    } else if (await canLaunchUrl(fallbackUrl)) {
+      await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open maps app')),
+        );
       }
     }
   }

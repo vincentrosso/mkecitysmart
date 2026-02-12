@@ -16,6 +16,23 @@
 - **2026-02-10 — [F-406] Support URL page shipped**: Added a hosted Support page to satisfy App Store Connect metadata requirements.
 - **2026-02-09 — [F-304] RevenueCat ↔ Google Play integration**: Play service credentials configured; RevenueCat checks all green.
 
+## 🔐 GCP Security Reminders (Action Items)
+
+Add these to the post-launch security checklist for Google Cloud:
+
+- **Zero-code secret storage:** Never commit service account keys or API keys to the repo. Use **Secret Manager** and inject at runtime.
+- **Disable dormant keys:** Audit service account keys and remove any unused for **30+ days**.
+- **Restrict API keys:** Ensure API keys are never unrestricted.
+  - Restrict by **API** (only the specific APIs needed).
+  - Restrict by **environment** (HTTP referrers, IPs, iOS bundle ID / Android package + SHA-1, etc.).
+- **Least privilege:** Use IAM Recommender / IAM policy analysis to prune unused permissions on service accounts.
+- **Mandatory rotation policies:**
+  - Set `iam.serviceAccountKeyExpiryHours` to enforce max lifetime on user-managed keys.
+  - If not needed, set `iam.managed.disableServiceAccountKeyCreation` to block new key creation.
+- **Operational safeguards:**
+  - Verify **Essential Contacts** are current for security/billing notifications.
+  - Ensure **Billing Budgets** + **Anomaly alerts** are configured and monitored.
+
 ## 🧩 App Store Connect Metadata URLs
 
 - **Support URL:** https://mkeparkapp-1ad15.web.app/support.html

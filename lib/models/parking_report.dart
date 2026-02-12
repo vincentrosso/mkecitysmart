@@ -225,7 +225,8 @@ class ParkingReport {
       'upvotes': upvotes,
       'downvotes': downvotes,
       'isExpired': isExpired,
-      'flagged': flagged,
+      // flagged and flagReason are server-owned fields set by
+      // moderateParkingReport Cloud Function — never sent from client.
       'region': region,
       'zoneId': zoneId,
     };

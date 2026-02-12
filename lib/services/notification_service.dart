@@ -46,6 +46,9 @@ class NotificationService {
         return;
       }
       _messaging = FirebaseMessaging.instance;
+      // Mark initialized early so reregisterTokenAfterSignIn() won't
+      // early-return if our 8-second timeout in main.dart fires first.
+      _initialized = true;
       await _requestPermissions();
       await _registerToken();
       await _subscribeToAlertsTopic();
@@ -82,7 +85,6 @@ class NotificationService {
       FirebaseMessaging.onBackgroundMessage(
         _firebaseMessagingBackgroundHandler,
       );
-      _initialized = true;
     } catch (e) {
       log('Notification init skipped: $e');
       _initialized = true;
@@ -470,7 +472,17 @@ class NotificationService {
   /// Call this after sign-in completes to ensure the token is associated
   /// with the correct UID (not an anonymous auth UID from app startup).
   Future<void> reregisterTokenAfterSignIn() async {
-    if (_messaging == null || !_initialized) return;
+    // Lazily acquire messaging if init hasn't completed yet.
+    if (_messaging == null) {
+      if (kIsWeb) return;
+      try {
+        if (Firebase.apps.isEmpty) return;
+        _messaging = FirebaseMessaging.instance;
+        _initialized = true;
+      } catch (_) {
+        return;
+      }
+    }
     try {
       await _registerToken();
       log('Re-registered push token after sign-in');
@@ -569,7 +581,17 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Optionally handle background payloads for risk alerts.
 }
 
-String _platform() => kIsWeb ? 'web' : 'mobile';
+String _platform() {
+  if (kIsWeb) return 'web';
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.iOS:
+      return 'ios';
+    case TargetPlatform.android:
+      return 'android';
+    default:
+      return 'unknown';
+  }
+}
 
 // Re-export for consumers if needed.
 String platformLabel() => _platform();

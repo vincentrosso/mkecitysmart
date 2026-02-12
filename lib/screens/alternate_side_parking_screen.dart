@@ -91,6 +91,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
+              context: context,
               icon: Icons.calendar_today,
               title: 'Odd Days (1, 3, 5, 7...)',
               description: 'Park on the odd-numbered side of the street',
@@ -98,6 +99,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
+              context: context,
               icon: Icons.calendar_today,
               title: 'Even Days (2, 4, 6, 8...)',
               description: 'Park on the even-numbered side of the street',
@@ -105,6 +107,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
+              context: context,
               icon: Icons.schedule,
               title: 'Switch at Midnight',
               description: 'Parking side changes every night at 12:00 AM',
@@ -117,6 +120,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
   }
 
   Widget _buildInfoRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String description,
@@ -140,15 +144,23 @@ class AlternateSideParkingScreen extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 description,
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                style: TextStyle(
+                  color:
+                      Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7) ??
+                      Colors.grey[600],
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -190,13 +202,19 @@ class AlternateSideParkingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildTipItem(
+              context,
               'Look at house numbers to identify which side is odd/even',
             ),
-            _buildTipItem('Set a reminder to move your car before midnight'),
             _buildTipItem(
+              context,
+              'Set a reminder to move your car before midnight',
+            ),
+            _buildTipItem(
+              context,
               'Check for posted signs - some streets may have exceptions',
             ),
             _buildTipItem(
+              context,
               'Enable notifications in this app for daily reminders',
             ),
           ],
@@ -205,7 +223,7 @@ class AlternateSideParkingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(String text) {
+  Widget _buildTipItem(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -225,7 +243,11 @@ class AlternateSideParkingScreen extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                color: Colors.grey[700],
+                color:
+                    Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.8) ??
+                    Colors.grey[700],
                 fontSize: 14,
                 height: 1.4,
               ),
@@ -282,7 +304,14 @@ class AlternateSideParkingScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Get reminders to help you remember which side to park on:',
-                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                  style: TextStyle(
+                    color:
+                        Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.8) ??
+                        Colors.grey[700],
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _buildNotificationToggle(
