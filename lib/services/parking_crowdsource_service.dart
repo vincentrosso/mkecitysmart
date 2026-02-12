@@ -166,6 +166,12 @@ class ParkingCrowdsourceService {
     required double longitude,
     int? geohashPrecision,
   }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      debugPrint('[Crowdsource] No authenticated user, skipping query');
+      return [];
+    }
+
     final precision = geohashPrecision ?? _queryGeohashPrecision;
     final prefix = encodeGeohash(latitude, longitude, precision);
     final now = DateTime.now();
@@ -188,6 +194,35 @@ class ParkingCrowdsourceService {
             .toList(),
       );
     } catch (e) {
+      // If permission-denied, force a token refresh and retry once.
+      if ('$e'.contains('permission-denied')) {
+        debugPrint(
+          '[Crowdsource] Permission denied — refreshing auth token and retrying',
+        );
+        try {
+          await user.getIdToken(true);
+          final snapshot = await _firestore
+              .collection(_collection)
+              .where('geohash', isGreaterThanOrEqualTo: prefix)
+              .where('geohash', isLessThan: _geohashUpperBound(prefix))
+              .where('isExpired', isEqualTo: false)
+              .orderBy('geohash')
+              .orderBy('timestamp', descending: true)
+              .limit(100)
+              .get();
+          return _applyReliabilityFilter(
+            snapshot.docs
+                .map((doc) => ParkingReport.fromFirestore(doc))
+                .where((r) => now.isBefore(r.expiresAt))
+                .toList(),
+          );
+        } catch (retryErr) {
+          debugPrint(
+            '[Crowdsource] Retry after token refresh also failed: $retryErr',
+          );
+          return [];
+        }
+      }
       debugPrint('[Crowdsource] Failed to query nearby reports: $e');
       return [];
     }

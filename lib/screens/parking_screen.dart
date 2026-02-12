@@ -181,6 +181,7 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
   String? _error;
   ParkingPrediction? _prediction;
   List<SafeParkingSpot> _safestSpots = [];
+  List<RecommendedSpot> _recommendedSpots = [];
   List<String> _warnings = [];
 
   Future<void> _findSafestSpot() async {
@@ -209,13 +210,24 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
         longitude: pos.longitude,
       );
 
-      // Find safest spots nearby
-      final safestSpots = await _predictionService.findSafestSpotsNearby(
+      // Find best open spots using all data sources
+      final recommendedSpots = await _predictionService.findBestOpenSpots(
         latitude: pos.latitude,
         longitude: pos.longitude,
         radiusKm: 2.0,
-        maxResults: 3,
+        maxResults: 5,
       );
+
+      // Fall back to safest spots if no recommended spots found
+      List<SafeParkingSpot> safestSpots = [];
+      if (recommendedSpots.isEmpty) {
+        safestSpots = await _predictionService.findSafestSpotsNearby(
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          radiusKm: 2.0,
+          maxResults: 3,
+        );
+      }
 
       // Get violation warnings
       final warnings = _predictionService.getViolationWarnings();
@@ -225,6 +237,7 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
       setState(() {
         _prediction = prediction;
         _safestSpots = safestSpots;
+        _recommendedSpots = recommendedSpots;
         _warnings = warnings;
         _loading = false;
       });
@@ -400,7 +413,40 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
             ],
 
             // Safest spots nearby
-            if (_safestSpots.isNotEmpty) ...[
+            if (_recommendedSpots.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text(
+                    'Best spots for you:',
+                    style: TextStyle(
+                      color: kCitySmartText,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Tap to navigate',
+                    style: TextStyle(
+                      color: kCitySmartMuted.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Highlight the #1 recommended spot
+              _TopRecommendedSpotCard(spot: _recommendedSpots.first),
+              const SizedBox(height: 4),
+              // Show remaining recommended spots
+              if (_recommendedSpots.length > 1)
+                ...(_recommendedSpots
+                    .skip(1)
+                    .take(3)
+                    .map((spot) => _RecommendedSpotTile(spot: spot))),
+            ] else if (_safestSpots.isNotEmpty) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -634,6 +680,260 @@ class _TopSafeSpotCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Prominent card for the #1 recommended open spot with navigation
+class _TopRecommendedSpotCard extends StatelessWidget {
+  const _TopRecommendedSpotCard({required this.spot});
+  final RecommendedSpot spot;
+
+  Future<void> _navigateToSpot(BuildContext context) async {
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spotColor = Color(spot.colorValue);
+    final safetyPct = spot.safetyScore != null
+        ? '${(spot.safetyScore! * 100).round()}% safe'
+        : '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            spotColor.withValues(alpha: 0.3),
+            spotColor.withValues(alpha: 0.15),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: spotColor.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: spotColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  IconData(
+                    spot.source.iconCodePoint,
+                    fontFamily: 'MaterialIcons',
+                  ),
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: spotColor.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            spot.sourceBadge.toUpperCase(),
+                            style: TextStyle(
+                              color: spotColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        if (safetyPct.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            safetyPct,
+                            style: const TextStyle(
+                              color: kCitySmartMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      spot.reason,
+                      style: const TextStyle(
+                        color: kCitySmartText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    spot.distanceLabel,
+                    style: const TextStyle(
+                      color: kCitySmartMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  Text(
+                    '${spot.walkingMinutes} min',
+                    style: const TextStyle(
+                      color: kCitySmartMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _navigateToSpot(context),
+              icon: const Icon(Icons.directions_walk),
+              label: const Text('Navigate to Open Spot'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: spotColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile for additional recommended spots (below the #1 card)
+class _RecommendedSpotTile extends StatelessWidget {
+  const _RecommendedSpotTile({required this.spot});
+  final RecommendedSpot spot;
+
+  Future<void> _navigateToSpot(BuildContext context) async {
+    final url = Uri.parse(
+      'https://maps.apple.com/?daddr=${spot.latitude},${spot.longitude}&dirflg=w',
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      final googleUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking',
+      );
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps app')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spotColor = Color(spot.colorValue);
+
+    return InkWell(
+      onTap: () => _navigateToSpot(context),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A2E28),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              IconData(spot.source.iconCodePoint, fontFamily: 'MaterialIcons'),
+              color: spotColor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    spot.reason,
+                    style: const TextStyle(color: kCitySmartText, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    spot.sourceBadge,
+                    style: TextStyle(
+                      color: spotColor.withValues(alpha: 0.8),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              spot.distanceLabel,
+              style: const TextStyle(color: kCitySmartMuted, fontSize: 12),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${spot.walkingMinutes} min',
+              style: const TextStyle(color: kCitySmartText, fontSize: 12),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.directions_walk,
+              color: kCitySmartYellow,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
