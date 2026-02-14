@@ -33,21 +33,21 @@
 
 #### Apple App Store Connect
 - [x] **Create Subscription Group** — "CitySmart Pro" ✅
-- [x] **Create Monthly Product** — Product ID: `citysmart_pro_monthly`, $4.99/month ✅
-- [x] **Create Yearly Product** — Product ID: `citysmart_pro_yearly`, $39.99/year ✅
+- [ ] **Create Monthly Product** — Product ID: `citysmart_pro_monthly_2026`, $4.99/month
+- [ ] **Create Yearly Product** — Product ID: `citysmart_pro_yearly_2026`, $39.99/year
 - [x] **Add subscription description & review screenshot** ✅
 - [x] **Submit IAP for review** ✅
 
 #### Google Play Console
-- [x] **Create Monthly Subscription** — `citysmart_pro_monthly`, $4.99/month ✅
-- [x] **Create Yearly Subscription** — `citysmart_pro_yearly`, $39.99/year ✅
+- [ ] **Create Monthly Subscription** — `citysmart_pro_monthly_2026`, $4.99/month
+- [ ] **Create Yearly Subscription** — `citysmart_pro_yearly_2026`, $39.99/year
 - [x] **Set up base plan and offers** ✅
 
 #### RevenueCat Dashboard (https://app.revenuecat.com)
 - [x] **Verify iOS app config** — API key `appl_nPogZtDlCliLIbcHVwxxguJacpq` is set ✅
 - [x] **Add Google Play app** — `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` set, service account JSON uploaded ✅ (Feb 9)
 - [x] **Replace Android placeholder key** — Real key `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` in code ✅ (Feb 9)
-- [x] **Create Products in RevenueCat** — Mapped to both stores ✅
+- [ ] **Create Products in RevenueCat** — Map `citysmart_pro_monthly_2026` and `citysmart_pro_yearly_2026` to both stores
 - [x] **Create Offering** — Default offering with monthly + yearly packages ✅
 - [x] **Create Entitlement** — `pro` entitlement linked to both products ✅
 - [x] **Set up App Store Connect Shared Secret** ✅
@@ -72,8 +72,8 @@
 ### Product IDs (Must Match Across All Platforms)
 | Product | ID | Price |
 |---------|----|-------|
-| Pro Monthly | `citysmart_pro_monthly` | $4.99/mo |
-| Pro Yearly | `citysmart_pro_yearly` | $39.99/yr (~33% savings) |
+| Pro Monthly | `citysmart_pro_monthly_2026` | $4.99/mo |
+| Pro Yearly | `citysmart_pro_yearly_2026` | $39.99/yr (~33% savings) |
 
 ### Entitlements
 | Entitlement ID | Grants Access To |

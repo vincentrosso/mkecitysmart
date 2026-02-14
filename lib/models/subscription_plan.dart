@@ -51,7 +51,7 @@ class SubscriptionPlan {
       case SubscriptionTier.free:
         return '';
       case SubscriptionTier.pro:
-        return 'citysmart_pro_monthly';
+        return 'citysmart_pro_monthly_2026';
     }
   }
 
@@ -60,7 +60,7 @@ class SubscriptionPlan {
       case SubscriptionTier.free:
         return '';
       case SubscriptionTier.pro:
-        return 'citysmart_pro_yearly';
+        return 'citysmart_pro_yearly_2026';
     }
   }
 

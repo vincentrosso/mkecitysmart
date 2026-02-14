@@ -449,7 +449,7 @@ a paywall, and AdMob ads for free-tier users.
 
 **Android Purchase Validation Checklist (pre-release):**
 1. RevenueCat dashboard → Google Play app credentials page shows all 3 green checks (subscriptions / inappproducts / monetization)
-2. RevenueCat Offerings include Google Play products: `citysmart_pro_monthly`, `citysmart_pro_yearly`
+2. RevenueCat Offerings include Google Play products: `citysmart_pro_monthly_2026`, `citysmart_pro_yearly_2026`
 3. Both products grant entitlement `pro` (or `citysmart_pro`)
 4. On Android device/emulator: open paywall → offerings load (not fallback cards)
 5. Test purchase → `SubscriptionTier.pro` activates → gated features unlock
