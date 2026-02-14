@@ -1,8 +1,8 @@
 # MKE CitySmart — Post-Launch TODO
 
 > **Created:** February 9, 2026
-> **Last Updated:** February 9, 2026
-> **Current Version:** 1.0.68+72
+> **Last Updated:** February 13, 2026
+> **Current Version:** 1.0.75+79
 > **Apple App Store:** Submitted for review v1.0.67+70 (manual release)
 > **Google Play Store:** Closed testing Alpha — Release 72 (1.0.68) in review, 5 testers
 
@@ -32,41 +32,41 @@
 ### What's Pending (Store + Dashboard Config)
 
 #### Apple App Store Connect
-- [ ] **Create Subscription Group** — Go to App Store Connect → Your App → Subscriptions → Create Group (e.g., "CitySmart Pro")
-- [ ] **Create Monthly Product** — Product ID: `citysmart_pro_monthly`, Price: $4.99/month, Reference name: "Pro Monthly"
-- [ ] **Create Yearly Product** — Product ID: `citysmart_pro_yearly`, Price: $39.99/year, Reference name: "Pro Yearly"
-- [ ] **Add subscription description & review screenshot** — Required for Apple review of IAP
-- [ ] **Submit IAP for review** — Products go into "Waiting for Review" state
+- [x] **Create Subscription Group** — "CitySmart Pro" ✅
+- [x] **Create Monthly Product** — Product ID: `citysmart_pro_monthly`, $4.99/month ✅
+- [x] **Create Yearly Product** — Product ID: `citysmart_pro_yearly`, $39.99/year ✅
+- [x] **Add subscription description & review screenshot** ✅
+- [x] **Submit IAP for review** ✅
 
 #### Google Play Console
-- [ ] **Create Monthly Subscription** — Play Console → Monetize → Subscriptions → Product ID: `citysmart_pro_monthly`, $4.99/month
-- [ ] **Create Yearly Subscription** — Product ID: `citysmart_pro_yearly`, $39.99/year
-- [ ] **Set up base plan and offers** — Free trial (7 days recommended), introductory pricing
+- [x] **Create Monthly Subscription** — `citysmart_pro_monthly`, $4.99/month ✅
+- [x] **Create Yearly Subscription** — `citysmart_pro_yearly`, $39.99/year ✅
+- [x] **Set up base plan and offers** ✅
 
 #### RevenueCat Dashboard (https://app.revenuecat.com)
-- [ ] **Verify iOS app config** — API key `appl_nPogZtDlCliLIbcHVwxxguJacpq` is set
-- [ ] **Add Google Play app** — Get `goog_` API key, add service account JSON for server validation
-- [ ] **Replace Android placeholder key** — Update `_revenueCatApiKeyAndroid` in `subscription_service.dart` (currently `goog_PLACEHOLDER`)
-- [ ] **Create Products in RevenueCat** — Map `citysmart_pro_monthly` and `citysmart_pro_yearly` to both stores
-- [ ] **Create Offering** — Default offering with monthly + yearly packages
-- [ ] **Create Entitlement** — `pro` entitlement linked to both products
-- [ ] **Set up App Store Connect Shared Secret** — For server-side receipt validation
-- [ ] **Set up Google Play service account** — For server-side receipt validation
+- [x] **Verify iOS app config** — API key `appl_nPogZtDlCliLIbcHVwxxguJacpq` is set ✅
+- [x] **Add Google Play app** — `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` set, service account JSON uploaded ✅ (Feb 9)
+- [x] **Replace Android placeholder key** — Real key `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` in code ✅ (Feb 9)
+- [x] **Create Products in RevenueCat** — Mapped to both stores ✅
+- [x] **Create Offering** — Default offering with monthly + yearly packages ✅
+- [x] **Create Entitlement** — `pro` entitlement linked to both products ✅
+- [x] **Set up App Store Connect Shared Secret** ✅
+- [x] **Set up Google Play service account** — JSON uploaded, validation configured ✅
 - [ ] **Configure Customer Center** — Cancellation flows, feedback surveys
 
 #### Code Changes Needed
-- [ ] **Replace `goog_PLACEHOLDER`** in `lib/services/subscription_service.dart:23` with real Google Play API key from RevenueCat
+- [x] **Replace Android API key** — Real key `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` in code ✅ (Feb 9)
 - [ ] **Test sandbox purchases on iOS** — Use App Store sandbox test account
 - [ ] **Test license purchases on Android** — Add license testers in Play Console
 - [ ] **Verify paywall displays real products** — Currently shows static plan cards when offerings unavailable
 - [ ] **Test restore purchases flow** — Ensure cross-device restore works
-- [ ] **Version bump to 1.0.68** — Submit update with working subscriptions
+- [x] **Version bump** — Now at 1.0.75+79 ✅
 
 ### RevenueCat Keys Reference
 | Platform | Key | Status |
 |----------|-----|--------|
 | iOS | `appl_nPogZtDlCliLIbcHVwxxguJacpq` | ✅ Set in code |
-| Android | `goog_PLACEHOLDER` | ❌ Needs real key |
+| Android | `goog_UfVOclLbKRHTgvZmywUdbmeJEVs` | ✅ Set in code (Feb 9) |
 | Test/Dev | `test_JhJpIJnyYopCsUtcPVYZKarOQEO` | ✅ Available (sandbox only) |
 
 ### Product IDs (Must Match Across All Platforms)

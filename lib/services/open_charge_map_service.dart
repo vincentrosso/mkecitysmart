@@ -155,4 +155,18 @@ class OpenChargeMapService {
     if (match == null) return 0;
     return double.tryParse(match.group(1)!.replaceAll(',', '.')) ?? 0;
   }
+
+  /// Estimated per-kWh pricing for known networks when the API has no data.
+  /// Sources: public rate schedules as of early 2026.
+  static double? estimatedPriceForNetwork(String network) {
+    final n = network.toLowerCase();
+    if (n.contains('tesla')) return 0.40;
+    if (n.contains('evgo')) return 0.35;
+    if (n.contains('chargepoint')) return 0.30;
+    if (n.contains('electrify america')) return 0.48;
+    if (n.contains('blink')) return 0.49;
+    if (n.contains('flo')) return 0.35;
+    if (n.contains('ev connect')) return 0.30;
+    return null;
+  }
 }

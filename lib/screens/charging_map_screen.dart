@@ -671,10 +671,28 @@ class _StationDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final availability = '${station.availablePorts}/${station.totalPorts} open';
-    final hasPrice = station.pricePerKwh > 0;
-    final priceText = hasPrice
-        ? '\$${station.pricePerKwh.toStringAsFixed(2)} / kWh'
-        : 'Pricing unavailable';
+    final hasExactPrice = station.pricePerKwh > 0;
+    // If the API provided a raw cost string (e.g. "$1.25 per hour"), show it.
+    final hasRawCost = station.notes != null && station.notes!.isNotEmpty;
+    final estimatedPrice = OpenChargeMapService.estimatedPriceForNetwork(
+      station.network,
+    );
+    final hasPrice = hasExactPrice || hasRawCost || estimatedPrice != null;
+    final String priceText;
+    final bool isEstimate;
+    if (hasExactPrice) {
+      priceText = '\$${station.pricePerKwh.toStringAsFixed(2)} / kWh';
+      isEstimate = false;
+    } else if (hasRawCost) {
+      priceText = station.notes!;
+      isEstimate = false;
+    } else if (estimatedPrice != null) {
+      priceText = 'Est. \$${estimatedPrice.toStringAsFixed(2)} / kWh';
+      isEstimate = true;
+    } else {
+      priceText = 'Pricing unavailable';
+      isEstimate = false;
+    }
     final connectors = station.connectorTypes.join(', ');
     final chipColor = station.hasAvailability
         ? const Color(0xFF2E5A3A) // Dark green
@@ -749,7 +767,7 @@ class _StationDetailCard extends StatelessWidget {
                   priceText,
                   style: TextStyle(
                     color: hasPrice ? Colors.white : Colors.white60,
-                    fontStyle: hasPrice ? FontStyle.normal : FontStyle.italic,
+                    fontStyle: isEstimate ? FontStyle.italic : FontStyle.normal,
                   ),
                 ),
                 backgroundColor: const Color(0xFF3A3A3A),
@@ -776,7 +794,19 @@ class _StationDetailCard extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          if (station.notes != null && station.notes!.isNotEmpty) ...[
+          if (isEstimate) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Estimated – check ${station.network} app for exact pricing',
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ] else if (station.notes != null &&
+              station.notes!.isNotEmpty &&
+              !hasRawCost) ...[
             const SizedBox(height: 4),
             Text(station.notes!, style: const TextStyle(color: Colors.white70)),
           ],
