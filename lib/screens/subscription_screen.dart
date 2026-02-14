@@ -298,6 +298,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
         );
       }
+    } else {
+      final lastError = SubscriptionService.instance.lastError;
+      if (lastError != null && lastError.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(lastError), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

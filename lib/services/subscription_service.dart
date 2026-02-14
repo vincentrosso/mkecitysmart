@@ -67,7 +67,14 @@ class SubscriptionService extends ChangeNotifier {
 
   /// Initialize RevenueCat SDK
   Future<void> initialize({String? userId}) async {
-    if (_initialized) return;
+    if (_initialized) {
+      // If initialization previously succeeded but offerings were unavailable
+      // (common when App Store agreements/tax were pending), try again.
+      if (_offerings?.current == null) {
+        await fetchOfferings();
+      }
+      return;
+    }
     if (_initFuture != null) return _initFuture;
 
     _initFuture = _initializeInternal(userId: userId);
@@ -348,6 +355,11 @@ class SubscriptionService extends ChangeNotifier {
     }
 
     try {
+      // Ensure offerings are fresh before presenting the paywall.
+      if (_offerings?.current == null) {
+        await fetchOfferings();
+      }
+
       Offering? offering;
       if (offeringIdentifier != null) {
         offering = _offerings?.getOffering(offeringIdentifier);
@@ -363,8 +375,11 @@ class SubscriptionService extends ChangeNotifier {
       return result == PaywallResult.purchased ||
           result == PaywallResult.restored;
     } on PlatformException catch (e) {
-      debugPrint('SubscriptionService: Paywall error - ${e.message}');
-      _lastError = e.message;
+      debugPrint(
+        'SubscriptionService: Paywall error - code=${e.code} message=${e.message} details=${e.details}',
+      );
+      final details = e.details == null ? '' : '\n${e.details}';
+      _lastError = '${e.message ?? 'Paywall error'}$details';
       return false;
     }
   }
@@ -381,6 +396,11 @@ class SubscriptionService extends ChangeNotifier {
     }
 
     try {
+      // Ensure offerings are fresh before presenting the paywall.
+      if (_offerings?.current == null) {
+        await fetchOfferings();
+      }
+
       final result = await RevenueCatUI.presentPaywallIfNeeded(
         entitlementId,
         offering: _offerings?.current,
@@ -393,8 +413,11 @@ class SubscriptionService extends ChangeNotifier {
           result == PaywallResult.restored ||
           result == PaywallResult.notPresented; // Already had entitlement
     } on PlatformException catch (e) {
-      debugPrint('SubscriptionService: Paywall error - ${e.message}');
-      _lastError = e.message;
+      debugPrint(
+        'SubscriptionService: Paywall error - code=${e.code} message=${e.message} details=${e.details}',
+      );
+      final details = e.details == null ? '' : '\n${e.details}';
+      _lastError = '${e.message ?? 'Paywall error'}$details';
       return false;
     }
   }
@@ -414,8 +437,11 @@ class SubscriptionService extends ChangeNotifier {
       // Refresh customer info after customer center closes
       await _refreshCustomerInfo();
     } on PlatformException catch (e) {
-      debugPrint('SubscriptionService: Customer Center error - ${e.message}');
-      _lastError = e.message;
+      debugPrint(
+        'SubscriptionService: Customer Center error - code=${e.code} message=${e.message} details=${e.details}',
+      );
+      final details = e.details == null ? '' : '\n${e.details}';
+      _lastError = '${e.message ?? 'Customer Center error'}$details';
     }
   }
 
