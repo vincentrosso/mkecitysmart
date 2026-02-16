@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/street_sweeping.dart';
+import '../providers/location_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/data_source_attribution.dart';
 
@@ -16,6 +17,202 @@ class StreetSweepingScreen extends StatefulWidget {
 class _StreetSweepingScreenState extends State<StreetSweepingScreen> {
   final _dateFormat = DateFormat('EEE, MMM d • h:mm a');
   int _pageIndex = 0;
+  bool _isLoading = false;
+
+  Future<void> _fetchForCurrentLocation() async {
+    final locationProvider = context.read<LocationProvider>();
+    final userProvider = context.read<UserProvider>();
+    final position = locationProvider.position;
+
+    if (position == null) {
+      setState(() => _isLoading = true);
+      await locationProvider.refreshLocation();
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      final newPos = locationProvider.position;
+      if (newPos == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get your location')),
+        );
+        return;
+      }
+      await _doFetch(userProvider, newPos.latitude, newPos.longitude);
+    } else {
+      await _doFetch(userProvider, position.latitude, position.longitude);
+    }
+  }
+
+  Future<void> _doFetch(UserProvider provider, double lat, double lng) async {
+    setState(() => _isLoading = true);
+    final routeCode = await provider.fetchRouteForLocation(lat: lat, lng: lng);
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+    if (routeCode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No sweeping route found for this location'),
+        ),
+      );
+    } else {
+      // Show schedule entry dialog
+      await _showScheduleEntryDialog(routeCode);
+    }
+  }
+
+  Future<void> _showScheduleEntryDialog(String routeCode) async {
+    int? selectedDay;
+    List<int>? selectedWeekPattern;
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Route $routeCode',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Check your street signs for the sweeping schedule, then enter it below.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Sweeping Day',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final entry in {
+                        1: 'Mon',
+                        2: 'Tue',
+                        3: 'Wed',
+                        4: 'Thu',
+                        5: 'Fri',
+                      }.entries)
+                        ChoiceChip(
+                          label: Text(entry.value),
+                          selected: selectedDay == entry.key,
+                          onSelected: (selected) {
+                            setModalState(() {
+                              selectedDay = selected ? entry.key : null;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Week Pattern',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('1st & 3rd weeks'),
+                        selected:
+                            selectedWeekPattern != null &&
+                            selectedWeekPattern!.contains(1),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selectedWeekPattern = selected ? [1, 3] : null;
+                          });
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('2nd & 4th weeks'),
+                        selected:
+                            selectedWeekPattern != null &&
+                            selectedWeekPattern!.contains(2),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selectedWeekPattern = selected ? [2, 4] : null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed:
+                          selectedDay != null && selectedWeekPattern != null
+                          ? () => Navigator.of(context).pop(true)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00A86B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Save Schedule'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true &&
+        selectedDay != null &&
+        selectedWeekPattern != null &&
+        mounted) {
+      final provider = context.read<UserProvider>();
+      final schedule = await provider.addSweepingScheduleFromUserEntry(
+        broomCode: routeCode,
+        sweepDay: selectedDay!,
+        weekPattern: selectedWeekPattern!,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Schedule saved for route ${schedule.zone}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +221,29 @@ class _StreetSweepingScreenState extends State<StreetSweepingScreen> {
     if (schedules.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Street Sweeping')),
-        body: const Center(child: Text('No sweeping schedules configured.')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cleaning_services_outlined,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              const Text('No sweeping schedules configured.'),
+              const SizedBox(height: 24),
+              if (_isLoading)
+                const CircularProgressIndicator()
+              else
+                ElevatedButton.icon(
+                  onPressed: _fetchForCurrentLocation,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text('Find My Schedule'),
+                ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -90,6 +309,21 @@ class _StreetSweepingScreenState extends State<StreetSweepingScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isLoading ? null : _fetchForCurrentLocation,
+        icon: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.add_location),
+        label: const Text('Add Location'),
+        backgroundColor: const Color(0xFF00A86B),
       ),
     );
   }

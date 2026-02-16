@@ -37,6 +37,7 @@ import '../services/notification_service.dart';
 import '../services/parking_history_service.dart';
 import '../services/report_api_service.dart';
 import '../services/subscription_service.dart';
+import '../services/street_sweeping_service.dart';
 import '../services/ticket_api_service.dart';
 import '../services/user_repository.dart';
 
@@ -2071,6 +2072,125 @@ class UserProvider extends ChangeNotifier {
         final2h: final2h,
         customMinutes: customMinutes,
       ),
+    );
+    // Sync notifications after updating toggles
+    await _syncSweepingNotifications();
+  }
+
+  /// Fetch the BROOM route code for a location from ArcGIS.
+  /// Returns null if location is outside Milwaukee sweeping routes.
+  Future<String?> fetchRouteForLocation({
+    required double lat,
+    required double lng,
+  }) async {
+    final service = StreetSweepingService();
+    final routeInfo = await service.fetchRouteByPoint(lat: lat, lng: lng);
+    return routeInfo?.broomCode;
+  }
+
+  /// Add a sweeping schedule with user-entered timing data.
+  /// Call this after user selects their sweep day and week pattern.
+  Future<StreetSweepingSchedule> addSweepingScheduleFromUserEntry({
+    required String broomCode,
+    required int sweepDay,
+    required List<int> weekPattern,
+    String side = 'Both sides',
+  }) async {
+    final service = StreetSweepingService();
+    final userSchedule = UserSweepingSchedule(
+      broomCode: broomCode,
+      sweepDay: sweepDay,
+      weekPattern: weekPattern,
+    );
+    final nextSweep =
+        service.computeNextSweepDate(userSchedule) ??
+        DateTime.now().add(const Duration(days: 30));
+
+    final schedule = StreetSweepingSchedule(
+      id: 'route_${broomCode}_$side',
+      zone: broomCode,
+      side: side,
+      nextSweep: nextSweep,
+      gpsMonitoring: false,
+      advance24h: true,
+      final2h: true,
+      customMinutes: 60,
+      alternativeParking: const [],
+      cleanStreakDays: 0,
+      violationsPrevented: 0,
+      sweepDay: sweepDay,
+      weekPattern: weekPattern,
+    );
+
+    // Check if we already have a schedule for this route
+    final existingIndex = sweepingSchedules.indexWhere(
+      (s) => s.zone == broomCode,
+    );
+    List<StreetSweepingSchedule> updated;
+    if (existingIndex >= 0) {
+      updated = [...sweepingSchedules];
+      updated[existingIndex] = schedule;
+    } else {
+      updated = [...sweepingSchedules, schedule];
+    }
+
+    if (_profile != null) {
+      _profile = _profile!.copyWith(sweepingSchedules: updated);
+      await _repository.saveProfile(_profile!);
+    } else {
+      _guestSweepingSchedules = updated;
+    }
+    notifyListeners();
+    await _syncSweepingNotifications();
+    return schedule;
+  }
+
+  /// Refresh all sweeping schedules to update nextSweep dates
+  /// using stored user-entered schedule data.
+  Future<void> refreshSweepingSchedules() async {
+    final service = StreetSweepingService();
+    final updated = sweepingSchedules.map((s) {
+      // Only recalculate if we have user-entered schedule data
+      if (s.sweepDay != null && s.weekPattern != null) {
+        final userSchedule = UserSweepingSchedule(
+          broomCode: s.zone,
+          sweepDay: s.sweepDay!,
+          weekPattern: s.weekPattern!,
+        );
+        final nextSweep = service.computeNextSweepDate(userSchedule);
+        if (nextSweep != null) {
+          return s.copyWith(nextSweep: nextSweep);
+        }
+      }
+      return s;
+    }).toList();
+
+    if (_profile != null) {
+      _profile = _profile!.copyWith(sweepingSchedules: updated);
+      await _repository.saveProfile(_profile!);
+    } else {
+      _guestSweepingSchedules = updated;
+    }
+    notifyListeners();
+    // Sync notifications after refreshing schedules
+    await _syncSweepingNotifications();
+  }
+
+  /// Sync street sweeping notifications with NotificationService
+  Future<void> _syncSweepingNotifications() async {
+    final scheduleData = sweepingSchedules
+        .map(
+          (s) => (
+            id: s.id,
+            nextSweep: s.nextSweep,
+            zone: s.zone,
+            advance24h: s.advance24h,
+            final2h: s.final2h,
+          ),
+        )
+        .toList();
+    await NotificationService.instance.syncSweepingNotifications(
+      schedules: scheduleData,
     );
   }
 
