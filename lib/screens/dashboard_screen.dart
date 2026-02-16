@@ -212,6 +212,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                     onTap: () => Navigator.pushNamed(context, '/history'),
                   ),
                   HomeTile(
+                    icon: Icons.directions_car,
+                    title: 'My Vehicles',
+                    onTap: () => Navigator.pushNamed(context, '/vehicles'),
+                  ),
+                  HomeTile(
                     icon: Icons.settings,
                     title: 'City settings',
                     onTap: () => Navigator.pushNamed(context, '/city-settings'),

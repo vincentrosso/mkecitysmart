@@ -1904,8 +1904,19 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addVehicle(Vehicle vehicle) async {
-    if (_profile == null) return;
+  /// Maximum vehicles allowed by the user's city rule pack.
+  int get maxVehicles => _profile?.rulePack.maxVehicles ?? 5;
+
+  /// Whether the user can add more vehicles.
+  bool get canAddVehicle =>
+      _profile != null && _profile!.vehicles.length < maxVehicles;
+
+  /// Add a vehicle if under the limit. Returns false if limit reached.
+  Future<bool> addVehicle(Vehicle vehicle) async {
+    if (_profile == null) return false;
+    if (_profile!.vehicles.length >= maxVehicles) {
+      return false; // At limit
+    }
     final currentVehicles = List<Vehicle>.from(_profile!.vehicles)
       ..add(vehicle);
     final prefs = _profile!.preferences.defaultVehicleId == null
@@ -1917,6 +1928,7 @@ class UserProvider extends ChangeNotifier {
     );
     await _repository.saveProfile(_profile!);
     notifyListeners();
+    return true;
   }
 
   Future<void> updateVehicle(Vehicle vehicle) async {
