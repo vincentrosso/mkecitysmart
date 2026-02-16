@@ -283,21 +283,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final purchased = await SubscriptionService.instance.presentPaywall();
 
     if (!mounted) return;
+    if (!context.mounted) return;
 
     if (purchased) {
       // Update the user provider with new subscription tier
-      if (context.mounted) {
-        context.read<UserProvider>().updateSubscriptionTier(
-          SubscriptionService.instance.currentTier,
-        );
+      context.read<UserProvider>().updateSubscriptionTier(
+        SubscriptionService.instance.currentTier,
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Welcome to Premium!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎉 Welcome to Premium!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else {
       final lastError = SubscriptionService.instance.lastError;
       if (lastError != null && lastError.isNotEmpty) {

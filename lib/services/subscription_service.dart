@@ -25,10 +25,21 @@ class SubscriptionService extends ChangeNotifier {
   // Entitlement identifier (must match RevenueCat dashboard)
   static const entitlementPro = 'pro';
 
-  // Product identifiers (must match App Store Connect / RevenueCat dashboard)
-  // Note: These must exactly match (case-sensitive)
-  static const productMonthly = 'citysmart_pro_monthly_2026';
-  static const productYearly = 'citysmart_pro_yearly_2026';
+  // Product identifiers (must match the underlying store identifiers).
+  // iOS: App Store Connect product ids.
+  // Android: Google Play subscription ids include base plan: "productId:basePlanId".
+  static const _productMonthlyIos = 'citysmart_pro_monthly_2026';
+  static const _productYearlyIos = 'citysmart_pro_yearly_2026';
+  static const _productMonthlyAndroid = 'citysmart_pro_monthly:monthly-base';
+  static const _productYearlyAndroid = 'citysmart_pro_yearly:yearly-base';
+
+  static List<String> get _platformProductIds {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return const [_productMonthlyIos, _productYearlyIos];
+    }
+    return const [_productMonthlyAndroid, _productYearlyAndroid];
+  }
 
   bool _initialized = false;
   Future<void>? _initFuture;
@@ -288,13 +299,11 @@ class SubscriptionService extends ChangeNotifier {
       // Try to probe StoreKit directly for our product IDs so we can tell if
       // the App Store is returning *any* products for this bundle.
       try {
-        final products = await Purchases.getProducts([
-          productMonthly,
-          productYearly,
-        ]);
+        final ids = _platformProductIds;
+        final products = await Purchases.getProducts(ids);
         debugPrint(
           'SubscriptionService: getProducts returned ${products.length} products for ids: '
-          '${[productMonthly, productYearly].join(', ')}',
+          '${ids.join(', ')}',
         );
       } catch (probeErr) {
         debugPrint('SubscriptionService: getProducts probe failed: $probeErr');

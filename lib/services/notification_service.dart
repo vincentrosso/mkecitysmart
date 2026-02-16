@@ -303,6 +303,102 @@ class NotificationService {
         'Move your car to the $side-numbered side before midnight.';
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  //  Street Sweeping – scheduled notifications per route
+  // ──────────────────────────────────────────────────────────────────────
+
+  /// Base ID for street sweeping notifications. Each schedule gets unique IDs:
+  /// - 24h advance: _sweepingBaseId + (index * 10) + 1
+  /// - 2h final:    _sweepingBaseId + (index * 10) + 2
+  static const int _sweepingBaseId = 910000;
+
+  /// Schedule street sweeping reminder notifications for a list of schedules.
+  /// Call this when schedules are loaded or when notification toggles change.
+  Future<void> syncSweepingNotifications({
+    required List<
+      ({
+        String id,
+        DateTime nextSweep,
+        String zone,
+        bool advance24h,
+        bool final2h,
+      })
+    >
+    schedules,
+  }) async {
+    const sweepingDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'sweeping_reminders',
+        'Street Sweeping',
+        channelDescription: 'Street sweeping reminders to move your vehicle',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    // Cancel existing sweeping notifications (up to 100 schedules * 10 IDs each)
+    for (var i = 0; i < 1000; i++) {
+      await _local.cancel(_sweepingBaseId + i);
+    }
+
+    try {
+      for (var i = 0; i < schedules.length; i++) {
+        final s = schedules[i];
+        final baseId = _sweepingBaseId + (i * 10);
+
+        // 24-hour advance notification
+        if (s.advance24h) {
+          final time24h = s.nextSweep.subtract(const Duration(hours: 24));
+          if (time24h.isAfter(DateTime.now())) {
+            final tzTime = tz.TZDateTime.from(time24h, tz.local);
+            await _local.zonedSchedule(
+              baseId + 1,
+              '🧹 Street Sweeping Tomorrow',
+              'Zone ${s.zone} will be swept tomorrow. Move your vehicle to avoid a ticket.',
+              tzTime,
+              sweepingDetails,
+              androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            );
+          }
+        }
+
+        // 2-hour final notification
+        if (s.final2h) {
+          final time2h = s.nextSweep.subtract(const Duration(hours: 2));
+          if (time2h.isAfter(DateTime.now())) {
+            final tzTime = tz.TZDateTime.from(time2h, tz.local);
+            await _local.zonedSchedule(
+              baseId + 2,
+              '🚨 Street Sweeping in 2 Hours!',
+              'Zone ${s.zone} sweeping starts soon. Move your vehicle now!',
+              tzTime,
+              sweepingDetails,
+              androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            );
+          }
+        }
+      }
+
+      log(
+        'Street sweeping notifications synced for ${schedules.length} schedules',
+      );
+    } catch (e) {
+      log('Failed to schedule street sweeping notifications: $e');
+    }
+  }
+
+  /// Cancel all street sweeping notifications
+  Future<void> cancelSweepingNotifications() async {
+    for (var i = 0; i < 1000; i++) {
+      await _local.cancel(_sweepingBaseId + i);
+    }
+  }
+
   Future<void> _requestPermissions() async {
     if (_messaging == null) return;
     final settings = await _messaging!.requestPermission(

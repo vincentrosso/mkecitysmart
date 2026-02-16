@@ -27,8 +27,10 @@ class VehicleManagementScreen extends StatelessWidget {
         }
 
         final vehicles = profile.vehicles;
+        final canAdd = provider.canAddVehicle;
+        final maxVehicles = provider.maxVehicles;
         return CitySmartScaffold(
-          title: 'My Vehicles',
+          title: 'My Vehicles (${vehicles.length}/$maxVehicles)',
           currentIndex: 0,
           body: ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -117,9 +119,20 @@ class VehicleManagementScreen extends StatelessWidget {
             },
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showVehicleSheet(context, provider, null),
-            label: const Text('Add Vehicle'),
-            icon: const Icon(Icons.add),
+            onPressed: canAdd
+                ? () => _showVehicleSheet(context, provider, null)
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Vehicle limit reached ($maxVehicles max)',
+                        ),
+                      ),
+                    );
+                  },
+            backgroundColor: canAdd ? null : Colors.grey,
+            label: Text(canAdd ? 'Add Vehicle' : 'Limit Reached'),
+            icon: Icon(canAdd ? Icons.add : Icons.block),
           ),
         );
       },

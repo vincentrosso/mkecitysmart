@@ -377,8 +377,12 @@ class _FilterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<T>(
-      onSelected: onChanged,
+    // Use index-based selection to handle null values properly
+    // (PopupMenuButton doesn't call onSelected for null values)
+    final currentIndex = items.indexOf(value);
+
+    return PopupMenuButton<int>(
+      onSelected: (index) => onChanged(items[index]),
       offset: const Offset(0, 40),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
@@ -415,28 +419,30 @@ class _FilterDropdown<T> extends StatelessWidget {
           ],
         ),
       ),
-      itemBuilder: (context) => items.map((item) {
-        final isSelected = item == value;
-        return PopupMenuItem<T>(
-          value: item,
-          child: Row(
-            children: [
-              if (isSelected)
-                const Icon(Icons.check, size: 18, color: Color(0xFF1565C0))
-              else
-                const SizedBox(width: 18),
-              const SizedBox(width: 8),
-              Text(
-                itemLabel(item),
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? const Color(0xFF1565C0) : null,
+      itemBuilder: (context) => [
+        for (int i = 0; i < items.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: Row(
+              children: [
+                if (i == currentIndex)
+                  const Icon(Icons.check, size: 18, color: Color(0xFF1565C0))
+                else
+                  const SizedBox(width: 18),
+                const SizedBox(width: 8),
+                Text(
+                  itemLabel(items[i]),
+                  style: TextStyle(
+                    fontWeight: i == currentIndex
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: i == currentIndex ? const Color(0xFF1565C0) : null,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 }
