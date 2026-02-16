@@ -216,7 +216,8 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
                   heroTag: 'reportFab',
                   onPressed: () async {
                     final report = await showReportSheet(context);
-                    if (report != null && mounted) {
+                    if (!context.mounted) return;
+                    if (report != null) {
                       showHeroConfirmation(
                         context,
                         reportType: report.reportType.displayName,
