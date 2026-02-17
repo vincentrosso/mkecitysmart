@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'services/analytics_service.dart';
 import 'services/ad_service.dart';
 import 'services/citation_hotspot_service.dart';
+import 'services/night_parking_service.dart';
 import 'services/parking_history_service.dart';
 import 'services/saved_places_service.dart';
 import 'services/subscription_service.dart';
@@ -36,6 +37,7 @@ import 'screens/street_sweeping_screen.dart';
 import 'screens/vehicle_management_screen.dart';
 import 'screens/history_receipts_screen.dart';
 import 'screens/maintenance_report_screen.dart';
+import 'screens/night_parking_screen.dart';
 import 'screens/garbage_schedule_screen.dart';
 import 'screens/city_settings_screen.dart';
 import 'services/notification_service.dart';
@@ -242,6 +244,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             )
             .timeout(const Duration(seconds: 3), onTimeout: () async {});
 
+        // Initialize night parking service for enforcement reminders
+        await diagnostics
+            .recordFuture<void>(
+              'NightParkingService',
+              () => NightParkingService.instance.initialize(),
+              onSuccess: (_, entry) =>
+                  entry.details = 'Night parking permission loaded.',
+            )
+            .timeout(const Duration(seconds: 3), onTimeout: () async {});
+
         // Initialize subscription service (RevenueCat)
         await diagnostics
             .recordFuture<void>(
@@ -426,6 +438,7 @@ class MKEParkApp extends StatelessWidget {
               '/maintenance': (context) => const MaintenanceReportScreen(),
               '/predictions': (context) => const ChargingMapScreen(),
               '/garbage': (context) => const GarbageScheduleScreen(),
+              '/night-parking': (context) => const NightParkingScreen(),
               '/city-settings': (context) => const CitySettingsScreen(),
               '/alternate-side-parking': (context) =>
                   const AlternateSideParkingScreen(),

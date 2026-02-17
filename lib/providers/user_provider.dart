@@ -13,6 +13,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/permit.dart';
 import '../models/payment_receipt.dart';
 import '../models/permit_eligibility.dart';
+import '../models/night_parking_permission.dart';
 import '../models/reservation.dart';
 import '../models/street_sweeping.dart';
 import '../models/sighting_report.dart';
@@ -33,6 +34,7 @@ import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
 import '../services/device_binding_service.dart';
 import '../services/location_service.dart';
+import '../services/night_parking_service.dart';
 import '../services/notification_service.dart';
 import '../services/parking_history_service.dart';
 import '../services/report_api_service.dart';
@@ -2288,6 +2290,84 @@ class UserProvider extends ChangeNotifier {
     } else {
       _guestSweepingSchedules = updated;
     }
+    notifyListeners();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  //  Night Parking Permission Helpers
+  // ──────────────────────────────────────────────────────────────────────
+
+  /// Check if the user's saved address requires night parking permission
+  Future<NightParkingZoneResult?> checkNightParkingForAddress() async {
+    if (_profile?.addressLatitude == null ||
+        _profile?.addressLongitude == null) {
+      return null;
+    }
+
+    return NightParkingService.instance.checkZone(
+      latitude: _profile!.addressLatitude!,
+      longitude: _profile!.addressLongitude!,
+      address: _profile?.address,
+    );
+  }
+
+  /// Get the user's night parking permission status
+  NightParkingPermission? get nightParkingPermission =>
+      NightParkingService.instance.permission;
+
+  /// Whether the user has a valid night parking permit
+  bool get hasValidNightParkingPermit =>
+      NightParkingService.instance.hasValidPermission;
+
+  /// Whether we're currently in night parking enforcement window
+  bool get isNightParkingEnforcementActive =>
+      NightParkingService.instance.isEnforcementActive();
+
+  /// Get a human-readable night parking status message
+  String get nightParkingStatusMessage =>
+      NightParkingService.instance.getStatusMessage();
+
+  /// Set up the user's night parking permission
+  Future<void> setNightParkingPermission({
+    required String licensePlate,
+    String? vehicleDescription,
+    NightParkingStatus status = NightParkingStatus.pending,
+    DateTime? expirationDate,
+  }) async {
+    final address = _profile?.address ?? '';
+    final zoneResult = await checkNightParkingForAddress();
+
+    await NightParkingService.instance.createPermission(
+      address: address,
+      licensePlate: licensePlate,
+      vehicleDescription: vehicleDescription,
+      zoneId: zoneResult?.zoneId,
+      initialStatus: status,
+      expirationDate: expirationDate,
+    );
+
+    notifyListeners();
+  }
+
+  /// Activate the user's night parking permission (e.g., after approval)
+  Future<void> activateNightParkingPermission({
+    DateTime? expirationDate,
+  }) async {
+    await NightParkingService.instance.activatePermission(
+      expirationDate: expirationDate,
+    );
+    notifyListeners();
+  }
+
+  /// Enable or disable night parking reminders
+  Future<void> setNightParkingReminders(bool enabled) async {
+    await NightParkingService.instance.setReminderEnabled(enabled);
+    notifyListeners();
+  }
+
+  /// Clear night parking permission data
+  Future<void> clearNightParkingPermission() async {
+    await NightParkingService.instance.clearPermission();
     notifyListeners();
   }
 
