@@ -161,6 +161,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                     onTap: () => Navigator.pushNamed(context, '/garbage'),
                   ),
                   HomeTile(
+                    icon: Icons.nightlight_round,
+                    title: 'Night Parking',
+                    subtitle: '2-6 AM permits',
+                    onTap: () => Navigator.pushNamed(context, '/night-parking'),
+                  ),
+                  HomeTile(
                     icon: Icons.compare_arrows,
                     title: 'Alt-side parking',
                     subtitle: 'Odd/Even side',

@@ -399,6 +399,98 @@ class NotificationService {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  //  Night Parking – notifications for 2 AM - 6 AM enforcement
+  // ──────────────────────────────────────────────────────────────────────
+
+  /// Base ID for night parking notifications
+  static const int _nightParkingBaseId = 800000;
+
+  /// Night parking notification details
+  static const _nightParkingDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'night_parking_reminders',
+      'Night Parking',
+      channelDescription: 'Night parking enforcement reminders (2-6 AM)',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
+  /// Schedule a daily night parking reminder at 9 PM
+  Future<void> scheduleNightParkingEveningReminder({
+    required bool hasPermit,
+  }) async {
+    await _local.cancel(_nightParkingBaseId + 1);
+
+    if (hasPermit) return; // Don't remind if user has permit
+
+    try {
+      final evening = _nextOccurrence(hour: 21, minute: 0);
+      await _local.zonedSchedule(
+        _nightParkingBaseId + 1,
+        '🌙 Night Parking Reminder',
+        'Enforcement starts at 2 AM. Do you have night parking permission?',
+        evening,
+        _nightParkingDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+      );
+      log('Scheduled nightly night parking reminder at 9 PM');
+    } catch (e) {
+      log('Failed to schedule night parking reminder: $e');
+    }
+  }
+
+  /// Schedule a permit expiration reminder
+  Future<void> scheduleNightParkingExpirationReminder({
+    required DateTime expirationDate,
+    int daysBeforeExpiry = 30,
+  }) async {
+    await _local.cancel(_nightParkingBaseId + 2);
+
+    final reminderDate = expirationDate.subtract(
+      Duration(days: daysBeforeExpiry),
+    );
+    if (reminderDate.isBefore(DateTime.now())) return;
+
+    try {
+      final tzTime = tz.TZDateTime.from(
+        DateTime(
+          reminderDate.year,
+          reminderDate.month,
+          reminderDate.day,
+          10,
+          0,
+        ),
+        tz.local,
+      );
+      await _local.zonedSchedule(
+        _nightParkingBaseId + 2,
+        '📋 Night Parking Permit Expiring',
+        'Your night parking permit expires in $daysBeforeExpiry days. Renew to avoid tickets.',
+        tzTime,
+        _nightParkingDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+      log('Scheduled night parking expiration reminder');
+    } catch (e) {
+      log('Failed to schedule expiration reminder: $e');
+    }
+  }
+
+  /// Cancel all night parking reminders
+  Future<void> cancelNightParkingReminders() async {
+    for (var i = 0; i < 10; i++) {
+      await _local.cancel(_nightParkingBaseId + i);
+    }
+  }
+
   Future<void> _requestPermissions() async {
     if (_messaging == null) return;
     final settings = await _messaging!.requestPermission(
@@ -429,17 +521,28 @@ class NotificationService {
     const initSettings = InitializationSettings(android: android, iOS: ios);
     await _local.initialize(initSettings);
 
-    const channel = AndroidNotificationChannel(
+    final androidPlugin = _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    // Risk alerts channel
+    const riskChannel = AndroidNotificationChannel(
       'risk_alerts',
       'Risk Alerts',
       description: 'Tow/ticket risk notifications',
       importance: Importance.high,
     );
-    await _local
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(channel);
+    await androidPlugin?.createNotificationChannel(riskChannel);
+
+    // Night parking channel
+    const nightParkingChannel = AndroidNotificationChannel(
+      'night_parking_reminders',
+      'Night Parking',
+      description: 'Night parking enforcement reminders (2-6 AM)',
+      importance: Importance.high,
+    );
+    await androidPlugin?.createNotificationChannel(nightParkingChannel);
   }
 
   Future<void> _registerToken() async {

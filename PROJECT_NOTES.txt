@@ -214,6 +214,20 @@ Future Enhancements (to implement if users request)
   * Hmong (hmn) not supported by Flutter's Material localizations - would need custom delegate.
   * Estimated effort: ~2-3 days for full implementation depending on string count.
 
+- Emissions Testing Helper (FUTURE INTEGRATION):
+  * Goal: Help users find nearby emissions testing locations and plan the best time to go.
+  * Data needed:
+    - Testing station directory (name, address, hours, phone, pricing if available, services offered)
+    - Real-time / historical busy times (wait time estimates or crowd levels by day/time)
+  * UX:
+    - “Nearby emissions testing” list + map
+    - “Best time to go” suggestions (e.g., least busy windows)
+  * Requirements checklist (show before navigating):
+    - What documents are needed (registration, ID, proof of insurance) and acceptable payment methods
+    - Vehicle requirements (warm engine guidance, check engine light rules if applicable)
+  * Notes:
+    - Busy-time data may require partner/API integration; fallback is advisory guidance without live wait times.
+
 - Custom Email Domain Setup (PENDING - 2026-02-05):
   * Domain: mkecitysmart.com
   * Purpose: Send Firebase Auth emails (verification, password reset) from noreply@mkecitysmart.com instead of noreply@mkeparkapp-1ad15.firebaseapp.com
