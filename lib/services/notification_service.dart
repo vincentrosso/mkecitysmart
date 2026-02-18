@@ -485,6 +485,32 @@ class NotificationService {
     }
   }
 
+  /// Schedule a one-time night parking reminder at an exact time
+  Future<void> scheduleNightParkingTimeReminder({
+    required DateTime when,
+    required int idOffset,
+    required String title,
+    required String body,
+  }) async {
+    await _local.cancel(_nightParkingBaseId + idOffset);
+    if (when.isBefore(DateTime.now())) return;
+
+    try {
+      final tzTime = tz.TZDateTime.from(when, tz.local);
+      await _local.zonedSchedule(
+        _nightParkingBaseId + idOffset,
+        title,
+        body,
+        tzTime,
+        _nightParkingDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+      log('Scheduled night parking time reminder (offset $idOffset)');
+    } catch (e) {
+      log('Failed to schedule night parking time reminder: $e');
+    }
+  }
+
   /// Cancel all night parking reminders
   Future<void> cancelNightParkingReminders() async {
     for (var i = 0; i < 10; i++) {

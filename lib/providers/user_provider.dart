@@ -2305,6 +2305,12 @@ class UserProvider extends ChangeNotifier {
     // If no saved coordinates exist, try current device location.
     // This will automatically prompt for permission when needed.
     if (latitude == null || longitude == null) {
+      if (kIsWeb) {
+        // Geolocator fallback used here is not supported on web builds.
+        // Keep web flow stable by requiring saved address coordinates.
+        return null;
+      }
+
       try {
         final position = await LocationService().getCurrentPosition();
         if (position == null) return null;

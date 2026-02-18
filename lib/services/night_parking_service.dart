@@ -370,6 +370,8 @@ class NightParkingService {
   static const int _eveningReminderId = 800001;
   static const int _expirationReminderId = 800002;
   static const int _weeklyReminderId = 800003;
+  static const int _shortExpiry12hReminderId = 800004;
+  static const int _shortExpiry2hReminderId = 800005;
 
   /// Schedule all night parking reminders based on user's status
   Future<void> scheduleNightParkingReminders() async {
@@ -405,6 +407,7 @@ class NightParkingService {
   ) async {
     if (_permission?.expirationDate == null) return;
     final expiry = _permission!.expirationDate!;
+    final remaining = expiry.difference(DateTime.now());
 
     await notificationService.scheduleNightParkingExpirationReminder(
       expirationDate: expiry,
@@ -416,6 +419,25 @@ class NightParkingService {
       daysBeforeExpiry: 7,
       idOffset: 3,
     );
+
+    // For short permits (e.g., daily/weekly), send near-expiry warnings.
+    if (remaining <= const Duration(days: 2)) {
+      await notificationService.scheduleNightParkingTimeReminder(
+        when: expiry.subtract(const Duration(hours: 12)),
+        idOffset: 4,
+        title: '⏰ Permit Expires Soon',
+        body:
+            'Your night parking permit expires in about 12 hours. Renew if needed.',
+      );
+
+      await notificationService.scheduleNightParkingTimeReminder(
+        when: expiry.subtract(const Duration(hours: 2)),
+        idOffset: 5,
+        title: '⚠️ Permit Expires in 2 Hours',
+        body:
+            'Your night parking permit is about to expire. Renew now to avoid tickets.',
+      );
+    }
   }
 
   /// Schedule weekly reminder to apply for permit
@@ -455,6 +477,8 @@ class NightParkingService {
     await notificationService.cancelScheduled(_eveningReminderId);
     await notificationService.cancelScheduled(_expirationReminderId);
     await notificationService.cancelScheduled(_expirationReminderId + 1);
+    await notificationService.cancelScheduled(_shortExpiry12hReminderId);
+    await notificationService.cancelScheduled(_shortExpiry2hReminderId);
     await notificationService.cancelScheduled(_weeklyReminderId);
   }
 

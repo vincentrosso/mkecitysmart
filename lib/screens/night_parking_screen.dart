@@ -160,6 +160,8 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
             dateFormat: _dateFormat,
             onApply: _launchApplication,
             onActivate: _showActivateDialog,
+            onEdit: _showEditDialog,
+            onDelete: _showDeleteDialog,
           ),
           const SizedBox(height: 16),
 
@@ -347,6 +349,181 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
     }
   }
 
+  Future<void> _showEditDialog() async {
+    final provider = context.read<UserProvider>();
+    final currentPermission = NightParkingService.instance.permission;
+    if (currentPermission == null) return;
+
+    final plateController = TextEditingController(
+      text: currentPermission.licensePlate ?? '',
+    );
+    final descController = TextEditingController(
+      text: currentPermission.vehicleDescription ?? '',
+    );
+    final now = DateTime.now();
+    _PermitPurchaseOption selectedPermitOption = _permitOptions.first;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: kCitySmartGreen,
+        title: const Text('Edit Permit Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: plateController,
+              decoration: const InputDecoration(
+                labelText: 'License Plate',
+                hintText: 'ABC-1234',
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(
+                labelText: 'Vehicle Description (optional)',
+                hintText: 'Blue Honda Civic',
+              ),
+            ),
+            const SizedBox(height: 12),
+            StatefulBuilder(
+              builder: (context, setLocalState) {
+                final expirationDate = _expirationFromPermit(
+                  now,
+                  selectedPermitOption.id,
+                );
+
+                return Column(
+                  children: [
+                    DropdownButtonFormField<_PermitPurchaseOption>(
+                      initialValue: selectedPermitOption,
+                      decoration: const InputDecoration(
+                        labelText: 'Permit Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _permitOptions
+                          .map(
+                            (option) => DropdownMenuItem<_PermitPurchaseOption>(
+                              value: option,
+                              child: Text(
+                                '${option.label} • ${option.costLabel} (${option.detailLabel})',
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setLocalState(() {
+                          selectedPermitOption = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: const Icon(Icons.event, color: kCitySmartYellow),
+                      title: const Text('New Expiration'),
+                      subtitle: Text(_dateFormat.format(expirationDate)),
+                    ),
+                    if (selectedPermitOption.noteLabel != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedPermitOption.noteLabel!,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: kCitySmartYellow,
+              foregroundColor: kCitySmartGreen,
+            ),
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && plateController.text.trim().isNotEmpty) {
+      final selectedExpirationDate = _expirationFromPermit(
+        now,
+        selectedPermitOption.id,
+      );
+
+      await provider.setNightParkingPermission(
+        licensePlate: plateController.text.trim(),
+        vehicleDescription: descController.text.trim().isNotEmpty
+            ? descController.text.trim()
+            : null,
+        status: NightParkingStatus.active,
+        expirationDate: selectedExpirationDate,
+      );
+
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permit details updated.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteDialog() async {
+    final provider = context.read<UserProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: kCitySmartGreen,
+        title: const Text('Delete Permit Info?'),
+        content: const Text(
+          'This will remove your saved night parking permit details and cancel permit reminders.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await provider.clearNightParkingPermission();
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permit information deleted.')),
+        );
+      }
+    }
+  }
+
   void _showInfoDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -512,12 +689,16 @@ class _PermitStatusCard extends StatelessWidget {
     required this.dateFormat,
     required this.onApply,
     required this.onActivate,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final NightParkingPermission? permission;
   final DateFormat dateFormat;
   final VoidCallback onApply;
   final VoidCallback onActivate;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -618,6 +799,34 @@ class _PermitStatusCard extends StatelessWidget {
                 ),
               ),
             ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit Permit'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kCitySmartYellow,
+                      side: const BorderSide(color: kCitySmartYellow),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Delete Info'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
