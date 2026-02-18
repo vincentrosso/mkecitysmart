@@ -631,7 +631,7 @@ class _ZoneCheckCard extends StatelessWidget {
             )
           else if (result == null)
             const Text(
-              'Set your address in settings to check if your zone requires night parking permission.',
+              'Allow location access (or set an address) to automatically check if your zone requires a night parking permit.',
               style: TextStyle(color: Colors.white70, fontSize: 14),
             )
           else ...[

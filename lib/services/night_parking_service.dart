@@ -68,6 +68,11 @@ class NightParkingService {
         }
       }
 
+      // Ensure reminders are restored after app restart if user enabled them.
+      if (_reminderEnabled) {
+        await scheduleNightParkingReminders();
+      }
+
       _initialized = true;
       log('NightParkingService initialized: permission=${_permission?.status}');
     } catch (e) {
@@ -393,18 +398,8 @@ class NightParkingService {
   Future<void> _scheduleEveningReminder(
     NotificationService notificationService,
   ) async {
-    // Schedule for 9 PM tonight (or tomorrow if past 9 PM)
-    final now = DateTime.now();
-    var reminderTime = DateTime(now.year, now.month, now.day, 21, 0);
-    if (reminderTime.isBefore(now)) {
-      reminderTime = reminderTime.add(const Duration(days: 1));
-    }
-
-    await notificationService.scheduleLocal(
-      title: '🌙 Night Parking Reminder',
-      body: 'Enforcement starts at 2 AM. Do you have night parking permission?',
-      when: reminderTime,
-      id: _eveningReminderId,
+    await notificationService.scheduleNightParkingEveningReminder(
+      hasPermit: hasValidPermission,
     );
   }
 
@@ -413,33 +408,18 @@ class NightParkingService {
     NotificationService notificationService,
   ) async {
     if (_permission?.expirationDate == null) return;
-
     final expiry = _permission!.expirationDate!;
-    final now = DateTime.now();
 
-    // Remind 30 days before expiration
-    final thirtyDayReminder = expiry.subtract(const Duration(days: 30));
-    if (thirtyDayReminder.isAfter(now)) {
-      await notificationService.scheduleLocal(
-        title: '📋 Permit Expiring Soon',
-        body:
-            'Your night parking permit expires in 30 days. Renew to avoid tickets.',
-        when: thirtyDayReminder,
-        id: _expirationReminderId,
-      );
-    }
-
-    // Also remind 7 days before
-    final sevenDayReminder = expiry.subtract(const Duration(days: 7));
-    if (sevenDayReminder.isAfter(now)) {
-      await notificationService.scheduleLocal(
-        title: '⚠️ Permit Expiring in 7 Days',
-        body:
-            'Your night parking permit expires soon! Renew now to stay protected.',
-        when: sevenDayReminder,
-        id: _expirationReminderId + 1,
-      );
-    }
+    await notificationService.scheduleNightParkingExpirationReminder(
+      expirationDate: expiry,
+      daysBeforeExpiry: 30,
+      idOffset: 2,
+    );
+    await notificationService.scheduleNightParkingExpirationReminder(
+      expirationDate: expiry,
+      daysBeforeExpiry: 7,
+      idOffset: 3,
+    );
   }
 
   /// Schedule weekly reminder to apply for permit

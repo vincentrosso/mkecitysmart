@@ -2299,14 +2299,37 @@ class UserProvider extends ChangeNotifier {
 
   /// Check if the user's saved address requires night parking permission
   Future<NightParkingZoneResult?> checkNightParkingForAddress() async {
-    if (_profile?.addressLatitude == null ||
-        _profile?.addressLongitude == null) {
-      return null;
+    double? latitude = _profile?.addressLatitude;
+    double? longitude = _profile?.addressLongitude;
+
+    // If no saved coordinates exist, try current device location.
+    // This will automatically prompt for permission when needed.
+    if (latitude == null || longitude == null) {
+      try {
+        final position = await LocationService().getCurrentPosition();
+        if (position == null) return null;
+
+        latitude = position.latitude;
+        longitude = position.longitude;
+
+        // Persist coordinates so zone status loads automatically next time.
+        if (_profile != null) {
+          _profile = _profile!.copyWith(
+            addressLatitude: latitude,
+            addressLongitude: longitude,
+          );
+          await _repository.saveProfile(_profile!);
+          notifyListeners();
+        }
+      } catch (e) {
+        debugPrint('Night parking zone location lookup failed: $e');
+        return null;
+      }
     }
 
     return NightParkingService.instance.checkZone(
-      latitude: _profile!.addressLatitude!,
-      longitude: _profile!.addressLongitude!,
+      latitude: latitude,
+      longitude: longitude,
       address: _profile?.address,
     );
   }

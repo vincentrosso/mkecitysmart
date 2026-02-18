@@ -451,8 +451,9 @@ class NotificationService {
   Future<void> scheduleNightParkingExpirationReminder({
     required DateTime expirationDate,
     int daysBeforeExpiry = 30,
+    int idOffset = 2,
   }) async {
-    await _local.cancel(_nightParkingBaseId + 2);
+    await _local.cancel(_nightParkingBaseId + idOffset);
 
     final reminderDate = expirationDate.subtract(
       Duration(days: daysBeforeExpiry),
@@ -471,7 +472,7 @@ class NotificationService {
         tz.local,
       );
       await _local.zonedSchedule(
-        _nightParkingBaseId + 2,
+        _nightParkingBaseId + idOffset,
         '📋 Night Parking Permit Expiring',
         'Your night parking permit expires in $daysBeforeExpiry days. Renew to avoid tickets.',
         tzTime,
