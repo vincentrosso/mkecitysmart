@@ -68,6 +68,11 @@ class NightParkingService {
         }
       }
 
+      // Ensure reminders are restored after app restart if user enabled them.
+      if (_reminderEnabled) {
+        await scheduleNightParkingReminders();
+      }
+
       _initialized = true;
       log('NightParkingService initialized: permission=${_permission?.status}');
     } catch (e) {
@@ -273,17 +278,13 @@ class NightParkingService {
   }
 
   /// Simulate activating a permission (for testing or after confirmation)
-  Future<void> activatePermission({DateTime? expirationDate}) async {
+  Future<void> activatePermission({required DateTime expirationDate}) async {
     if (_permission == null) return;
-
-    final expiry =
-        expirationDate ??
-        DateTime.now().add(const Duration(days: 365)); // Annual permit
 
     _permission = _permission!.copyWith(
       status: NightParkingStatus.active,
       issueDate: DateTime.now(),
-      expirationDate: expiry,
+      expirationDate: expirationDate,
     );
 
     await _savePermission();
@@ -369,6 +370,8 @@ class NightParkingService {
   static const int _eveningReminderId = 800001;
   static const int _expirationReminderId = 800002;
   static const int _weeklyReminderId = 800003;
+  static const int _shortExpiry12hReminderId = 800004;
+  static const int _shortExpiry2hReminderId = 800005;
 
   /// Schedule all night parking reminders based on user's status
   Future<void> scheduleNightParkingReminders() async {
@@ -393,18 +396,8 @@ class NightParkingService {
   Future<void> _scheduleEveningReminder(
     NotificationService notificationService,
   ) async {
-    // Schedule for 9 PM tonight (or tomorrow if past 9 PM)
-    final now = DateTime.now();
-    var reminderTime = DateTime(now.year, now.month, now.day, 21, 0);
-    if (reminderTime.isBefore(now)) {
-      reminderTime = reminderTime.add(const Duration(days: 1));
-    }
-
-    await notificationService.scheduleLocal(
-      title: '🌙 Night Parking Reminder',
-      body: 'Enforcement starts at 2 AM. Do you have night parking permission?',
-      when: reminderTime,
-      id: _eveningReminderId,
+    await notificationService.scheduleNightParkingEveningReminder(
+      hasPermit: hasValidPermission,
     );
   }
 
@@ -413,31 +406,36 @@ class NightParkingService {
     NotificationService notificationService,
   ) async {
     if (_permission?.expirationDate == null) return;
-
     final expiry = _permission!.expirationDate!;
-    final now = DateTime.now();
+    final remaining = expiry.difference(DateTime.now());
 
-    // Remind 30 days before expiration
-    final thirtyDayReminder = expiry.subtract(const Duration(days: 30));
-    if (thirtyDayReminder.isAfter(now)) {
-      await notificationService.scheduleLocal(
-        title: '📋 Permit Expiring Soon',
+    await notificationService.scheduleNightParkingExpirationReminder(
+      expirationDate: expiry,
+      daysBeforeExpiry: 30,
+      idOffset: 2,
+    );
+    await notificationService.scheduleNightParkingExpirationReminder(
+      expirationDate: expiry,
+      daysBeforeExpiry: 7,
+      idOffset: 3,
+    );
+
+    // For short permits (e.g., daily/weekly), send near-expiry warnings.
+    if (remaining <= const Duration(days: 2)) {
+      await notificationService.scheduleNightParkingTimeReminder(
+        when: expiry.subtract(const Duration(hours: 12)),
+        idOffset: 4,
+        title: '⏰ Permit Expires Soon',
         body:
-            'Your night parking permit expires in 30 days. Renew to avoid tickets.',
-        when: thirtyDayReminder,
-        id: _expirationReminderId,
+            'Your night parking permit expires in about 12 hours. Renew if needed.',
       );
-    }
 
-    // Also remind 7 days before
-    final sevenDayReminder = expiry.subtract(const Duration(days: 7));
-    if (sevenDayReminder.isAfter(now)) {
-      await notificationService.scheduleLocal(
-        title: '⚠️ Permit Expiring in 7 Days',
+      await notificationService.scheduleNightParkingTimeReminder(
+        when: expiry.subtract(const Duration(hours: 2)),
+        idOffset: 5,
+        title: '⚠️ Permit Expires in 2 Hours',
         body:
-            'Your night parking permit expires soon! Renew now to stay protected.',
-        when: sevenDayReminder,
-        id: _expirationReminderId + 1,
+            'Your night parking permit is about to expire. Renew now to avoid tickets.',
       );
     }
   }
@@ -479,6 +477,8 @@ class NightParkingService {
     await notificationService.cancelScheduled(_eveningReminderId);
     await notificationService.cancelScheduled(_expirationReminderId);
     await notificationService.cancelScheduled(_expirationReminderId + 1);
+    await notificationService.cancelScheduled(_shortExpiry12hReminderId);
+    await notificationService.cancelScheduled(_shortExpiry2hReminderId);
     await notificationService.cancelScheduled(_weeklyReminderId);
   }
 
