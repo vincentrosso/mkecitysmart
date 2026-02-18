@@ -2374,7 +2374,7 @@ class UserProvider extends ChangeNotifier {
 
   /// Activate the user's night parking permission (e.g., after approval)
   Future<void> activateNightParkingPermission({
-    DateTime? expirationDate,
+    required DateTime expirationDate,
   }) async {
     await NightParkingService.instance.activatePermission(
       expirationDate: expirationDate,

@@ -8,6 +8,22 @@ import '../providers/user_provider.dart';
 import '../services/night_parking_service.dart';
 import '../theme/app_theme.dart';
 
+class _PermitPurchaseOption {
+  const _PermitPurchaseOption({
+    required this.id,
+    required this.label,
+    required this.costLabel,
+    required this.detailLabel,
+    this.noteLabel,
+  });
+
+  final String id;
+  final String label;
+  final String costLabel;
+  final String detailLabel;
+  final String? noteLabel;
+}
+
 class NightParkingScreen extends StatefulWidget {
   const NightParkingScreen({super.key});
 
@@ -19,6 +35,75 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
   bool _checkingZone = false;
   NightParkingZoneResult? _zoneResult;
   final _dateFormat = DateFormat('MMM d, yyyy');
+
+  static const List<_PermitPurchaseOption> _permitOptions = [
+    _PermitPurchaseOption(
+      id: 'annual',
+      label: 'Annual',
+      costLabel: '\$55',
+      detailLabel: '12 months',
+    ),
+    _PermitPurchaseOption(
+      id: 'trimester',
+      label: 'Trimester',
+      costLabel: '\$20',
+      detailLabel: '4 months',
+    ),
+    _PermitPurchaseOption(
+      id: 'monthly',
+      label: 'Monthly',
+      costLabel: '\$10',
+      detailLabel: '1 month',
+    ),
+    _PermitPurchaseOption(
+      id: 'weekly',
+      label: 'Weekly',
+      costLabel: '\$5',
+      detailLabel: '7 days',
+    ),
+    _PermitPurchaseOption(
+      id: 'daily',
+      label: 'Daily',
+      costLabel: '\$1',
+      detailLabel: '1 day',
+      noteLabel: 'First 3 permissions per 30 days are free',
+    ),
+  ];
+
+  DateTime _addMonths(DateTime date, int monthsToAdd) {
+    final totalMonths = date.month + monthsToAdd;
+    final targetYear = date.year + ((totalMonths - 1) ~/ 12);
+    final targetMonth = ((totalMonths - 1) % 12) + 1;
+    final maxDay = DateUtils.getDaysInMonth(targetYear, targetMonth);
+    final targetDay = date.day > maxDay ? maxDay : date.day;
+    return DateTime(
+      targetYear,
+      targetMonth,
+      targetDay,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond,
+      date.microsecond,
+    );
+  }
+
+  DateTime _expirationFromPermit(DateTime purchaseDate, String permitId) {
+    switch (permitId) {
+      case 'annual':
+        return _addMonths(purchaseDate, 12);
+      case 'trimester':
+        return _addMonths(purchaseDate, 4);
+      case 'monthly':
+        return _addMonths(purchaseDate, 1);
+      case 'weekly':
+        return purchaseDate.add(const Duration(days: 7));
+      case 'daily':
+        return purchaseDate.add(const Duration(days: 1));
+      default:
+        return _addMonths(purchaseDate, 12);
+    }
+  }
 
   @override
   void initState() {
@@ -137,6 +222,8 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
     final provider = context.read<UserProvider>();
     final plateController = TextEditingController();
     final descController = TextEditingController();
+    final now = DateTime.now();
+    _PermitPurchaseOption selectedPermitOption = _permitOptions.first;
 
     final result = await showDialog<bool>(
       context: context,
@@ -162,6 +249,62 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
                 hintText: 'Blue Honda Civic',
               ),
             ),
+            const SizedBox(height: 12),
+            StatefulBuilder(
+              builder: (context, setLocalState) {
+                final expirationDate = _expirationFromPermit(
+                  now,
+                  selectedPermitOption.id,
+                );
+
+                return Column(
+                  children: [
+                    DropdownButtonFormField<_PermitPurchaseOption>(
+                      initialValue: selectedPermitOption,
+                      decoration: const InputDecoration(
+                        labelText: 'Permit Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _permitOptions
+                          .map(
+                            (option) => DropdownMenuItem<_PermitPurchaseOption>(
+                              value: option,
+                              child: Text(
+                                '${option.label} • ${option.costLabel} (${option.detailLabel})',
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setLocalState(() {
+                          selectedPermitOption = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: const Icon(Icons.event, color: kCitySmartYellow),
+                      title: const Text('Estimated Expiration'),
+                      subtitle: Text(_dateFormat.format(expirationDate)),
+                    ),
+                    if (selectedPermitOption.noteLabel != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedPermitOption.noteLabel!,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
         actions: [
@@ -182,13 +325,18 @@ class _NightParkingScreenState extends State<NightParkingScreen> {
     );
 
     if (result == true && plateController.text.isNotEmpty) {
+      final selectedExpirationDate = _expirationFromPermit(
+        now,
+        selectedPermitOption.id,
+      );
+
       await provider.setNightParkingPermission(
         licensePlate: plateController.text.trim(),
         vehicleDescription: descController.text.trim().isNotEmpty
             ? descController.text.trim()
             : null,
         status: NightParkingStatus.active,
-        expirationDate: DateTime.now().add(const Duration(days: 365)),
+        expirationDate: selectedExpirationDate,
       );
       if (mounted) {
         setState(() {});

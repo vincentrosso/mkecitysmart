@@ -278,17 +278,13 @@ class NightParkingService {
   }
 
   /// Simulate activating a permission (for testing or after confirmation)
-  Future<void> activatePermission({DateTime? expirationDate}) async {
+  Future<void> activatePermission({required DateTime expirationDate}) async {
     if (_permission == null) return;
-
-    final expiry =
-        expirationDate ??
-        DateTime.now().add(const Duration(days: 365)); // Annual permit
 
     _permission = _permission!.copyWith(
       status: NightParkingStatus.active,
       issueDate: DateTime.now(),
-      expirationDate: expiry,
+      expirationDate: expirationDate,
     );
 
     await _savePermission();
