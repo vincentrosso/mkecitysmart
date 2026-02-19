@@ -28,18 +28,18 @@ class AdService {
   static const _prodAndroidRewardedAdUnitId =
       'ca-app-pub-2009498889741048/4856978809';
 
-    // Production IDs - iOS
+  // Production IDs - iOS
   static const _prodIosBannerAdUnitId =
       'ca-app-pub-2009498889741048/5020898555';
   static const _prodIosInterstitialAdUnitId =
       'ca-app-pub-2009498889741048/6714276952';
   static const _prodIosRewardedAdUnitId =
       'ca-app-pub-2009498889741048/2775031941'; // citysmart_rewarded
-    static const _prodIosNativeAdUnitId =
+  static const _prodIosNativeAdUnitId =
       'ca-app-pub-2009498889741048/3072178018'; // Native advanced
 
-    // Production IDs - Native (Android)
-    static const _prodAndroidNativeAdUnitId =
+  // Production IDs - Native (Android)
+  static const _prodAndroidNativeAdUnitId =
       'ca-app-pub-2009498889741048/4845746535'; // Native advanced
 
   // Frequency caps
