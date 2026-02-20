@@ -20,15 +20,27 @@ class AdService {
   static const _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
   static const _testNativeAdUnitId = 'ca-app-pub-3940256099942544/2247696110';
 
-  // Production IDs - MKE CitySmart AdMob
-  // Create these ad units at https://admob.google.com → Apps → MKE CitySmart → Ad units
-  static const _prodBannerAdUnitId = 'ca-app-pub-2009498889741048/5020898555';
-  static const _prodInterstitialAdUnitId =
+  // Production IDs - Android
+  static const _prodAndroidBannerAdUnitId =
+      'ca-app-pub-2009498889741048/4202372682';
+  static const _prodAndroidInterstitialAdUnitId =
+      'ca-app-pub-2009498889741048/1300877172';
+  static const _prodAndroidRewardedAdUnitId =
+      'ca-app-pub-2009498889741048/4856978809';
+
+  // Production IDs - iOS
+  static const _prodIosBannerAdUnitId =
+      'ca-app-pub-2009498889741048/5020898555';
+  static const _prodIosInterstitialAdUnitId =
       'ca-app-pub-2009498889741048/6714276952';
-  static const _prodRewardedAdUnitId =
+  static const _prodIosRewardedAdUnitId =
       'ca-app-pub-2009498889741048/2775031941'; // citysmart_rewarded
-  static const _prodNativeAdUnitId =
-      'ca-app-pub-2009498889741048/3072178018'; // Feed Screen native ad
+  static const _prodIosNativeAdUnitId =
+      'ca-app-pub-2009498889741048/3072178018'; // Native advanced
+
+  // Production IDs - Native (Android)
+  static const _prodAndroidNativeAdUnitId =
+      'ca-app-pub-2009498889741048/4845746535'; // Native advanced
 
   // Frequency caps
   static const int _maxInterstitialsPerHour = 3;
@@ -56,14 +68,30 @@ class AdService {
   bool get shouldShowAds => _userTier == SubscriptionTier.free;
   AdPreferences get preferences => _preferences;
 
-  String get _bannerAdUnitId =>
-      _isTestMode ? _testBannerAdUnitId : _prodBannerAdUnitId;
-  String get _interstitialAdUnitId =>
-      _isTestMode ? _testInterstitialAdUnitId : _prodInterstitialAdUnitId;
-  String get _rewardedAdUnitId =>
-      _isTestMode ? _testRewardedAdUnitId : _prodRewardedAdUnitId;
-  String get _nativeAdUnitId =>
-      _isTestMode ? _testNativeAdUnitId : _prodNativeAdUnitId;
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  String get _bannerAdUnitId {
+    if (_isTestMode) return _testBannerAdUnitId;
+    return _isAndroid ? _prodAndroidBannerAdUnitId : _prodIosBannerAdUnitId;
+  }
+
+  String get _interstitialAdUnitId {
+    if (_isTestMode) return _testInterstitialAdUnitId;
+    return _isAndroid
+        ? _prodAndroidInterstitialAdUnitId
+        : _prodIosInterstitialAdUnitId;
+  }
+
+  String get _rewardedAdUnitId {
+    if (_isTestMode) return _testRewardedAdUnitId;
+    return _isAndroid ? _prodAndroidRewardedAdUnitId : _prodIosRewardedAdUnitId;
+  }
+
+  String get _nativeAdUnitId {
+    if (_isTestMode) return _testNativeAdUnitId;
+    return _isAndroid ? _prodAndroidNativeAdUnitId : _prodIosNativeAdUnitId;
+  }
 
   /// Initialize the ad service
   Future<void> initialize({bool testMode = true}) async {

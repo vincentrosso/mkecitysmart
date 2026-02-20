@@ -279,8 +279,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       return;
     }
 
-    // Show RevenueCat's native paywall for upgrade
-    final purchased = await SubscriptionService.instance.presentPaywall();
+    // Show app-controlled paywall for upgrade so billed amount and legal links
+    // remain clear and consistent with App Review requirements.
+    final purchased = await PaywallScreen.show(
+      context,
+      feature: PremiumFeature.adFree,
+    );
 
     if (!mounted) return;
     if (!context.mounted) return;

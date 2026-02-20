@@ -519,6 +519,14 @@ class _PackageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final product = package.storeProduct;
+    final billedPeriod = switch (package.packageType) {
+      PackageType.monthly => 'Billed monthly',
+      PackageType.annual => 'Billed yearly',
+      _ => 'Auto-renewing subscription',
+    };
+    final monthlyEquivalent = package.packageType == PackageType.annual
+        ? product.price / 12
+        : null;
 
     return GestureDetector(
       onTap: onTap,
@@ -563,25 +571,39 @@ class _PackageCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.description,
+                    billedPeriod,
                     style: TextStyle(
                       color: kCitySmartText.withValues(alpha: 0.7),
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              product.priceString,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: kCitySmartYellow,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  product.priceString,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: kCitySmartYellow,
+                  ),
+                ),
+                if (monthlyEquivalent != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '(~\$${monthlyEquivalent.toStringAsFixed(2)}/month)',
+                    style: TextStyle(
+                      color: kCitySmartText.withValues(alpha: 0.55),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
