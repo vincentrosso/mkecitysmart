@@ -53,7 +53,7 @@ jobs:
         run: ./scripts/flutter_with_secrets.sh build ipa --no-codesign
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Runner-ipa
           path: build/ios/ipa/Runner.ipa
