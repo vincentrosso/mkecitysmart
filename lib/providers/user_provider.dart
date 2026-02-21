@@ -29,6 +29,7 @@ import '../models/city_rule_pack.dart';
 import '../data/city_rule_packs.dart';
 import '../data/sample_schedules.dart';
 import '../data/sample_tickets.dart';
+import '../firebase_options.dart';
 import '../services/ad_service.dart';
 import '../services/api_client.dart';
 import '../services/cloud_log_service.dart';
@@ -555,7 +556,9 @@ class UserProvider extends ChangeNotifier {
       return msg;
     }
     try {
-      _googleSignInInit ??= GoogleSignIn.instance.initialize();
+      _googleSignInInit ??= GoogleSignIn.instance.initialize(
+        serverClientId: DefaultFirebaseOptions.googleWebClientId,
+      );
       try {
         await _googleSignInInit;
       } catch (_) {
@@ -630,6 +633,12 @@ class UserProvider extends ChangeNotifier {
         _setLastAuthError(msg);
         return msg;
       }
+      final description = e.description ?? e.code.name;
+      final androidOAuthMisconfigured =
+          defaultTargetPlatform == TargetPlatform.android &&
+          (description.contains('DEVELOPER_ERROR') ||
+              description.contains('ApiException: 10') ||
+              description.contains('10:'));
       unawaited(
         CloudLogService.instance.recordError(
           'google_sign_in_error',
@@ -637,7 +646,10 @@ class UserProvider extends ChangeNotifier {
           StackTrace.current,
         ),
       );
-      final msg = 'Google sign-in failed: ${e.description ?? e.code.name}.';
+      final msg = androidOAuthMisconfigured
+          ? 'Google sign-in failed on Android due to OAuth configuration. '
+                'Add your Android SHA-1/SHA-256 fingerprints (upload and Play signing) in Firebase and download a fresh google-services.json.'
+          : 'Google sign-in failed: $description.';
       _setLastAuthError(msg);
       return msg;
     } on FirebaseAuthException catch (e) {

@@ -19,6 +19,13 @@ class DefaultFirebaseOptions {
   static const String _androidApiKey =
       'AIzaSyBaT4ZkDKVhwjiFwYCEhhf8c1Sd0xvnf_g';
   static const String _iosApiKey = 'AIzaSyC39SUQ0SyewAcm0tzvlmXNxf5W8f5IM5Q';
+  static const String _googleWebClientId =
+      '418926446148-er0kn18rarpoiipppun30m4p1t1c6623.apps.googleusercontent.com';
+
+  static String get googleWebClientId => const String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: _googleWebClientId,
+  );
 
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
