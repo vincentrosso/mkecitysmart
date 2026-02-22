@@ -79,9 +79,9 @@ class _LoadingContent extends StatelessWidget {
             Text(
               'Reporter Rewards',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: kCitySmartYellow,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: kCitySmartYellow,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -164,8 +164,8 @@ class _Content extends StatelessWidget {
               tier == RewardTier.premiumWeek
                   ? Colors.purpleAccent
                   : tier == RewardTier.adFreeWeek
-                      ? Colors.green.shade400
-                      : kCitySmartYellow,
+                  ? Colors.green.shade400
+                  : kCitySmartYellow,
             ),
           ),
         ),
@@ -180,8 +180,7 @@ class _Content extends StatelessWidget {
               children: [
                 if (rewards.isPremiumActive)
                   _Chip(
-                    label:
-                        'Premium until ${_shortDate(rewards.premiumUntil!)}',
+                    label: 'Premium until ${_shortDate(rewards.premiumUntil!)}',
                     color: Colors.purple.shade700,
                   ),
                 if (rewards.isPremiumActive && rewards.isAdFreeActive)
@@ -198,8 +197,11 @@ class _Content extends StatelessWidget {
         // Raffle entry row
         Row(
           children: [
-            const Icon(Icons.confirmation_number_outlined,
-                size: 14, color: kCitySmartMuted),
+            const Icon(
+              Icons.confirmation_number_outlined,
+              size: 14,
+              color: kCitySmartMuted,
+            ),
             const SizedBox(width: 4),
             Text(
               '${rewards.monthlyEntries} raffle entr${rewards.monthlyEntries == 1 ? 'y' : 'ies'} this month',
@@ -250,8 +252,7 @@ class _Content extends StatelessWidget {
     return label.replaceAll(RegExp(r'[^\x00-\x7F]'), '').trim();
   }
 
-  static String _shortDate(DateTime d) =>
-      '${d.month}/${d.day}';
+  static String _shortDate(DateTime d) => '${d.month}/${d.day}';
 }
 
 // ── Chip helper ───────────────────────────────────────────────────────────────
