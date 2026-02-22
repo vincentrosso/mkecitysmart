@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "418926446148",
+    "project_id": "mkeparkapp-1ad15",
+    "storage_bucket": "mkeparkapp-1ad15.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:418926446148:android:3e196b7206c0c5f0631e11",
+        "android_client_info": {
+          "package_name": "com.mkecitysmart.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "418926446148-er0kn18rarpoiipppun30m4p1t1c6623.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaT4ZkDKVhwjiFwYCEhhf8c1Sd0xvnf_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "418926446148-er0kn18rarpoiipppun30m4p1t1c6623.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "418926446148-4ps7gq2729sc3k2d48vnsauojq14nffp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mkecitysmart.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

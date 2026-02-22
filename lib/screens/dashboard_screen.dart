@@ -145,9 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             const CrowdsourceAvailabilityBanner(),
             const SizedBox(height: 12),
             // Gamified reporter rewards progress card
-            ReporterRewardsCard(
-              onReportTap: () => showReportSheet(context),
-            ),
+            ReporterRewardsCard(onReportTap: () => showReportSheet(context)),
             const SizedBox(height: 16),
             Expanded(
               child: GridView.count(
