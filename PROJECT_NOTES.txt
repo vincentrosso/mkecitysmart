@@ -2,6 +2,37 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-02-21 [FUTURE] Reporter Rewards System — Incentivize Parking Reports for Better Predictions
+  Goal: Reward users who submit parking reports to accelerate crowdsource data and improve prediction accuracy.
+  Report types needed:
+    - leavingSpot ("I'm leaving this spot now") — TTL 10 min, highest value, exact GPS
+    - spotAvailable ("I see an open spot here") — TTL 15 min, high value
+    - parkedHere ("I just parked here") — TTL 120 min, confirms spot taken
+    - spotTaken ("This spot is occupied") — TTL 30 min, reduces false positives
+    - Enforcement sighting ("I see a meter maid") — high value, warns nearby users
+  Reward tiers (weekly, not daily — avoids spam):
+    - 3 reports/week → "Active Reporter" badge
+    - 10 reports/week → 1 week free Pro (ad-free + premium predictions)
+    - 30-day streak (1+ report on parking days) → full month free Pro
+    - Quality bonus: reports confirmed by other users count double
+  Anti-spam safeguards (already in place):
+    - TTL auto-expiry on all reports
+    - Per-UID rate limiting on submissions
+    - GPS required (no fake locations)
+    - Contradicting reports get lower confidence scores
+  UI components to build:
+    - ReporterRewardsCard on Dashboard — progress bar, streak counter, next reward
+    - QuickReportSheet — floating button on map screens, bottom sheet with report types
+    - Reward Unlocked toast notification
+    - Profile badges section (Active Reporter, 30-Day Streak, Top Contributor)
+  Backend components to build:
+    - ReporterRewardsService — track weekly count, streak days, reward tier
+    - UserProfile model updates — weeklyReportCount, streakDays, rewardTier fields
+    - Firestore users/{uid} schema update for report stats
+    - SubscriptionService modification — check reward tier before enforcing paywall
+    - Cloud Function — increment counters on report submission, weekly reset
+    - Dashboard + map screen modifications for new widgets
+  Estimated effort: 1-2 sessions, single build cycle covers iOS + Android.
 - 2026-02-21 [AUTH-ANDROID] Saved reference: Play Integrity setup + missing App Integrity keys checklist.
   Context: Android Google Sign-In production failures are often OAuth certificate mismatches. We need SHA-1/SHA-256 from Google Play App Integrity for Firebase Android app `com.mkecitysmart.app`.
   Quick reference from docs:
