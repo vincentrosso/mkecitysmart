@@ -2,6 +2,55 @@ Development notes for mkecitysmart
 ---------------------------------------
 
 Change log (most recent first)
+- 2026-02-21 [FUTURE] Reporter Rewards System — Incentivize Parking Reports for Better Predictions
+  Goal: Reward users who submit parking reports to accelerate crowdsource data and improve prediction accuracy.
+  Report types needed:
+    - leavingSpot ("I'm leaving this spot now") — TTL 10 min, highest value, exact GPS
+    - spotAvailable ("I see an open spot here") — TTL 15 min, high value
+    - parkedHere ("I just parked here") — TTL 120 min, confirms spot taken
+    - spotTaken ("This spot is occupied") — TTL 30 min, reduces false positives
+    - Enforcement sighting ("I see a meter maid") — high value, warns nearby users
+  Reward tiers (weekly, not daily — avoids spam):
+    - 3 reports/week → "Active Reporter" badge
+    - 10 reports/week → 1 week free Pro (ad-free + premium predictions)
+    - 30-day streak (1+ report on parking days) → full month free Pro
+    - Quality bonus: reports confirmed by other users count double
+  Anti-spam safeguards (already in place):
+    - TTL auto-expiry on all reports
+    - Per-UID rate limiting on submissions
+    - GPS required (no fake locations)
+    - Contradicting reports get lower confidence scores
+  UI components to build:
+    - ReporterRewardsCard on Dashboard — progress bar, streak counter, next reward
+    - QuickReportSheet — floating button on map screens, bottom sheet with report types
+    - Reward Unlocked toast notification
+    - Profile badges section (Active Reporter, 30-Day Streak, Top Contributor)
+  Backend components to build:
+    - ReporterRewardsService — track weekly count, streak days, reward tier
+    - UserProfile model updates — weeklyReportCount, streakDays, rewardTier fields
+    - Firestore users/{uid} schema update for report stats
+    - SubscriptionService modification — check reward tier before enforcing paywall
+    - Cloud Function — increment counters on report submission, weekly reset
+    - Dashboard + map screen modifications for new widgets
+  Estimated effort: 1-2 sessions, single build cycle covers iOS + Android.
+- 2026-02-21 [AUTH-ANDROID] Saved reference: Play Integrity setup + missing App Integrity keys checklist.
+  Context: Android Google Sign-In production failures are often OAuth certificate mismatches. We need SHA-1/SHA-256 from Google Play App Integrity for Firebase Android app `com.mkecitysmart.app`.
+  Quick reference from docs:
+  * Play Integrity API setup path: Play Console → Test and release → App integrity → Play Integrity API → Link a Cloud project.
+  * Enabling/linking the Cloud project unlocks advanced settings, reporting, and quota requests (default quota 10,000/day token requests + decryptions).
+  * Optional remediation: Play can show a single in-app prompt to help users recover from integrity/client-side errors.
+  Where to get cert fingerprints for Firebase Google Sign-In:
+  * Play Console → Setup → App integrity → App signing.
+  * Copy SHA-1 and SHA-256 for BOTH: App signing key + Upload key.
+  * Add all fingerprints in Firebase Console → Project settings → Android app (`com.mkecitysmart.app`) → SHA certificate fingerprints.
+  If fingerprints are not visible in Play Console:
+  * Confirm you are in the correct Play app/package (`com.mkecitysmart.app`).
+  * Confirm account has required Play Console permissions (Admin or release/integrity access).
+  * Ensure the app is enrolled in Play App Signing; if not, upload an AAB to internal testing and complete enrollment.
+  * Use left nav path Setup → App integrity (not only Play Integrity API settings section).
+  * If still missing, check if app record is draft/incomplete and finish required app setup fields.
+  Follow-up when ready:
+  * After adding SHA fingerprints in Firebase, re-download `android/app/google-services.json`, replace file, rebuild release AAB, and retest Google sign-in from Play internal track.
 - 2026-02-11 [F-110] Predictive Parking "Guide to Open Spot": Added findBestOpenSpot() to ParkingPredictionService; combines real-time crowdsource reports (leavingSpot/spotAvailable with exact GPS), zone-level availability (CrowdsourceZone.estimatedOpenSpots), historical patterns (hourlyAvgOpenSpots), and citation risk zones into a ranked RecommendedSpot result; updated _PredictAndFindCard UI with top recommended spot and navigate button. Also fixed _platform() returning 'mobile' → now returns 'ios'/'android'; fixed _initialized race condition in NotificationService.
 - 2026-02-11 [FUTURE] Push Fan-Out for Crowdsource Parking Reports: Currently leavingSpot, parkedHere, spotAvailable reports are consumed passively via Firestore real-time listeners (geohash prefix queries). Future enhancement: add FCM push fan-out to moderateParkingReport Cloud Function (similar to submitSighting fan-out) so nearby users get a push notification when someone reports a spot opening. Would query devices collection by geohash proximity and send FCM HTTP v1 messages. Data payload: { kind: "parking_report", reportType: "leavingSpot"|"parkedHere"|"spotAvailable", lat, lng, reportId }. Respect TTLs (leavingSpot=10min, spotAvailable=15min, parkedHere=120min). Cap fan-out at MAX_FANOUT_PER_SIGHTING (2000). Consider throttling to avoid notification fatigue in dense areas.
 - 2026-02-10 [SEC-001] GCP security reminders: Do not commit keys; move secrets to Secret Manager; audit + disable dormant service account keys (30+ days); restrict API keys by API + environment; apply least privilege with IAM recommender; enforce key rotation (iam.serviceAccountKeyExpiryHours) / optionally disable key creation (iam.managed.disableServiceAccountKeyCreation); verify Essential Contacts + billing budget/anomaly alerts.

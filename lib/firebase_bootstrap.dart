@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
@@ -63,6 +64,8 @@ Future<bool> initializeFirebaseIfAvailable() async {
 
     await Firebase.initializeApp(options: options);
 
+    await _initializeAppCheck();
+
     // Configure Firestore for better offline support and performance
     // This enables local caching to reduce reads and improve scalability
     try {
@@ -106,5 +109,38 @@ Future<bool> initializeFirebaseIfAvailable() async {
       stackTrace: stack,
     );
     return false;
+  }
+}
+
+Future<void> _initializeAppCheck() async {
+  if (kIsWeb) return;
+
+  try {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        await FirebaseAppCheck.instance.activate(
+          providerAndroid: kDebugMode
+              ? const AndroidDebugProvider()
+              : const AndroidPlayIntegrityProvider(),
+        );
+        debugPrint(
+          '[Bootstrap] App Check enabled (Android: ${kDebugMode ? 'debug' : 'playIntegrity'})',
+        );
+        break;
+      case TargetPlatform.iOS:
+        await FirebaseAppCheck.instance.activate(
+          providerApple: kDebugMode
+              ? const AppleDebugProvider()
+              : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+        );
+        debugPrint(
+          '[Bootstrap] App Check enabled (iOS: ${kDebugMode ? 'debug' : 'appAttestWithDeviceCheckFallback'})',
+        );
+        break;
+      default:
+        break;
+    }
+  } catch (e) {
+    debugPrint('[Bootstrap] App Check init skipped/failed: $e');
   }
 }
