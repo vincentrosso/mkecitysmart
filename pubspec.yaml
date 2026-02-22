@@ -68,7 +68,7 @@ dependencies:
   add_2_calendar: ^3.0.1
   purchases_flutter: ^8.8.1
   google_mobile_ads: ^5.3.1
-  share_plus: ^10.1.4
+  share_plus: ^12.0.1
   purchases_ui_flutter: ^8.11.0
 
   path_provider: ^2.1.5
