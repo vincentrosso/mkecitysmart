@@ -614,12 +614,17 @@ export const submitSighting = onCall(
     secrets: [firebaseAdminSdkKey],
   },
   async (request) => {
+  // Use x-forwarded-for for the real client IP (rawRequest.ip is the LB IP in v2)
+  const fwd = request.rawRequest?.headers?.["x-forwarded-for"];
+  const realIp = typeof fwd === "string"
+    ? fwd.split(",")[0].trim()
+    : (request.rawRequest.ip ?? "unknown").toString();
+
   const uidBase =
-    request.auth?.uid ?? `anonymous_${request.rawRequest.ip ?? "unknown"}`;
+    request.auth?.uid ?? `anonymous_${realIp}`;
   const uidKey = uidBase.replace(/[^A-Za-z0-9_.-]/g, "_");
 
-  const ip = (request.rawRequest.ip ?? "unknown").toString();
-  const ipKey = `ip_${ip}`.replace(/[^A-Za-z0-9_.-]/g, "_");
+  const ipKey = `ip_${realIp}`.replace(/[^A-Za-z0-9_.-]/g, "_");
 
   const db = getFirestore();
   const now = Timestamp.now();
@@ -1582,14 +1587,14 @@ export const notifyOnApproval = onDocumentWritten(
 
 // Rate limits for risk functions - more permissive than sighting submission
 // but still prevents abuse
-const RISK_RATE_LIMIT_MAX = 30; // 30 lookups per window
+const RISK_RATE_LIMIT_MAX = 30; // 30 lookups per window per user/IP
 const RISK_RATE_LIMIT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 
 /**
  * Get parking risk score for a given location.
  * Uses geohash-based citation data to calculate risk percentage.
  * 
- * RATE LIMITED: 30 calls per 10 minutes per user/IP to prevent abuse
+ * RATE LIMITED: 30 calls per 10 minutes per user (auth UID) or client IP
  */
 export const getRiskForLocation = onCall(async (request) => {
   const latitude = Number(request.data?.latitude);
@@ -1602,30 +1607,39 @@ export const getRiskForLocation = onCall(async (request) => {
   const db = getFirestore();
   const now = Timestamp.now();
   
-  // Rate limiting by IP (no auth required for basic risk lookup)
-  const ip = (request.rawRequest.ip ?? "unknown").toString();
-  const ipKey = `risk_ip_${ip}`.replace(/[^A-Za-z0-9_.-]/g, "_");
-  const ipRateRef = db.collection("rate_limits").doc(ipKey);
+  // Rate limiting per authenticated user (UID) or per real client IP.
+  // NOTE: rawRequest.ip returns the GCP load-balancer IP in Cloud Functions v2,
+  // so all users would share one bucket. Use x-forwarded-for for the real IP,
+  // or the authenticated UID when available.
+  const forwarded = request.rawRequest?.headers?.["x-forwarded-for"];
+  const clientIp = typeof forwarded === "string"
+    ? forwarded.split(",")[0].trim()
+    : (request.rawRequest?.ip ?? "unknown").toString();
+  const rateLimitKey = request.auth?.uid
+    ? `risk_uid_${request.auth.uid}`
+    : `risk_ip_${clientIp}`;
+  const safeKey = rateLimitKey.replace(/[^A-Za-z0-9_.-]/g, "_");
+  const rateRef = db.collection("rate_limits").doc(safeKey);
   
-  const ipAllowed = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ipRateRef);
+  const allowed = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(rateRef);
     const data = snap.data() as {count?: number; windowStart?: Timestamp} | undefined;
     const windowStart = data?.windowStart ?? now;
     const elapsed = now.toMillis() - windowStart.toMillis();
 
     if (!snap.exists || elapsed >= RISK_RATE_LIMIT_WINDOW_SECONDS * 1000) {
-      tx.set(ipRateRef, {count: 1, windowStart: now});
+      tx.set(rateRef, {count: 1, windowStart: now});
       return true;
     }
 
     const count = data?.count ?? 0;
     if (count >= RISK_RATE_LIMIT_MAX) return false;
 
-    tx.update(ipRateRef, {count: count + 1});
+    tx.update(rateRef, {count: count + 1});
     return true;
   });
 
-  if (!ipAllowed) {
+  if (!allowed) {
     throw new HttpsError(
       "resource-exhausted",
       "Too many risk lookups. Please wait a few minutes.",
