@@ -3,6 +3,17 @@
     "default": "mkeparkapp-1ad15",
     "prod": "mkeparkapp-1ad15"
   },
-  "targets": {},
+  "targets": {
+    "mkeparkapp-1ad15": {
+      "hosting": {
+        "landing": [
+          "mkeparkapp-1ad15"
+        ],
+        "app": [
+          "mkeparkapp-1ad15-web"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

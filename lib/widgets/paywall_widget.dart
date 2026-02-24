@@ -196,9 +196,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     TextButton(
                       onPressed: () {
                         launchUrl(
-                          Uri.parse(
-                            'https://mkeparkapp-1ad15.web.app/privacy.html',
-                          ),
+                          Uri.parse('https://mkecitysmart.com/privacy.html'),
                         );
                       },
                       child: Text(
@@ -218,9 +216,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     TextButton(
                       onPressed: () {
                         launchUrl(
-                          Uri.parse(
-                            'https://mkeparkapp-1ad15.web.app/terms.html',
-                          ),
+                          Uri.parse('https://mkecitysmart.com/terms.html'),
                         );
                       },
                       child: Text(
