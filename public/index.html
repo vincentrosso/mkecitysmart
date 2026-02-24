@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKE CitySmart — Milwaukee's City Companion App</title>
+<meta name="description" content="Your all-in-one Milwaukee city companion. Parking, street sweeping alerts, garbage pickup, community reports, and more. Free on iOS and Android.">
+<meta name="keywords" content="Milwaukee app, MKE, city companion, parking, street sweeping, community, garbage pickup Milwaukee, Milwaukee drivers">
+<meta property="og:title" content="MKE CitySmart — Milwaukee's City Companion">
+<meta property="og:description" content="Your all-in-one Milwaukee city companion. Parking, alerts, community reports, and more. Free on iOS and Android.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mkecitysmart.com">
+<meta property="og:image" content="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/feature_graphic_1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MKE CitySmart — Milwaukee's City Companion">
+<meta name="twitter:description" content="Your all-in-one Milwaukee city companion. Free on iOS and Android.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/feature_graphic_1024x500.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='72' fill='%237CA726'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='180' font-weight='700' fill='%23E0B000'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F2419;
+  --bg-card:#1A3D32;
+  --gold:#D4A84B;
+  --gold-hover:#E8C56D;
+  --teal:#4ECDC4;
+  --text:#F5F5F0;
+  --text-muted:#8A9A94;
+  --green:#7CA726;
+  --border:rgba(255,255,255,0.08);
+  --radius:16px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--teal);text-decoration:none}
+a:hover{text-decoration:underline}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(15,36,25,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--text)}
+.nav-logo svg{width:36px;height:36px;border-radius:8px}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{color:var(--text-muted);font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+.nav-cta{background:var(--gold);color:#0F2419;padding:8px 20px;border-radius:24px;font-weight:600;font-size:14px;transition:background .2s}
+.nav-cta:hover{background:var(--gold-hover);text-decoration:none}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:800px;height:800px;background:radial-gradient(circle,rgba(124,167,38,0.15) 0%,transparent 70%);pointer-events:none}
+.hero-inner{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.hero-text h1{font-size:clamp(36px,5vw,56px);font-weight:800;line-height:1.1;margin-bottom:20px}
+.hero-text h1 span{color:var(--gold)}
+.hero-text p{font-size:18px;color:var(--text-muted);margin-bottom:32px;max-width:480px}
+.hero-badges{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+.badge{background:var(--bg-card);border:1px solid var(--border);padding:6px 14px;border-radius:24px;font-size:13px;color:var(--text-muted);font-weight:500}
+.store-buttons{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.store-btn{display:inline-block;transition:transform .2s}
+.store-btn:hover{transform:scale(1.05)}
+.store-btn img{height:52px}
+.hero-phone{display:flex;justify-content:center}
+.hero-phone img{max-width:320px;width:100%;border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,0.4)}
+.stats{display:flex;gap:40px;margin-top:40px}
+.stat{text-align:left}
+.stat-num{font-size:28px;font-weight:800;color:var(--gold)}
+.stat-label{font-size:13px;color:var(--text-muted)}
+.section{padding:100px 24px}
+.section-title{text-align:center;font-size:clamp(28px,4vw,40px);font-weight:800;margin-bottom:12px}
+.section-sub{text-align:center;color:var(--text-muted);font-size:16px;margin-bottom:60px;max-width:600px;margin-left:auto;margin-right:auto}
+.features-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px;transition:border-color .3s,transform .3s}
+.feature-card:hover{border-color:rgba(212,168,75,0.3);transform:translateY(-4px)}
+.feature-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;background:rgba(124,167,38,0.15)}
+.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--text-muted);line-height:1.6}
+.pro-section{background:linear-gradient(135deg,#1A3D32 0%,#0F2419 100%)}
+.pro-card{max-width:700px;margin:0 auto;background:var(--bg-card);border:2px solid var(--gold);border-radius:var(--radius);padding:48px 40px;text-align:center}
+.pro-price{font-size:48px;font-weight:800;color:var(--gold)}
+.pro-price span{font-size:18px;font-weight:500;color:var(--text-muted)}
+.pro-or{color:var(--text-muted);margin:8px 0 24px;font-size:14px}
+.pro-features{list-style:none;text-align:left;max-width:400px;margin:0 auto 32px}
+.pro-features li{padding:10px 0;border-bottom:1px solid var(--border);font-size:15px;display:flex;align-items:center;gap:10px}
+.pro-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:16px}
+.screenshots{overflow:hidden}
+.screenshots-scroll{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;max-width:1200px;margin:0 auto}
+.screenshots-scroll img{height:420px;border-radius:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.cta-section{text-align:center;padding:100px 24px}
+.cta-section h2{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:16px}
+.cta-section p{color:var(--text-muted);margin-bottom:32px;font-size:16px}
+.footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center}
+.footer-links{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.footer-links a{color:var(--text-muted);font-size:14px}
+.footer-copy{color:var(--text-muted);font-size:13px}
+@media(max-width:768px){
+  .hero-inner{grid-template-columns:1fr;text-align:center}
+  .hero-text p{margin-left:auto;margin-right:auto}
+  .hero-badges{justify-content:center}
+  .store-buttons{justify-content:center}
+  .stats{justify-content:center}
+  .hero-phone{order:-1}
+  .hero-phone img{max-width:260px}
+  .nav-links{display:none}
+  .screenshots-scroll img{height:300px}
+  .pro-card{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 512 512"><rect width="512" height="512" rx="72" fill="#7CA726"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="180" font-weight="700" fill="#E0B000">P</text></svg>
+    MKE CitySmart
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#community">Community</a>
+    <a href="#pro">Pro</a>
+    <a href="https://apps.apple.com/us/app/mkecitysmart-app/id6756332812" class="nav-cta">Download Free</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-badges">
+        <span class="badge">👥 Community</span>
+        <span class="badge">🅿️ Parking</span>
+        <span class="badge">🧹 City Alerts</span>
+        <span class="badge">🚗 Milwaukee</span>
+      </div>
+      <h1>Milwaukee, meet your <span>city companion</span>.</h1>
+      <p>MKE CitySmart connects you to your city — real-time community reports, smart parking, street sweeping alerts, garbage pickup reminders, and everything Milwaukee drivers need. Built by Milwaukee, for Milwaukee.</p>
+      <div class="store-buttons">
+        <a href="https://apps.apple.com/us/app/mkecitysmart-app/id6756332812" class="store-btn">
+          <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store">
+        </a>
+        <a href="https://play.google.com/store/apps/details?id=com.mkecitysmart.app" class="store-btn">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play">
+        </a>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num">466K+</div>
+          <div class="stat-label">Citations analyzed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">39</div>
+          <div class="stat-label">Screens</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">Free</div>
+          <div class="stat-label">iOS & Android</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-phone">
+      <img src="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/ios_screenshots/Dashboard_1284x2778.png" alt="MKE CitySmart Dashboard" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section class="section" id="community">
+  <h2 class="section-title">Your neighborhood, connected</h2>
+  <p class="section-sub">MKE CitySmart isn't just an app — it's Milwaukee's driver community looking out for each other.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">👥</div>
+      <h3>Community Reports</h3>
+      <p>See real-time reports from fellow Milwaukee drivers — enforcement sightings, open parking spots, road closures, and events. Your neighbors have your back.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📍</div>
+      <h3>Crowdsourced Spot Finder</h3>
+      <p>Users report open and taken spots in real-time. See live spot counts nearby so you stop circling the block.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌍</div>
+      <h3>Serving All of Milwaukee</h3>
+      <p>Available in English, Chinese, French, Hindi, and Greek — because every Milwaukee community deserves a smarter city experience.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <h2 class="section-title">Everything Milwaukee drivers need</h2>
+  <p class="section-sub">From avoiding tickets to tracking city services — one app that actually gets Milwaukee.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🅿️</div>
+      <h3>Smart Parking</h3>
+      <p>AI-powered parking that finds the safest spots near you based on time, day, weather, and citation history.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔥</div>
+      <h3>Citation Risk Heatmap</h3>
+      <p>Color-coded map showing where tickets are most common — built from 466,000+ real Milwaukee parking citations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧹</div>
+      <h3>Street Sweeping Alerts</h3>
+      <p>Multi-stage notifications — 24 hours, 2 hours, and GPS-based alerts so you never forget to move your car.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗑️</div>
+      <h3>Garbage & Recycling</h3>
+      <p>Lookup your pickup schedule by address using real Milwaukee DPW data. Night-before and morning-of reminders.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎫</div>
+      <h3>Ticket Tracker</h3>
+      <p>Log tickets, scan them with AI OCR, track late fees, and get guided steps to pay or dispute.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>EV Charging Map</h3>
+      <p>Find Milwaukee-area charging stations with fast-charge filters, weather overlay, and community status reports.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚨</div>
+      <h3>Tow Recovery</h3>
+      <p>Step-by-step guide if your car gets towed. Find the lot, know the fees, get your car back faster.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔔</div>
+      <h3>Smart Alerts</h3>
+      <p>Risk alerts, enforcement sightings, weather warnings, and customizable notifications — all tailored to your zones.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚗</div>
+      <h3>Vehicle Management</h3>
+      <p>Track multiple vehicles, manage permits, and get location-aware alerts for your saved places.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section screenshots" id="screenshots">
+  <h2 class="section-title">See it in action</h2>
+  <p class="section-sub">Designed with a dark, premium feel for easy use day and night.</p>
+  <div class="screenshots-scroll">
+    <img src="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/ios_screenshots/Dashboard_1284x2778.png" alt="Dashboard" loading="lazy">
+    <img src="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/ios_screenshots/CityLanguage_1284x2778.png" alt="City Language" loading="lazy">
+    <img src="https://raw.githubusercontent.com/Dwayne-26/Mke-CitySmart-app_flutter/main/assets/brand/ios_screenshots/IMG_5364_1284x2778.png" alt="App Screenshot" loading="lazy">
+  </div>
+</section>
+
+<section class="section pro-section" id="pro">
+  <h2 class="section-title">Go Pro 💎</h2>
+  <p class="section-sub">Unlock the full power of CitySmart with unlimited alerts, AI parking, and zero ads.</p>
+  <div class="pro-card">
+    <div class="pro-price">$4.99<span>/mo</span></div>
+    <div class="pro-or">or $39.99/year (save 33%)</div>
+    <ul class="pro-features">
+      <li>Citation risk heatmap</li>
+      <li>AI parking finder</li>
+      <li>Live spot counts</li>
+      <li>15-mile alert radius (vs 3-mile)</li>
+      <li>Unlimited alerts (vs 3/day)</li>
+      <li>1 year history (vs 7 days)</li>
+      <li>Tow recovery helper</li>
+      <li>Smart alerts</li>
+      <li>Ad-free experience</li>
+      <li>Priority support</li>
+    </ul>
+    <div class="store-buttons" style="justify-content:center;margin-top:24px">
+      <a href="https://apps.apple.com/us/app/mkecitysmart-app/id6756332812" class="store-btn">
+        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store">
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.mkecitysmart.app" class="store-btn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play">
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Built for Milwaukee.<br>Built <span style="color:var(--gold)">by</span> Milwaukee.</h2>
+  <p>Created by a young Milwaukee developer who knows the struggle. Join the community — download free today.</p>
+  <div class="store-buttons" style="justify-content:center">
+    <a href="https://apps.apple.com/us/app/mkecitysmart-app/id6756332812" class="store-btn">
+      <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store">
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=com.mkecitysmart.app" class="store-btn">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play">
+    </a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-links">
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Use</a>
+    <a href="support.html">Support</a>
+    <a href="delete-account.html">Delete Account</a>
+  </div>
+  <p class="footer-copy">© 2026 Dwayne Sampson. All rights reserved. MKE CitySmart is not affiliated with the City of Milwaukee.</p>
+</footer>
+
+</body>
+</html>
