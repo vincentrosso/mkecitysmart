@@ -54,6 +54,7 @@ codemagic.conf
 # Firebase / secrets staging (generated at build time)
 .env.firebase
 .secrets/
+.firebase/
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 macos/Runner/GoogleService-Info.plist
