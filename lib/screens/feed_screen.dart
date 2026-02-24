@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/firebase_resilience_service.dart';
 import '../services/feed_filter_service.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
@@ -33,12 +34,15 @@ class _FeedBody extends StatefulWidget {
 
 class _FeedBodyState extends State<_FeedBody> {
   final FeedFilterService _filterService = FeedFilterService();
+  final FirebaseResilienceService _resilience =
+      FirebaseResilienceService.instance;
   FeedFilters _filters = const FeedFilters(
     radiusMiles: 5.0, // Default: 5 miles
     timeWindow: Duration(hours: 2), // Default: last 2 hours
   );
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _docs = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _lastGoodDocs = [];
   Position? _userPosition;
   bool _loading = true;
   bool _loadingMore = false;
@@ -77,11 +81,7 @@ class _FeedBodyState extends State<_FeedBody> {
         filters: _filters.copyWith(lastDoc: _lastDoc),
       );
 
-      final snapshot = await query.get().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () =>
-            throw Exception('Request timed out. Please check your connection.'),
-      );
+      final snapshot = await _queryWithResilience(query);
       final rawDocs = snapshot.docs;
 
       if (kDebugMode) {
@@ -103,6 +103,10 @@ class _FeedBodyState extends State<_FeedBody> {
           _docs = result.docs;
         } else {
           _docs = [..._docs, ...result.docs];
+        }
+        if (_docs.isNotEmpty) {
+          _lastGoodDocs =
+              List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(_docs);
         }
         _userPosition = result.userPosition;
         _warning = result.error; // Non-fatal errors like location unavailable
@@ -133,10 +137,44 @@ class _FeedBodyState extends State<_FeedBody> {
       }
 
       setState(() {
-        _error = errorMessage;
+        if (_lastGoodDocs.isNotEmpty) {
+          _docs = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+            _lastGoodDocs,
+          );
+          _warning =
+              'Live feed temporarily unavailable — showing recent results.';
+          _error = null;
+        } else {
+          _error = errorMessage;
+        }
         _loading = false;
         _loadingMore = false;
       });
+    }
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> _queryWithResilience(
+    Query<Map<String, dynamic>> query,
+  ) async {
+    Future<QuerySnapshot<Map<String, dynamic>>> run() {
+      return query.get().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () =>
+            throw Exception('Request timed out. Please check your connection.'),
+      );
+    }
+
+    try {
+      await _resilience.ensureAuthReady();
+      return await run();
+    } catch (e) {
+      if (_resilience.isAuthError(e)) {
+        final refreshed = await _resilience.refreshAuthToken();
+        if (refreshed) {
+          return run();
+        }
+      }
+      rethrow;
     }
   }
 
@@ -469,9 +507,9 @@ class _SightingCard extends StatelessWidget {
     final location = (data['location'] ?? '').toString();
     final notes = (data['notes'] ?? '').toString();
     final createdAt = data['createdAt'] as Timestamp?;
-    final lat = data['latitude'] as double?;
-    final lng = data['longitude'] as double?;
-    final reports = data['reports'] as int? ?? 0;
+    final lat = (data['latitude'] as num?)?.toDouble();
+    final lng = (data['longitude'] as num?)?.toDouble();
+    final reports = (data['reports'] as num?)?.toInt() ?? 0;
 
     // Calculate distance if we have user position and sighting coordinates
     String? distanceText;

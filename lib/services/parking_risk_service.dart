@@ -1,6 +1,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
+import 'citation_hotspot_service.dart';
+import 'firebase_resilience_service.dart';
+
 /// Risk level enum for type-safe handling
 enum RiskLevel {
   low,
@@ -122,11 +125,18 @@ class ParkingRiskService {
   static ParkingRiskService get instance => _instance;
 
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseResilienceService _resilience =
+      FirebaseResilienceService.instance;
 
   /// Cache for risk zones (refreshed periodically)
   List<RiskZone>? _cachedZones;
   DateTime? _cacheTime;
   static const _cacheDuration = Duration(minutes: 30);
+
+  /// Cache the most recent location risk by rounded coordinate key.
+  final Map<String, LocationRisk> _locationRiskCache = {};
+  static const _locationCacheDuration = Duration(minutes: 15);
+  final Map<String, DateTime> _locationRiskCacheTimes = {};
 
   /// Get risk score for a specific location
   Future<LocationRisk?> getRiskForLocation(
@@ -134,14 +144,27 @@ class ParkingRiskService {
     double longitude,
   ) async {
     debugPrint('ParkingRiskService: Getting risk for $latitude, $longitude');
-    try {
+    final cacheKey = _locationCacheKey(latitude, longitude);
+
+    LocationRisk? fromCache() {
+      final cached = _locationRiskCache[cacheKey];
+      final cachedAt = _locationRiskCacheTimes[cacheKey];
+      if (cached == null || cachedAt == null) return null;
+      if (DateTime.now().difference(cachedAt) > _locationCacheDuration) {
+        _locationRiskCache.remove(cacheKey);
+        _locationRiskCacheTimes.remove(cacheKey);
+        return null;
+      }
+      return cached;
+    }
+
+    Future<LocationRisk?> fetchRisk() async {
       final callable = _functions.httpsCallable('getRiskForLocation');
       final result = await callable.call({
         'latitude': latitude,
         'longitude': longitude,
       });
 
-      // Cast the response properly - Cloud Functions returns Map<Object?, Object?>
       final rawData = result.data;
       debugPrint('ParkingRiskService: Response data: $rawData');
       if (rawData == null) {
@@ -161,15 +184,34 @@ class ParkingRiskService {
       debugPrint(
         'ParkingRiskService: Risk level=${risk.riskLevel.name}, score=${risk.riskScore}',
       );
+      _locationRiskCache[cacheKey] = risk;
+      _locationRiskCacheTimes[cacheKey] = DateTime.now();
       return risk;
+    }
+
+    try {
+      await _resilience.ensureAuthReady();
+      final risk = await fetchRisk();
+      return risk ?? fromCache() ?? _buildHeuristicFallbackRisk();
     } on FirebaseFunctionsException catch (e) {
       debugPrint(
         'ParkingRiskService: getRiskForLocation error: ${e.code} - ${e.message}',
       );
-      return null;
+      if (e.code == 'permission-denied' || e.code == 'unauthenticated') {
+        final refreshed = await _resilience.refreshAuthToken();
+        if (refreshed) {
+          try {
+            final retryRisk = await fetchRisk();
+            return retryRisk ?? fromCache() ?? _buildHeuristicFallbackRisk();
+          } catch (_) {
+            return fromCache() ?? _buildHeuristicFallbackRisk();
+          }
+        }
+      }
+      return fromCache() ?? _buildHeuristicFallbackRisk();
     } catch (e) {
       debugPrint('ParkingRiskService: getRiskForLocation exception: $e');
-      return null;
+      return fromCache() ?? _buildHeuristicFallbackRisk();
     }
   }
 
@@ -207,6 +249,7 @@ class ParkingRiskService {
       debugPrint(
         'ParkingRiskService: Calling getRiskZones Cloud Function with params: $params',
       );
+      await _resilience.ensureAuthReady();
       final result = await callable.call(params);
 
       // Cast the response properly - Cloud Functions returns Map<Object?, Object?>
@@ -245,11 +288,74 @@ class ParkingRiskService {
       debugPrint(
         'ParkingRiskService: getRiskZones error: ${e.code} - ${e.message}',
       );
+      if (e.code == 'permission-denied' || e.code == 'unauthenticated') {
+        final refreshed = await _resilience.refreshAuthToken();
+        if (refreshed) {
+          try {
+            final callable = _functions.httpsCallable('getRiskZones');
+            final retry = await callable.call({
+              if (minLat != null) 'minLat': minLat,
+              if (maxLat != null) 'maxLat': maxLat,
+              if (minLng != null) 'minLng': minLng,
+              if (maxLng != null) 'maxLng': maxLng,
+            });
+            final rawData = retry.data;
+            if (rawData != null) {
+              final data = Map<String, dynamic>.from(rawData as Map);
+              final rawZones = data['zones'] as List<dynamic>?;
+              final zones =
+                  rawZones
+                      ?.map(
+                        (z) => RiskZone.fromMap(
+                          Map<String, dynamic>.from(z as Map),
+                        ),
+                      )
+                      .toList() ??
+                  [];
+              if (zones.isNotEmpty) {
+                _cachedZones = zones;
+                _cacheTime = DateTime.now();
+              }
+              return zones.isNotEmpty ? zones : (_cachedZones ?? []);
+            }
+          } catch (_) {}
+        }
+      }
       return _cachedZones ?? [];
     } catch (e) {
       debugPrint('ParkingRiskService: getRiskZones exception: $e');
       return _cachedZones ?? [];
     }
+  }
+
+  String _locationCacheKey(double lat, double lng) {
+    final latRounded = lat.toStringAsFixed(3);
+    final lngRounded = lng.toStringAsFixed(3);
+    return '$latRounded,$lngRounded';
+  }
+
+  LocationRisk _buildHeuristicFallbackRisk() {
+    final multiplier = CitationHotspotService.instance
+        .getCurrentRiskMultiplier();
+    final scaledRisk = (multiplier * 35).round().clamp(8, 78);
+    final level = scaledRisk >= 70
+        ? RiskLevel.high
+        : scaledRisk >= 40
+        ? RiskLevel.medium
+        : RiskLevel.low;
+
+    return LocationRisk(
+      riskScore: scaledRisk,
+      riskLevel: level,
+      riskPercentage: scaledRisk,
+      message:
+          'Using local fallback risk model while live risk data reconnects.',
+      currentHour: DateTime.now().hour,
+      hourlyMultiplier: multiplier,
+      peakHours: const [2, 3, 4],
+      topViolations: CitationHotspotService.instance.getTopViolations(limit: 3),
+      totalCitations: CitationHotspotService.instance.totalCitations,
+    );
   }
 
   /// Clear cached data
