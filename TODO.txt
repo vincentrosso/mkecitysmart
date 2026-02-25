@@ -218,6 +218,9 @@ NOTES:
 - Add a Support page and deploy so App Store Connect metadata can be completed
 NOTES:
 - 2026-02-10: Added `web/support.html` and deployed Hosting at https://mkeparkapp-1ad15.web.app/support.html (Hosting serves from `build/web`).
+- 2026-02-24: AdMob app-ads.txt verification issue diagnosed. `public/app-ads.txt` is valid and live. Root cause was domain mismatch/DNS: `mkecitysmart.app` did not resolve, while `mkecitysmart.com` and `mkeparkapp-1ad15.web.app` served app-ads correctly.
+- 2026-02-24: Confirmed working endpoint: https://mkecitysmart.com/app-ads.txt returns `google.com, pub-2009498889741048, DIRECT, f08c47fec0942fa0`.
+- 2026-02-24: Immediate metadata fix for iOS listing: Support URL `https://mkecitysmart.com/support.html`, Marketing URL `https://mkecitysmart.com/` (or temporary fallback to `https://mkeparkapp-1ad15.web.app`).
 
 -[F-407] [DONE] (P0) Update App Store Connect metadata + resubmit iOS build
 - Paste Support URL (and confirm Privacy/Terms/Delete URLs)
