@@ -126,7 +126,10 @@ class _FeedBodyState extends State<_FeedBody> {
       // Provide user-friendly error messages
       String errorMessage;
       if (e.toString().contains('permission-denied')) {
-        errorMessage = 'Access denied. Please sign in to view the feed.';
+        // If the user IS signed in, this is a service issue, not an auth issue
+        errorMessage = _resilience.isUserSignedIn
+            ? 'Service temporarily unavailable. Please try again in a moment.'
+            : 'Access denied. Please sign in to view the feed.';
       } else if (e.toString().contains('unavailable') ||
           e.toString().contains('network')) {
         errorMessage = 'Network error. Please check your connection.';
@@ -168,10 +171,23 @@ class _FeedBodyState extends State<_FeedBody> {
       await _resilience.ensureAuthReady();
       return await run();
     } catch (e) {
+      if (kDebugMode) debugPrint('[Feed] First attempt failed: $e');
       if (_resilience.isAuthError(e)) {
+        // Attempt 1: refresh auth + App Check tokens and retry
         final refreshed = await _resilience.refreshAuthToken();
         if (refreshed) {
-          return run();
+          try {
+            return await run();
+          } catch (e2) {
+            if (kDebugMode) debugPrint('[Feed] Second attempt failed: $e2');
+            // Attempt 2: refresh ONLY App Check and try once more
+            await _resilience.refreshAppCheckToken();
+            try {
+              return await run();
+            } catch (_) {
+              // Fall through to rethrow original error
+            }
+          }
         }
       }
       rethrow;
