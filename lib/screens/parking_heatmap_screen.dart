@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/parking_report.dart';
 import '../models/subscription_plan.dart';
 import '../services/location_service.dart';
+import '../services/firebase_resilience_service.dart';
 import '../services/parking_crowdsource_service.dart';
 import '../services/parking_prediction_service.dart';
 import '../services/parking_risk_service.dart';
@@ -29,6 +31,7 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
   final _riskService = ParkingRiskService.instance;
   final _predictionService = ParkingPredictionService.instance;
   final _crowdsourceService = ParkingCrowdsourceService.instance;
+  final _resilience = FirebaseResilienceService.instance;
   final _mapController = MapController();
 
   double _centerLat = 43.0389; // Milwaukee default
@@ -125,8 +128,15 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
     _startCrowdsourceStream(lat, lng);
   }
 
-  void _startCrowdsourceStream(double lat, double lng) {
+  Future<void> _startCrowdsourceStream(double lat, double lng) async {
     _crowdsourceSub?.cancel();
+
+    await _resilience.ensureAuthReady();
+    if (FirebaseAuth.instance.currentUser == null) {
+      debugPrint('[HeatmapCrowdsource] Auth unavailable, skipping stream');
+      return;
+    }
+
     _crowdsourceSub = _crowdsourceService
         .nearbyReportsStream(latitude: lat, longitude: lng)
         .listen(
@@ -134,8 +144,14 @@ class _ParkingHeatmapScreenState extends State<ParkingHeatmapScreen> {
             if (!mounted) return;
             setState(() => _nearbyReports = reports);
           },
-          onError: (e) {
+          onError: (e) async {
             debugPrint('[HeatmapCrowdsource] Stream error: $e');
+            if (_resilience.isAuthError(e)) {
+              final refreshed = await _resilience.refreshAuthToken();
+              if (refreshed && mounted) {
+                await _startCrowdsourceStream(lat, lng);
+              }
+            }
           },
         );
   }

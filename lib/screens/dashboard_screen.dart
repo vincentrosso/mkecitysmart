@@ -9,7 +9,6 @@ import '../theme/app_theme.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../widgets/crowdsource_widgets.dart';
-import '../widgets/reporter_rewards_card.dart';
 import 'alerts_landing_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -143,9 +142,6 @@ class _DashboardScreenState extends State<DashboardScreen>
             const SizedBox(height: 12),
             // Live crowdsource parking availability + report button
             const CrowdsourceAvailabilityBanner(),
-            const SizedBox(height: 12),
-            // Gamified reporter rewards progress card
-            ReporterRewardsCard(onReportTap: () => showReportSheet(context)),
             const SizedBox(height: 16),
             Expanded(
               child: GridView.count(
