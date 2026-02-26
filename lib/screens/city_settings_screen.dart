@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
+import '../services/tutorial_service.dart';
 
 class CitySettingsScreen extends StatefulWidget {
   const CitySettingsScreen({super.key});
@@ -210,6 +211,24 @@ class _CitySettingsScreenState extends State<CitySettingsScreen> {
                   );
                 },
                 child: const Text('Save'),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await TutorialService.reset();
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Tutorial will replay when you return to the dashboard!',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.replay_rounded),
+                label: const Text('Replay Tutorial'),
               ),
               const SizedBox(height: 16),
               Card(
