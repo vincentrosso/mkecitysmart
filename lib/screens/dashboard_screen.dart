@@ -1,34 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../providers/user_provider.dart';
 import '../services/location_service.dart';
 import '../services/parking_risk_service.dart';
+import '../services/tutorial_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../widgets/crowdsource_widgets.dart';
 import 'alerts_landing_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      onComplete: (stepIndex, completedKey) => TutorialService.markSeen(),
+      builder: (context) => const _DashboardBody(),
+    );
+  }
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
+class _DashboardBody extends StatefulWidget {
+  const _DashboardBody();
+
+  @override
+  State<_DashboardBody> createState() => _DashboardBodyState();
+}
+
+class _DashboardBodyState extends State<_DashboardBody>
     with WidgetsBindingObserver {
   LocationRisk? _locationRisk;
   bool _loadingRisk = true;
   bool _hasBeenBackgrounded = false;
+
+  // Showcase keys
+  final _keyRiskBadge = GlobalKey();
+  final _keyParking = GlobalKey();
+  final _keyGarbage = GlobalKey();
+  final _keyNightParking = GlobalKey();
+  final _keyHeatmap = GlobalKey();
+  final _keyTickets = GlobalKey();
+  final _keyAlerts = GlobalKey();
+  final _keySettings = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadRiskData();
+    _checkTutorial();
+  }
+
+  Future<void> _checkTutorial() async {
+    final seen = await TutorialService.hasSeenTutorial();
+    if (!seen && mounted) {
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          _keyRiskBadge,
+          _keyParking,
+          _keyGarbage,
+          _keyNightParking,
+          _keyAlerts,
+          _keyHeatmap,
+          _keyTickets,
+          _keySettings,
+        ]);
+      }
+    }
   }
 
   @override
@@ -40,11 +84,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // App went to background
       _hasBeenBackgrounded = true;
       debugPrint('Dashboard: App went to background');
     } else if (state == AppLifecycleState.resumed && _hasBeenBackgrounded) {
-      // App came back from background - show welcome back
       _hasBeenBackgrounded = false;
       debugPrint('Dashboard: App resumed from background');
       _showWelcomeBack();
@@ -54,7 +96,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _showWelcomeBack() {
     final userProvider = context.read<UserProvider>();
 
-    // Show welcome if user is logged in (not a guest)
     if (userProvider.isLoggedIn && !userProvider.isGuest) {
       final name = userProvider.profile?.name;
       final greeting = name != null && name.isNotEmpty
@@ -80,7 +121,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _loadRiskData() async {
-    // Default to downtown Milwaukee if location unavailable
     double lat = 43.0389;
     double lng = -87.9065;
 
@@ -119,7 +159,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    // Watch the provider for reactive updates
     context.watch<UserProvider>();
 
     return CitySmartScaffold(
@@ -133,12 +172,31 @@ class _DashboardScreenState extends State<DashboardScreen>
             Text('Dashboard', style: textTheme.headlineMedium),
             const SizedBox(height: 12),
             // Risk Badge Card
-            if (_loadingRisk)
-              const _RiskBadgeCardLoading()
-            else if (_locationRisk != null)
-              _RiskBadgeCard(risk: _locationRisk!)
-            else
-              _RiskBadgeCardError(onRetry: _loadRiskData),
+            Showcase(
+              key: _keyRiskBadge,
+              title: '🚨 Citation Risk',
+              description:
+                  'See your real-time parking ticket risk based on your location. Powered by 466K+ Milwaukee citations.',
+              targetShapeBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              tooltipBackgroundColor: kCitySmartGreen,
+              textColor: Colors.white,
+              titleTextStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+              descTextStyle: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+              child: _loadingRisk
+                  ? const _RiskBadgeCardLoading()
+                  : _locationRisk != null
+                  ? _RiskBadgeCard(risk: _locationRisk!)
+                  : _RiskBadgeCardError(onRetry: _loadRiskData),
+            ),
             const SizedBox(height: 12),
             // Live crowdsource parking availability + report button
             const CrowdsourceAvailabilityBanner(),
@@ -150,21 +208,82 @@ class _DashboardScreenState extends State<DashboardScreen>
                 mainAxisSpacing: 16,
                 childAspectRatio: 1.1,
                 children: [
-                  HomeTile(
-                    icon: Icons.local_parking,
-                    title: 'Overview',
-                    onTap: () => Navigator.pushNamed(context, '/parking'),
+                  Showcase(
+                    key: _keyParking,
+                    title: '🅿️ Parking Overview',
+                    description:
+                        'Everything you need to know about parking rules, street sweeping, and restrictions in your area.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.local_parking,
+                      title: 'Overview',
+                      onTap: () => Navigator.pushNamed(context, '/parking'),
+                    ),
                   ),
-                  HomeTile(
-                    icon: Icons.delete_outline,
-                    title: 'Garbage Day',
-                    onTap: () => Navigator.pushNamed(context, '/garbage'),
+                  Showcase(
+                    key: _keyGarbage,
+                    title: '🗑️ Garbage Day',
+                    description:
+                        'Never miss garbage or recycling day again. We\'ll tell you exactly when to put your bins out.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.delete_outline,
+                      title: 'Garbage Day',
+                      onTap: () => Navigator.pushNamed(context, '/garbage'),
+                    ),
                   ),
-                  HomeTile(
-                    icon: Icons.nightlight_round,
-                    title: 'Night Parking',
-                    subtitle: '2-6 AM permits',
-                    onTap: () => Navigator.pushNamed(context, '/night-parking'),
+                  Showcase(
+                    key: _keyNightParking,
+                    title: '🌙 Night Parking',
+                    description:
+                        'Check if you need a 2-6 AM night parking permit. Avoid those overnight tickets!',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.nightlight_round,
+                      title: 'Night Parking',
+                      subtitle: '2-6 AM permits',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/night-parking'),
+                    ),
                   ),
                   HomeTile(
                     icon: Icons.compare_arrows,
@@ -173,21 +292,61 @@ class _DashboardScreenState extends State<DashboardScreen>
                     onTap: () =>
                         Navigator.pushNamed(context, '/alternate-parking'),
                   ),
-                  HomeTile(
-                    icon: Icons.notifications_active_outlined,
-                    title: 'Risk & reminders',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AlertsLandingScreen(),
+                  Showcase(
+                    key: _keyAlerts,
+                    title: '🔔 Risk & Reminders',
+                    description:
+                        'Set up alerts so you never get caught off guard. Get notified before street sweeping, snow emergencies, and more.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.notifications_active_outlined,
+                      title: 'Risk & reminders',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AlertsLandingScreen(),
+                        ),
                       ),
                     ),
                   ),
-                  HomeTile(
-                    icon: Icons.map,
-                    title: 'Parking heatmap',
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/parking-heatmap'),
+                  Showcase(
+                    key: _keyHeatmap,
+                    title: '🗺️ Parking Heatmap',
+                    description:
+                        'See where tickets are given most. Avoid the hot zones and park smarter.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.map,
+                      title: 'Parking heatmap',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/parking-heatmap'),
+                    ),
                   ),
                   HomeTile(
                     icon: Icons.warning_amber_rounded,
@@ -195,11 +354,31 @@ class _DashboardScreenState extends State<DashboardScreen>
                     onTap: () =>
                         Navigator.pushNamed(context, '/report-sighting'),
                   ),
-                  HomeTile(
-                    icon: Icons.receipt_long,
-                    title: 'My tickets',
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/ticket-tracker'),
+                  Showcase(
+                    key: _keyTickets,
+                    title: '🎫 My Tickets',
+                    description:
+                        'Track and manage your parking tickets. Scan them with your camera or add them manually.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.receipt_long,
+                      title: 'My tickets',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/ticket-tracker'),
+                    ),
                   ),
                   HomeTile(
                     icon: Icons.workspace_premium,
@@ -222,10 +401,31 @@ class _DashboardScreenState extends State<DashboardScreen>
                     title: 'My Vehicles',
                     onTap: () => Navigator.pushNamed(context, '/vehicles'),
                   ),
-                  HomeTile(
-                    icon: Icons.settings,
-                    title: 'City settings',
-                    onTap: () => Navigator.pushNamed(context, '/city-settings'),
+                  Showcase(
+                    key: _keySettings,
+                    title: '⚙️ City Settings',
+                    description:
+                        'Customize your experience. Set your neighborhood, preferred alerts, and notification preferences.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.settings,
+                      title: 'City settings',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/city-settings'),
+                    ),
                   ),
                   HomeTile(
                     icon: Icons.ev_station_outlined,

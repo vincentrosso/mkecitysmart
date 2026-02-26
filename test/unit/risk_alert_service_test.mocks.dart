@@ -3,32 +3,33 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i11;
-import 'dart:ui' as _i24;
+import 'dart:async' as _i12;
+import 'dart:ui' as _i25;
 
-import 'package:geolocator/geolocator.dart' as _i13;
+import 'package:geolocator/geolocator.dart' as _i14;
 import 'package:mkecitysmart/models/ad_preferences.dart' as _i3;
 import 'package:mkecitysmart/models/city_rule_pack.dart' as _i5;
 import 'package:mkecitysmart/models/garbage_schedule.dart' as _i22;
 import 'package:mkecitysmart/models/maintenance_report.dart' as _i9;
-import 'package:mkecitysmart/models/parking_zone.dart' as _i14;
+import 'package:mkecitysmart/models/night_parking_permission.dart' as _i24;
+import 'package:mkecitysmart/models/parking_zone.dart' as _i15;
 import 'package:mkecitysmart/models/payment_receipt.dart' as _i8;
-import 'package:mkecitysmart/models/permit.dart' as _i17;
+import 'package:mkecitysmart/models/permit.dart' as _i18;
 import 'package:mkecitysmart/models/permit_eligibility.dart' as _i7;
-import 'package:mkecitysmart/models/reservation.dart' as _i18;
+import 'package:mkecitysmart/models/reservation.dart' as _i19;
 import 'package:mkecitysmart/models/sighting_report.dart' as _i21;
-import 'package:mkecitysmart/models/street_sweeping.dart' as _i19;
+import 'package:mkecitysmart/models/street_sweeping.dart' as _i10;
 import 'package:mkecitysmart/models/subscription_plan.dart' as _i4;
 import 'package:mkecitysmart/models/ticket.dart' as _i20;
 import 'package:mkecitysmart/models/vehicle.dart' as _i23;
 import 'package:mkecitysmart/providers/user_provider.dart' as _i6;
 import 'package:mkecitysmart/services/city_ticket_stats_service.dart' as _i2;
-import 'package:mkecitysmart/services/location_service.dart' as _i12;
-import 'package:mkecitysmart/services/notification_service.dart' as _i10;
+import 'package:mkecitysmart/services/location_service.dart' as _i13;
+import 'package:mkecitysmart/services/notification_service.dart' as _i11;
 import 'package:mkecitysmart/services/ticket_risk_prediction_service.dart'
-    as _i15;
+    as _i16;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i16;
+import 'package:mockito/src/dummies.dart' as _i17;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -91,40 +92,46 @@ class _FakeMaintenanceReport_7 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
+class _FakeStreetSweepingSchedule_8 extends _i1.SmartFake
+    implements _i10.StreetSweepingSchedule {
+  _FakeStreetSweepingSchedule_8(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [NotificationService].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockNotificationService extends _i1.Mock
-    implements _i10.NotificationService {
+    implements _i11.NotificationService {
   MockNotificationService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i11.Future<void> initialize({required bool? enableRemoteNotifications}) =>
+  _i12.Future<void> initialize({required bool? enableRemoteNotifications}) =>
       (super.noSuchMethod(
             Invocation.method(#initialize, [], {
               #enableRemoteNotifications: enableRemoteNotifications,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> showLocal({
+  _i12.Future<void> showLocal({
     required String? title,
     required String? body,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#showLocal, [], {#title: title, #body: body}),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> scheduleLocal({
+  _i12.Future<void> scheduleLocal({
     required String? title,
     required String? body,
     required DateTime? when,
@@ -137,13 +144,13 @@ class MockNotificationService extends _i1.Mock
               #when: when,
               #id: id,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> scheduleRepeatingReminders({
+  _i12.Future<void> scheduleRepeatingReminders({
     required String? title,
     required String? body,
     required DateTime? startTime,
@@ -158,31 +165,31 @@ class MockNotificationService extends _i1.Mock
               #cutoffTime: cutoffTime,
               #baseId: baseId,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> cancelAllScheduled() =>
+  _i12.Future<void> cancelAllScheduled() =>
       (super.noSuchMethod(
             Invocation.method(#cancelAllScheduled, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> cancelScheduled(int? id) =>
+  _i12.Future<void> cancelScheduled(int? id) =>
       (super.noSuchMethod(
             Invocation.method(#cancelScheduled, [id]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> syncAspNotifications({
+  _i12.Future<void> syncAspNotifications({
     required bool? morningEnabled,
     required bool? eveningEnabled,
     required bool? midnightEnabled,
@@ -193,43 +200,132 @@ class MockNotificationService extends _i1.Mock
               #eveningEnabled: eveningEnabled,
               #midnightEnabled: midnightEnabled,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  void setAlertLimitCallback(_i11.Future<bool> Function()? callback) =>
+  _i12.Future<void> syncSweepingNotifications({
+    required List<
+      ({
+        bool advance24h,
+        bool final2h,
+        String id,
+        DateTime nextSweep,
+        String zone,
+      })
+    >?
+    schedules,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#syncSweepingNotifications, [], {
+              #schedules: schedules,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> cancelSweepingNotifications() =>
+      (super.noSuchMethod(
+            Invocation.method(#cancelSweepingNotifications, []),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> scheduleNightParkingEveningReminder({
+    required bool? hasPermit,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#scheduleNightParkingEveningReminder, [], {
+              #hasPermit: hasPermit,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> scheduleNightParkingExpirationReminder({
+    required DateTime? expirationDate,
+    int? daysBeforeExpiry = 30,
+    int? idOffset = 2,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#scheduleNightParkingExpirationReminder, [], {
+              #expirationDate: expirationDate,
+              #daysBeforeExpiry: daysBeforeExpiry,
+              #idOffset: idOffset,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> scheduleNightParkingTimeReminder({
+    required DateTime? when,
+    required int? idOffset,
+    required String? title,
+    required String? body,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#scheduleNightParkingTimeReminder, [], {
+              #when: when,
+              #idOffset: idOffset,
+              #title: title,
+              #body: body,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> cancelNightParkingReminders() =>
+      (super.noSuchMethod(
+            Invocation.method(#cancelNightParkingReminders, []),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  void setAlertLimitCallback(_i12.Future<bool> Function()? callback) =>
       super.noSuchMethod(
         Invocation.method(#setAlertLimitCallback, [callback]),
         returnValueForMissingStub: null,
       );
 
   @override
-  _i11.Future<void> reregisterTokenAfterSignIn() =>
+  _i12.Future<void> reregisterTokenAfterSignIn() =>
       (super.noSuchMethod(
             Invocation.method(#reregisterTokenAfterSignIn, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 }
 
 /// A class which mocks [LocationService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLocationService extends _i1.Mock implements _i12.LocationService {
+class MockLocationService extends _i1.Mock implements _i13.LocationService {
   MockLocationService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i11.Future<_i13.Position?> getCurrentPosition() =>
+  _i12.Future<_i14.Position?> getCurrentPosition() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentPosition, []),
-            returnValue: _i11.Future<_i13.Position?>.value(),
+            returnValue: _i12.Future<_i14.Position?>.value(),
           )
-          as _i11.Future<_i13.Position?>);
+          as _i12.Future<_i14.Position?>);
 
   @override
   double calculateDistanceKm({
@@ -250,12 +346,12 @@ class MockLocationService extends _i1.Mock implements _i12.LocationService {
           as double);
 
   @override
-  List<_i14.ParkingZone> loadDefaultZones() =>
+  List<_i15.ParkingZone> loadDefaultZones() =>
       (super.noSuchMethod(
             Invocation.method(#loadDefaultZones, []),
-            returnValue: <_i14.ParkingZone>[],
+            returnValue: <_i15.ParkingZone>[],
           )
-          as List<_i14.ParkingZone>);
+          as List<_i15.ParkingZone>);
 
   @override
   List<String> searchAddresses(String? query) =>
@@ -267,8 +363,8 @@ class MockLocationService extends _i1.Mock implements _i12.LocationService {
 
   @override
   List<String> buildWalkingDirections({
-    required _i13.Position? start,
-    required _i14.ParkingZone? destination,
+    required _i14.Position? start,
+    required _i15.ParkingZone? destination,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#buildWalkingDirections, [], {
@@ -284,7 +380,7 @@ class MockLocationService extends _i1.Mock implements _i12.LocationService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockTicketRiskPredictionService extends _i1.Mock
-    implements _i15.TicketRiskPredictionService {
+    implements _i16.TicketRiskPredictionService {
   MockTicketRiskPredictionService() {
     _i1.throwOnMissingStub(this);
   }
@@ -337,7 +433,7 @@ class MockTicketRiskPredictionService extends _i1.Mock
   String riskMessage(double? score) =>
       (super.noSuchMethod(
             Invocation.method(#riskMessage, [score]),
-            returnValue: _i16.dummyValue<String>(
+            returnValue: _i17.dummyValue<String>(
               this,
               Invocation.method(#riskMessage, [score]),
             ),
@@ -348,7 +444,7 @@ class MockTicketRiskPredictionService extends _i1.Mock
   String getEnforcementSummary() =>
       (super.noSuchMethod(
             Invocation.method(#getEnforcementSummary, []),
-            returnValue: _i16.dummyValue<String>(
+            returnValue: _i17.dummyValue<String>(
               this,
               Invocation.method(#getEnforcementSummary, []),
             ),
@@ -448,28 +544,28 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
           as bool);
 
   @override
-  List<_i17.Permit> get permits =>
+  List<_i18.Permit> get permits =>
       (super.noSuchMethod(
             Invocation.getter(#permits),
-            returnValue: <_i17.Permit>[],
+            returnValue: <_i18.Permit>[],
           )
-          as List<_i17.Permit>);
+          as List<_i18.Permit>);
 
   @override
-  List<_i18.Reservation> get reservations =>
+  List<_i19.Reservation> get reservations =>
       (super.noSuchMethod(
             Invocation.getter(#reservations),
-            returnValue: <_i18.Reservation>[],
+            returnValue: <_i19.Reservation>[],
           )
-          as List<_i18.Reservation>);
+          as List<_i19.Reservation>);
 
   @override
-  List<_i19.StreetSweepingSchedule> get sweepingSchedules =>
+  List<_i10.StreetSweepingSchedule> get sweepingSchedules =>
       (super.noSuchMethod(
             Invocation.getter(#sweepingSchedules),
-            returnValue: <_i19.StreetSweepingSchedule>[],
+            returnValue: <_i10.StreetSweepingSchedule>[],
           )
-          as List<_i19.StreetSweepingSchedule>);
+          as List<_i10.StreetSweepingSchedule>);
 
   @override
   List<_i20.Ticket> get tickets =>
@@ -577,7 +673,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
   String get cityId =>
       (super.noSuchMethod(
             Invocation.getter(#cityId),
-            returnValue: _i16.dummyValue<String>(
+            returnValue: _i17.dummyValue<String>(
               this,
               Invocation.getter(#cityId),
             ),
@@ -588,7 +684,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
   String get tenantId =>
       (super.noSuchMethod(
             Invocation.getter(#tenantId),
-            returnValue: _i16.dummyValue<String>(
+            returnValue: _i17.dummyValue<String>(
               this,
               Invocation.getter(#tenantId),
             ),
@@ -599,7 +695,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
   String get languageCode =>
       (super.noSuchMethod(
             Invocation.getter(#languageCode),
-            returnValue: _i16.dummyValue<String>(
+            returnValue: _i17.dummyValue<String>(
               this,
               Invocation.getter(#languageCode),
             ),
@@ -628,35 +724,72 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
           as bool);
 
   @override
+  int get maxVehicles =>
+      (super.noSuchMethod(Invocation.getter(#maxVehicles), returnValue: 0)
+          as int);
+
+  @override
+  bool get canAddVehicle =>
+      (super.noSuchMethod(Invocation.getter(#canAddVehicle), returnValue: false)
+          as bool);
+
+  @override
+  bool get hasValidNightParkingPermit =>
+      (super.noSuchMethod(
+            Invocation.getter(#hasValidNightParkingPermit),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
+  bool get isNightParkingEnforcementActive =>
+      (super.noSuchMethod(
+            Invocation.getter(#isNightParkingEnforcementActive),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
+  String get nightParkingStatusMessage =>
+      (super.noSuchMethod(
+            Invocation.getter(#nightParkingStatusMessage),
+            returnValue: _i17.dummyValue<String>(
+              this,
+              Invocation.getter(#nightParkingStatusMessage),
+            ),
+          )
+          as String);
+
+  @override
   bool get hasListeners =>
       (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
           as bool);
 
   @override
-  _i11.Future<bool> canReceiveAlert() =>
+  _i12.Future<bool> canReceiveAlert() =>
       (super.noSuchMethod(
             Invocation.method(#canReceiveAlert, []),
-            returnValue: _i11.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i11.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i11.Future<void> recordAlertReceived() =>
+  _i12.Future<void> recordAlertReceived() =>
       (super.noSuchMethod(
             Invocation.method(#recordAlertReceived, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> initialize() =>
+  _i12.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
   void muteAlerts(Duration? duration) => super.noSuchMethod(
@@ -671,16 +804,16 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
   );
 
   @override
-  _i11.Future<void> continueAsGuest() =>
+  _i12.Future<void> continueAsGuest() =>
       (super.noSuchMethod(
             Invocation.method(#continueAsGuest, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<String?> register({
+  _i12.Future<String?> register({
     required String? name,
     required String? email,
     required String? password,
@@ -693,58 +826,58 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #password: password,
               #phone: phone,
             }),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<String?> resendVerificationEmail() =>
+  _i12.Future<String?> resendVerificationEmail() =>
       (super.noSuchMethod(
             Invocation.method(#resendVerificationEmail, []),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<void> refreshUserData() =>
+  _i12.Future<void> refreshUserData() =>
       (super.noSuchMethod(
             Invocation.method(#refreshUserData, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<String?> login(String? email, String? password) =>
+  _i12.Future<String?> login(String? email, String? password) =>
       (super.noSuchMethod(
             Invocation.method(#login, [email, password]),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<String?> signInWithGoogle() =>
+  _i12.Future<String?> signInWithGoogle() =>
       (super.noSuchMethod(
             Invocation.method(#signInWithGoogle, []),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<_i6.PhoneAuthStartResult> startPhoneSignIn(String? phoneNumber) =>
+  _i12.Future<_i6.PhoneAuthStartResult> startPhoneSignIn(String? phoneNumber) =>
       (super.noSuchMethod(
             Invocation.method(#startPhoneSignIn, [phoneNumber]),
-            returnValue: _i11.Future<_i6.PhoneAuthStartResult>.value(
+            returnValue: _i12.Future<_i6.PhoneAuthStartResult>.value(
               _FakePhoneAuthStartResult_4(
                 this,
                 Invocation.method(#startPhoneSignIn, [phoneNumber]),
               ),
             ),
           )
-          as _i11.Future<_i6.PhoneAuthStartResult>);
+          as _i12.Future<_i6.PhoneAuthStartResult>);
 
   @override
-  _i11.Future<String?> confirmPhoneCode({
+  _i12.Future<String?> confirmPhoneCode({
     required String? verificationId,
     required String? smsCode,
     String? phoneNumber,
@@ -755,37 +888,37 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #smsCode: smsCode,
               #phoneNumber: phoneNumber,
             }),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<String?> signInWithApple() =>
+  _i12.Future<String?> signInWithApple() =>
       (super.noSuchMethod(
             Invocation.method(#signInWithApple, []),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<void> logout() =>
+  _i12.Future<void> logout() =>
       (super.noSuchMethod(
             Invocation.method(#logout, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<String?> deleteAccount() =>
+  _i12.Future<String?> deleteAccount() =>
       (super.noSuchMethod(
             Invocation.method(#deleteAccount, []),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<void> updateProfile({
+  _i12.Future<void> updateProfile({
     String? name,
     String? email,
     String? phone,
@@ -816,24 +949,24 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #languageCode: languageCode,
               #rulePack: rulePack,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> setGarbageSchedules(
+  _i12.Future<void> setGarbageSchedules(
     List<_i22.GarbageSchedule>? schedules,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#setGarbageSchedules, [schedules]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<({String? message, int usersWarned})> reportSighting({
+  _i12.Future<({String? message, int usersWarned})> reportSighting({
     required _i21.SightingType? type,
     required String? location,
     String? notes = '',
@@ -849,34 +982,34 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #longitude: longitude,
             }),
             returnValue:
-                _i11.Future<({String? message, int usersWarned})>.value((
+                _i12.Future<({String? message, int usersWarned})>.value((
                   message: null,
                   usersWarned: 0,
                 )),
           )
-          as _i11.Future<({String? message, int usersWarned})>);
+          as _i12.Future<({String? message, int usersWarned})>);
 
   @override
-  _i11.Future<void> deleteSighting(String? sightingId) =>
+  _i12.Future<void> deleteSighting(String? sightingId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteSighting, [sightingId]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> cleanupOldSightings({int? days = 7}) =>
+  _i12.Future<void> cleanupOldSightings({int? days = 7}) =>
       (super.noSuchMethod(
             Invocation.method(#cleanupOldSightings, [], {#days: days}),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
   _i7.PermitEligibilityResult evaluatePermitEligibility({
-    required _i17.PermitType? type,
+    required _i18.PermitType? type,
     required bool? hasProofOfResidence,
     required int? unpaidTicketCount,
     required bool? isLowIncome,
@@ -927,34 +1060,34 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
           as _i8.PaymentReceipt);
 
   @override
-  _i11.Future<void> updateAdPreferences(_i3.AdPreferences? prefs) =>
+  _i12.Future<void> updateAdPreferences(_i3.AdPreferences? prefs) =>
       (super.noSuchMethod(
             Invocation.method(#updateAdPreferences, [prefs]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateSubscriptionTier(_i4.SubscriptionTier? tier) =>
+  _i12.Future<void> updateSubscriptionTier(_i4.SubscriptionTier? tier) =>
       (super.noSuchMethod(
             Invocation.method(#updateSubscriptionTier, [tier]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> grantAdRewardTrial({int? days = 3}) =>
+  _i12.Future<void> grantAdRewardTrial({int? days = 3}) =>
       (super.noSuchMethod(
             Invocation.method(#grantAdRewardTrial, [], {#days: days}),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateCityAndTenant({
+  _i12.Future<void> updateCityAndTenant({
     required String? cityId,
     required String? tenantId,
   }) =>
@@ -963,19 +1096,19 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #cityId: cityId,
               #tenantId: tenantId,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateLanguage(String? languageCode) =>
+  _i12.Future<void> updateLanguage(String? languageCode) =>
       (super.noSuchMethod(
             Invocation.method(#updateLanguage, [languageCode]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
   _i20.Ticket? findTicket(String? plate, String? ticketId) =>
@@ -1024,16 +1157,16 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
           as _i8.PaymentReceipt);
 
   @override
-  _i11.Future<void> syncTicketsWithBackend() =>
+  _i12.Future<void> syncTicketsWithBackend() =>
       (super.noSuchMethod(
             Invocation.method(#syncTicketsWithBackend, []),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<_i9.MaintenanceReport> submitMaintenanceReport({
+  _i12.Future<_i9.MaintenanceReport> submitMaintenanceReport({
     required _i9.MaintenanceCategory? category,
     required String? description,
     required String? location,
@@ -1050,7 +1183,7 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #longitude: longitude,
               #photoPath: photoPath,
             }),
-            returnValue: _i11.Future<_i9.MaintenanceReport>.value(
+            returnValue: _i12.Future<_i9.MaintenanceReport>.value(
               _FakeMaintenanceReport_7(
                 this,
                 Invocation.method(#submitMaintenanceReport, [], {
@@ -1064,10 +1197,10 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               ),
             ),
           )
-          as _i11.Future<_i9.MaintenanceReport>);
+          as _i12.Future<_i9.MaintenanceReport>);
 
   @override
-  _i11.Future<void> scheduleGarbageReminders({
+  _i12.Future<void> scheduleGarbageReminders({
     Duration? nightBefore = const Duration(hours: 12),
     Duration? morningOf = const Duration(hours: 2),
     String? languageCode = 'en',
@@ -1080,10 +1213,10 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #languageCode: languageCode,
               #useRepeatingReminders: useRepeatingReminders,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
   bool hasFeature(_i4.PremiumFeature? feature) =>
@@ -1094,42 +1227,41 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
           as bool);
 
   @override
-  _i11.Future<String?> changePassword(String? password) =>
+  _i12.Future<String?> changePassword(String? password) =>
       (super.noSuchMethod(
             Invocation.method(#changePassword, [password]),
-            returnValue: _i11.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i11.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i11.Future<void> addVehicle(_i23.Vehicle? vehicle) =>
+  _i12.Future<bool> addVehicle(_i23.Vehicle? vehicle) =>
       (super.noSuchMethod(
             Invocation.method(#addVehicle, [vehicle]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i11.Future<void>);
+          as _i12.Future<bool>);
 
   @override
-  _i11.Future<void> updateVehicle(_i23.Vehicle? vehicle) =>
+  _i12.Future<void> updateVehicle(_i23.Vehicle? vehicle) =>
       (super.noSuchMethod(
             Invocation.method(#updateVehicle, [vehicle]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> removeVehicle(String? vehicleId) =>
+  _i12.Future<void> removeVehicle(String? vehicleId) =>
       (super.noSuchMethod(
             Invocation.method(#removeVehicle, [vehicleId]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updatePreferences({
+  _i12.Future<void> updatePreferences({
     bool? parkingNotifications,
     bool? towAlerts,
     bool? reminderNotifications,
@@ -1154,97 +1286,97 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #aspEveningWarning: aspEveningWarning,
               #aspMidnightAlert: aspMidnightAlert,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> addPermit(_i17.Permit? permit) =>
+  _i12.Future<void> addPermit(_i18.Permit? permit) =>
       (super.noSuchMethod(
             Invocation.method(#addPermit, [permit]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> renewPermit(String? permitId) =>
+  _i12.Future<void> renewPermit(String? permitId) =>
       (super.noSuchMethod(
             Invocation.method(#renewPermit, [permitId]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updatePermitStatus(
+  _i12.Future<void> updatePermitStatus(
     String? permitId,
-    _i17.PermitStatus? status,
+    _i18.PermitStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updatePermitStatus, [permitId, status]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> toggleOfflineAccess(String? permitId) =>
+  _i12.Future<void> toggleOfflineAccess(String? permitId) =>
       (super.noSuchMethod(
             Invocation.method(#toggleOfflineAccess, [permitId]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updatePermitVehicles(
+  _i12.Future<void> updatePermitVehicles(
     String? permitId,
     List<String>? vehicleIds,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updatePermitVehicles, [permitId, vehicleIds]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateAutoRenew(String? permitId, bool? enabled) =>
+  _i12.Future<void> updateAutoRenew(String? permitId, bool? enabled) =>
       (super.noSuchMethod(
             Invocation.method(#updateAutoRenew, [permitId, enabled]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> createReservation(_i18.Reservation? reservation) =>
+  _i12.Future<void> createReservation(_i19.Reservation? reservation) =>
       (super.noSuchMethod(
             Invocation.method(#createReservation, [reservation]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateReservationStatus(
+  _i12.Future<void> updateReservationStatus(
     String? reservationId,
-    _i18.ReservationStatus? status,
+    _i19.ReservationStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateReservationStatus, [
               reservationId,
               status,
             ]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> recordPayment({
+  _i12.Future<void> recordPayment({
     required String? reservationId,
     required String? paymentMethod,
     required double? amount,
@@ -1257,13 +1389,13 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
               #amount: amount,
               #transactionId: transactionId,
             }),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateSweepingNotifications(
+  _i12.Future<void> updateSweepingNotifications(
     String? id, {
     bool? gpsMonitoring,
     bool? advance24h,
@@ -1281,28 +1413,137 @@ class MockUserProvider extends _i1.Mock implements _i6.UserProvider {
                 #customMinutes: customMinutes,
               },
             ),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i11.Future<void> logVehicleMoved(String? id) =>
+  _i12.Future<String?> fetchRouteForLocation({
+    required double? lat,
+    required double? lng,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchRouteForLocation, [], {
+              #lat: lat,
+              #lng: lng,
+            }),
+            returnValue: _i12.Future<String?>.value(),
+          )
+          as _i12.Future<String?>);
+
+  @override
+  _i12.Future<_i10.StreetSweepingSchedule> addSweepingScheduleFromUserEntry({
+    required String? broomCode,
+    required int? sweepDay,
+    required List<int>? weekPattern,
+    String? side = 'Both sides',
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#addSweepingScheduleFromUserEntry, [], {
+              #broomCode: broomCode,
+              #sweepDay: sweepDay,
+              #weekPattern: weekPattern,
+              #side: side,
+            }),
+            returnValue: _i12.Future<_i10.StreetSweepingSchedule>.value(
+              _FakeStreetSweepingSchedule_8(
+                this,
+                Invocation.method(#addSweepingScheduleFromUserEntry, [], {
+                  #broomCode: broomCode,
+                  #sweepDay: sweepDay,
+                  #weekPattern: weekPattern,
+                  #side: side,
+                }),
+              ),
+            ),
+          )
+          as _i12.Future<_i10.StreetSweepingSchedule>);
+
+  @override
+  _i12.Future<void> refreshSweepingSchedules() =>
+      (super.noSuchMethod(
+            Invocation.method(#refreshSweepingSchedules, []),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> logVehicleMoved(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#logVehicleMoved, [id]),
-            returnValue: _i11.Future<void>.value(),
-            returnValueForMissingStub: _i11.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i11.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  void addListener(_i24.VoidCallback? listener) => super.noSuchMethod(
+  _i12.Future<_i24.NightParkingZoneResult?> checkNightParkingForAddress() =>
+      (super.noSuchMethod(
+            Invocation.method(#checkNightParkingForAddress, []),
+            returnValue: _i12.Future<_i24.NightParkingZoneResult?>.value(),
+          )
+          as _i12.Future<_i24.NightParkingZoneResult?>);
+
+  @override
+  _i12.Future<void> setNightParkingPermission({
+    required String? licensePlate,
+    String? vehicleDescription,
+    _i24.NightParkingStatus? status = _i24.NightParkingStatus.pending,
+    DateTime? expirationDate,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#setNightParkingPermission, [], {
+              #licensePlate: licensePlate,
+              #vehicleDescription: vehicleDescription,
+              #status: status,
+              #expirationDate: expirationDate,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> activateNightParkingPermission({
+    required DateTime? expirationDate,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#activateNightParkingPermission, [], {
+              #expirationDate: expirationDate,
+            }),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> setNightParkingReminders(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setNightParkingReminders, [enabled]),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  _i12.Future<void> clearNightParkingPermission() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearNightParkingPermission, []),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
+          )
+          as _i12.Future<void>);
+
+  @override
+  void addListener(_i25.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i24.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i25.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
