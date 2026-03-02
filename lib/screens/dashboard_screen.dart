@@ -436,6 +436,11 @@ class _DashboardBodyState extends State<_DashboardBody>
                     onTap: () => Navigator.pushNamed(context, '/charging'),
                   ),
                   HomeTile(
+                    icon: Icons.restaurant_outlined,
+                    title: 'Food Access',
+                    onTap: () => Navigator.pushNamed(context, '/food-access'),
+                  ),
+                  HomeTile(
                     icon: Icons.local_shipping,
                     title: 'Tow Helper',
                     onTap: () => Navigator.pushNamed(context, '/tow-helper'),

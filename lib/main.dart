@@ -57,6 +57,7 @@ import 'screens/referral_screen.dart';
 import 'screens/saved_places_screen.dart';
 import 'screens/tow_helper_screen.dart';
 import 'screens/sponsors_screen.dart';
+import 'screens/food_access_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -431,6 +432,7 @@ class MKEParkApp extends StatelessWidget {
               '/preferences': (context) => const PreferencesScreen(),
               '/alerts': (context) => const AlertsLandingScreen(),
               '/charging': (context) => const ChargingMapScreen(),
+              '/food-access': (context) => const FoodAccessScreen(),
               '/report-sighting': (context) => const ReportSightingScreen(),
               '/tickets': (context) => const TicketWorkflowScreen(),
               '/ticket-tracker': (context) => const TicketTrackerScreen(),
