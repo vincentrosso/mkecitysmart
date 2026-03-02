@@ -13,7 +13,7 @@ import '../services/api_client.dart';
 import '../services/prediction_api_service.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../services/location_service.dart';
-import '../services/open_charge_map_service.dart';
+import '../services/nrel_charging_service.dart';
 import '../services/weather_service.dart';
 import '../models/sighting_report.dart';
 
@@ -25,7 +25,7 @@ class ChargingMapScreen extends StatefulWidget {
 }
 
 class _ChargingMapScreenState extends State<ChargingMapScreen> {
-  final _ocm = OpenChargeMapService();
+  final _nrel = NRELChargingService();
   final _weather = WeatherService();
   bool _showFastOnly = false;
   bool _showAvailableOnly = false;
@@ -133,7 +133,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                     mode: LaunchMode.externalApplication,
                   ),
                   child: const Text(
-                    'Source: OpenChargeMap',
+                    'Source: US Dept of Energy (NREL/AFDC)',
                     style: TextStyle(
                       color: Colors.white38,
                       fontSize: 10,
@@ -420,10 +420,11 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     _currentLng = lng;
 
     try {
-      final stations = await _ocm.fetchStations(
+      final stations = await _nrel.fetchStations(
         lat: lat,
         lng: lng,
-        distanceKm: 15,
+        radiusMiles: 10,
+        maxResults: 100,
       );
       if (!mounted) return;
       if (stations.isEmpty) {
@@ -674,7 +675,7 @@ class _StationDetailCard extends StatelessWidget {
     final hasExactPrice = station.pricePerKwh > 0;
     // If the API provided a raw cost string (e.g. "$1.25 per hour"), show it.
     final hasRawCost = station.notes != null && station.notes!.isNotEmpty;
-    final estimatedPrice = OpenChargeMapService.estimatedPriceForNetwork(
+    final estimatedPrice = NRELChargingService.estimatedPriceForNetwork(
       station.network,
     );
     final hasPrice = hasExactPrice || hasRawCost || estimatedPrice != null;

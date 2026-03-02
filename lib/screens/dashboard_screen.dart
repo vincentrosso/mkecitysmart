@@ -19,7 +19,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShowCaseWidget(
-      onComplete: (stepIndex, completedKey) => TutorialService.markSeen(),
+      onComplete: (_, __) => TutorialService.markSeen(),
       builder: (context) => const _DashboardBody(),
     );
   }
@@ -84,9 +84,11 @@ class _DashboardBodyState extends State<_DashboardBody>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      // App went to background
       _hasBeenBackgrounded = true;
       debugPrint('Dashboard: App went to background');
     } else if (state == AppLifecycleState.resumed && _hasBeenBackgrounded) {
+      // App came back from background - show welcome back
       _hasBeenBackgrounded = false;
       debugPrint('Dashboard: App resumed from background');
       _showWelcomeBack();
@@ -96,6 +98,7 @@ class _DashboardBodyState extends State<_DashboardBody>
   void _showWelcomeBack() {
     final userProvider = context.read<UserProvider>();
 
+    // Show welcome if user is logged in (not a guest)
     if (userProvider.isLoggedIn && !userProvider.isGuest) {
       final name = userProvider.profile?.name;
       final greeting = name != null && name.isNotEmpty
@@ -121,6 +124,7 @@ class _DashboardBodyState extends State<_DashboardBody>
   }
 
   Future<void> _loadRiskData() async {
+    // Default to downtown Milwaukee if location unavailable
     double lat = 43.0389;
     double lng = -87.9065;
 
@@ -159,6 +163,7 @@ class _DashboardBodyState extends State<_DashboardBody>
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    // Watch the provider for reactive updates
     context.watch<UserProvider>();
 
     return CitySmartScaffold(
@@ -194,8 +199,8 @@ class _DashboardBodyState extends State<_DashboardBody>
               child: _loadingRisk
                   ? const _RiskBadgeCardLoading()
                   : _locationRisk != null
-                  ? _RiskBadgeCard(risk: _locationRisk!)
-                  : _RiskBadgeCardError(onRetry: _loadRiskData),
+                      ? _RiskBadgeCard(risk: _locationRisk!)
+                      : _RiskBadgeCardError(onRetry: _loadRiskData),
             ),
             const SizedBox(height: 12),
             // Live crowdsource parking availability + report button
@@ -281,8 +286,7 @@ class _DashboardBodyState extends State<_DashboardBody>
                       icon: Icons.nightlight_round,
                       title: 'Night Parking',
                       subtitle: '2-6 AM permits',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/night-parking'),
+                      onTap: () => Navigator.pushNamed(context, '/night-parking'),
                     ),
                   ),
                   HomeTile(
@@ -423,8 +427,7 @@ class _DashboardBodyState extends State<_DashboardBody>
                     child: HomeTile(
                       icon: Icons.settings,
                       title: 'City settings',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/city-settings'),
+                      onTap: () => Navigator.pushNamed(context, '/city-settings'),
                     ),
                   ),
                   HomeTile(
