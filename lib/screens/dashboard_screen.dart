@@ -20,6 +20,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ShowCaseWidget(
       onComplete: (_, __) => TutorialService.markSeen(),
+      enableAutoScroll: true,
       builder: (context) => const _DashboardBody(),
     );
   }
@@ -173,11 +174,9 @@ class _DashboardBodyState extends State<_DashboardBody>
     return CitySmartScaffold(
       title: 'MKE CitySmart',
       currentIndex: 0,
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        children: [
             Text('Dashboard', style: textTheme.headlineMedium),
             const SizedBox(height: 12),
             // Risk Badge Card
@@ -232,8 +231,9 @@ class _DashboardBodyState extends State<_DashboardBody>
               child: const CrowdsourceAvailabilityBanner(),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: GridView.count(
+            GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
@@ -516,7 +516,6 @@ class _DashboardBodyState extends State<_DashboardBody>
                   ),
                 ],
               ),
-            ),
             const SizedBox(height: 16),
             // AdMob banner ad for free tier users
             const AdBannerWidget(
@@ -525,7 +524,6 @@ class _DashboardBodyState extends State<_DashboardBody>
             ),
           ],
         ),
-      ),
     );
   }
 }
