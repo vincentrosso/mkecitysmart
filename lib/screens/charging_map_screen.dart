@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,7 +14,7 @@ import '../services/api_client.dart';
 import '../services/prediction_api_service.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../services/location_service.dart';
-import '../services/open_charge_map_service.dart';
+import '../services/nrel_charging_service.dart';
 import '../services/weather_service.dart';
 import '../models/sighting_report.dart';
 
@@ -25,9 +26,9 @@ class ChargingMapScreen extends StatefulWidget {
 }
 
 class _ChargingMapScreenState extends State<ChargingMapScreen> {
-  final _ocm = OpenChargeMapService();
+  final _nrel = NRELChargingService();
   final _weather = WeatherService();
-  bool _showFastOnly = false;
+  bool _showFastOnly = true; // Default to DC Fast only to reduce clutter
   bool _showAvailableOnly = false;
   bool _loadingStations = true;
   String? _stationError;
@@ -133,7 +134,7 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                     mode: LaunchMode.externalApplication,
                   ),
                   child: const Text(
-                    'Source: OpenChargeMap',
+                    'Source: US Dept of Energy (NREL/AFDC)',
                     style: TextStyle(
                       color: Colors.white38,
                       fontSize: 10,
@@ -165,9 +166,16 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                   ),
                   FilterChip(
                     selected: _showFastOnly,
-                    label: const Text('50kW+', style: TextStyle(fontSize: 12)),
+                    label: const Text('DC Fast (50kW+)', style: TextStyle(fontSize: 12)),
                     avatar: const Icon(Icons.flash_on, size: 16),
                     onSelected: (v) => setState(() => _showFastOnly = v),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  FilterChip(
+                    selected: !_showFastOnly,
+                    label: const Text('All Chargers', style: TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.ev_station, size: 16),
+                    onSelected: (v) => setState(() => _showFastOnly = !v),
                     visualDensity: VisualDensity.compact,
                   ),
                   FilterChip(
@@ -241,28 +249,56 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                             )
                             .toList(),
                       ),
-                    MarkerLayer(
-                      markers: stations
-                          .map<Marker>(
-                            (station) => Marker(
-                              width: 42,
-                              height: 42,
-                              point: LatLng(
-                                station.latitude,
-                                station.longitude,
-                              ),
-                              alignment: Alignment.center,
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selected = station),
-                                child: _StationMarker(
-                                  station: station,
-                                  isSelected: _selected?.id == station.id,
+                    MarkerClusterLayerWidget(
+                      options: MarkerClusterLayerOptions(
+                        maxClusterRadius: 60,
+                        size: const Size(44, 44),
+                        markers: stations
+                            .map<Marker>(
+                              (station) => Marker(
+                                width: 42,
+                                height: 42,
+                                point: LatLng(
+                                  station.latitude,
+                                  station.longitude,
+                                ),
+                                alignment: Alignment.center,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _selected = station),
+                                  child: _StationMarker(
+                                    station: station,
+                                    isSelected: _selected?.id == station.id,
+                                  ),
                                 ),
                               ),
+                            )
+                            .toList(),
+                        builder: (context, markers) => Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E3A5F),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(80),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${markers.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
                             ),
-                          )
-                          .toList(),
+                          ),
+                        ),
+                      ),
                     ),
                     if (_showSightings && sightings.isNotEmpty)
                       MarkerLayer(
@@ -420,10 +456,11 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     _currentLng = lng;
 
     try {
-      final stations = await _ocm.fetchStations(
+      final stations = await _nrel.fetchStations(
         lat: lat,
         lng: lng,
-        distanceKm: 15,
+        radiusMiles: 10,
+        maxResults: 100,
       );
       if (!mounted) return;
       if (stations.isEmpty) {
@@ -674,7 +711,7 @@ class _StationDetailCard extends StatelessWidget {
     final hasExactPrice = station.pricePerKwh > 0;
     // If the API provided a raw cost string (e.g. "$1.25 per hour"), show it.
     final hasRawCost = station.notes != null && station.notes!.isNotEmpty;
-    final estimatedPrice = OpenChargeMapService.estimatedPriceForNetwork(
+    final estimatedPrice = NRELChargingService.estimatedPriceForNetwork(
       station.network,
     );
     final hasPrice = hasExactPrice || hasRawCost || estimatedPrice != null;

@@ -118,8 +118,8 @@ class GovernmentDataDisclaimer extends StatelessWidget {
     ),
     _Source(
       'EV charging stations',
-      'OpenChargeMap',
-      'https://openchargemap.org',
+      'US Dept of Energy (NREL/AFDC)',
+      'https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/',
     ),
   ];
 
