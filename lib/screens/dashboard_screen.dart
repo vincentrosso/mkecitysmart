@@ -49,6 +49,11 @@ class _DashboardBodyState extends State<_DashboardBody>
   final _keyTickets = GlobalKey();
   final _keyAlerts = GlobalKey();
   final _keyReportSighting = GlobalKey();
+  final _keyEvChargers = GlobalKey();
+  final _keyFoodAccess = GlobalKey();
+  final _keyTowHelper = GlobalKey();
+  final _keySavedPlaces = GlobalKey();
+  final _keyInviteFriends = GlobalKey();
   final _keySettings = GlobalKey();
 
   @override
@@ -74,6 +79,11 @@ class _DashboardBodyState extends State<_DashboardBody>
           _keyHeatmap,
           _keyReportSighting,
           _keyTickets,
+          _keyEvChargers,
+          _keyFoodAccess,
+          _keyTowHelper,
+          _keySavedPlaces,
+          _keyInviteFriends,
           _keySettings,
         ]);
       }
@@ -483,36 +493,141 @@ class _DashboardBodyState extends State<_DashboardBody>
                       onTap: () => Navigator.pushNamed(context, '/city-settings'),
                     ),
                   ),
-                  HomeTile(
-                    icon: Icons.ev_station_outlined,
-                    title: 'EV Chargers',
-                    onTap: () => Navigator.pushNamed(context, '/charging'),
+                  Showcase(
+                    key: _keyEvChargers,
+                    title: '⚡ EV Chargers',
+                    description:
+                        'Find electric vehicle charging stations across Milwaukee. '
+                        'See availability, connector types, and get directions.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.ev_station_outlined,
+                      title: 'EV Chargers',
+                      onTap: () => Navigator.pushNamed(context, '/charging'),
+                    ),
                   ),
-                  HomeTile(
-                    icon: Icons.restaurant_outlined,
-                    title: 'Food Access',
-                    onTap: () => Navigator.pushNamed(context, '/food-access'),
+                  Showcase(
+                    key: _keyFoodAccess,
+                    title: '🍎 Food Access',
+                    description:
+                        'Locate food pantries, community meals, and fresh food '
+                        'resources near you. Powered by Milwaukee city data.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.restaurant_outlined,
+                      title: 'Food Access',
+                      onTap: () => Navigator.pushNamed(context, '/food-access'),
+                    ),
                   ),
-                  HomeTile(
-                    icon: Icons.local_shipping,
-                    title: 'Tow Helper',
-                    onTap: () => Navigator.pushNamed(context, '/tow-helper'),
+                  Showcase(
+                    key: _keyTowHelper,
+                    title: '🚗 Tow Helper',
+                    description:
+                        'Car got towed? Find out where it is, what to do, '
+                        'and how to get it back fast.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.local_shipping,
+                      title: 'Tow Helper',
+                      onTap: () => Navigator.pushNamed(context, '/tow-helper'),
+                    ),
                   ),
-                  HomeTile(
-                    icon: Icons.place,
-                    title: 'Saved Places',
-                    onTap: () => Navigator.pushNamed(context, '/saved-places'),
+                  Showcase(
+                    key: _keySavedPlaces,
+                    title: '📍 Saved Places',
+                    description:
+                        'Save your home, work, and favorite spots. Get parking '
+                        'alerts and risk info tailored to places you go most.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.place,
+                      title: 'Saved Places',
+                      onTap: () => Navigator.pushNamed(context, '/saved-places'),
+                    ),
                   ),
                   HomeTile(
                     icon: Icons.local_offer,
                     title: 'Deals & Sponsors',
                     onTap: () => Navigator.pushNamed(context, '/sponsors'),
                   ),
-                  HomeTile(
-                    icon: Icons.card_giftcard,
-                    title: 'Invite Friends',
-                    subtitle: 'Earn free Premium',
-                    onTap: () => Navigator.pushNamed(context, '/referrals'),
+                  Showcase(
+                    key: _keyInviteFriends,
+                    title: '🎁 Invite Friends',
+                    description:
+                        'Share CitySmart with friends and earn free Premium access. '
+                        'More users = better live parking data for everyone.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.card_giftcard,
+                      title: 'Invite Friends',
+                      subtitle: 'Earn free Premium',
+                      onTap: () => Navigator.pushNamed(context, '/referrals'),
+                    ),
                   ),
                 ],
               ),

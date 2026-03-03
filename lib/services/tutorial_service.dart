@@ -9,7 +9,7 @@ class TutorialService {
   static const _versionKey = 'dashboard_tutorial_version';
 
   /// Bump this when the walkthrough changes so users see it again.
-  static const int _currentVersion = 2;
+  static const int _currentVersion = 3;
 
   static Future<bool> hasSeenTutorial() async {
     final prefs = await SharedPreferences.getInstance();
