@@ -11,7 +11,7 @@ import '../models/food_location.dart';
 /// No API key required — all public feature services.
 class FoodAccessService {
   FoodAccessService({http.Client? client})
-      : _client = client ?? SafeHttpClient();
+    : _client = client ?? SafeHttpClient();
 
   final http.Client _client;
 
@@ -39,11 +39,20 @@ class FoodAccessService {
       _fetchFarmersMarkets(),
     ]);
 
-    _cache = [...results[0], ...results[1], ...results[2]];
+    final combined = [...results[0], ...results[1], ...results[2]];
+
+    if (combined.isEmpty && _cache != null && _cache!.isNotEmpty) {
+      debugPrint('FoodAccess: Live fetch returned empty, using stale cache');
+      return _cache!;
+    }
+
+    _cache = combined;
     _cacheTime = DateTime.now();
-    debugPrint('FoodAccess: Loaded ${_cache!.length} total locations '
-        '(${results[0].length} pantries, ${results[1].length} grocery, '
-        '${results[2].length} markets)');
+    debugPrint(
+      'FoodAccess: Loaded ${_cache!.length} total locations '
+      '(${results[0].length} pantries, ${results[1].length} grocery, '
+      '${results[2].length} markets)',
+    );
     return _cache!;
   }
 
@@ -70,7 +79,11 @@ class FoodAccessService {
 
   /// Approximate distance in miles (Haversine shortcut for nearby points).
   static double distanceMiles(
-      double lat1, double lng1, double lat2, double lng2) {
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
     return _distance(lat1, lng1, lat2, lng2);
   }
 
@@ -143,33 +156,36 @@ class FoodAccessService {
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final features = data['features'] as List<dynamic>? ?? [];
 
-      return features.map<FoodLocation?>((f) {
-        final attrs = f['attributes'] as Map<String, dynamic>?;
-        final geometry = f['geometry'] as Map<String, dynamic>?;
-        if (attrs == null || geometry == null) return null;
+      return features
+          .map<FoodLocation?>((f) {
+            final attrs = f['attributes'] as Map<String, dynamic>?;
+            final geometry = f['geometry'] as Map<String, dynamic>?;
+            if (attrs == null || geometry == null) return null;
 
-        final lat = (geometry['y'] as num?)?.toDouble();
-        final lng = (geometry['x'] as num?)?.toDouble();
-        if (lat == null || lng == null || lat == 0 || lng == 0) return null;
+            final lat = (geometry['y'] as num?)?.toDouble();
+            final lng = (geometry['x'] as num?)?.toDouble();
+            if (lat == null || lng == null || lat == 0 || lng == 0) return null;
 
-        final name = (attrs[nameField] as String?)?.trim() ?? 'Unknown';
-        final address = (attrs[addressField] as String?)?.trim() ?? '';
+            final name = (attrs[nameField] as String?)?.trim() ?? 'Unknown';
+            final address = (attrs[addressField] as String?)?.trim() ?? '';
 
-        return FoodLocation(
-          id: '${type.name}_${attrs['ObjectID'] ?? name.hashCode}',
-          name: name,
-          address: address.isEmpty ? 'Milwaukee, WI' : address,
-          latitude: lat,
-          longitude: lng,
-          type: type,
-          phone: _cleanString(attrs[phoneField]),
-          hours: _cleanString(attrs[hoursField]),
-          website: _cleanString(attrs[websiteField]),
-          serviceAreaZips: serviceAreaField != null
-              ? _cleanString(attrs[serviceAreaField])
-              : null,
-        );
-      }).whereType<FoodLocation>().toList();
+            return FoodLocation(
+              id: '${type.name}_${attrs['ObjectID'] ?? name.hashCode}',
+              name: name,
+              address: address.isEmpty ? 'Milwaukee, WI' : address,
+              latitude: lat,
+              longitude: lng,
+              type: type,
+              phone: _cleanString(attrs[phoneField]),
+              hours: _cleanString(attrs[hoursField]),
+              website: _cleanString(attrs[websiteField]),
+              serviceAreaZips: serviceAreaField != null
+                  ? _cleanString(attrs[serviceAreaField])
+                  : null,
+            );
+          })
+          .whereType<FoodLocation>()
+          .toList();
     } catch (e) {
       debugPrint('FoodAccess: Exception fetching $type: $e');
       return [];
@@ -182,8 +198,7 @@ class FoodAccessService {
     return s.isEmpty ? null : s;
   }
 
-  static double _distance(
-      double lat1, double lng1, double lat2, double lng2) {
+  static double _distance(double lat1, double lng1, double lat2, double lng2) {
     // Simple equirectangular approximation — good enough for city distances
     const milesPerDegLat = 69.0;
     final dLat = (lat2 - lat1) * milesPerDegLat;

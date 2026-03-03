@@ -35,7 +35,7 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
 
   Future<void> _loadLocation() async {
     try {
-      final pos = await LocationService.getCurrentPosition();
+      final pos = await LocationService().getCurrentPosition();
       if (pos != null && mounted) {
         setState(() {
           _userLat = pos.latitude;
@@ -113,10 +113,11 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                   icon: '🛒',
                   selected: _filter == FoodLocationType.grocery,
                   color: const Color(0xFF22C55E),
-                  onTap: () => setState(() => _filter =
-                      _filter == FoodLocationType.grocery
-                          ? null
-                          : FoodLocationType.grocery),
+                  onTap: () => setState(
+                    () => _filter = _filter == FoodLocationType.grocery
+                        ? null
+                        : FoodLocationType.grocery,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 _FilterChip(
@@ -124,10 +125,11 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                   icon: '🏠',
                   selected: _filter == FoodLocationType.pantry,
                   color: const Color(0xFFF59E0B),
-                  onTap: () => setState(() => _filter =
-                      _filter == FoodLocationType.pantry
-                          ? null
-                          : FoodLocationType.pantry),
+                  onTap: () => setState(
+                    () => _filter = _filter == FoodLocationType.pantry
+                        ? null
+                        : FoodLocationType.pantry,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 _FilterChip(
@@ -135,10 +137,11 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                   icon: '🥕',
                   selected: _filter == FoodLocationType.farmersMarket,
                   color: const Color(0xFFA855F7),
-                  onTap: () => setState(() => _filter =
-                      _filter == FoodLocationType.farmersMarket
-                          ? null
-                          : FoodLocationType.farmersMarket),
+                  onTap: () => setState(
+                    () => _filter = _filter == FoodLocationType.farmersMarket
+                        ? null
+                        : FoodLocationType.farmersMarket,
+                  ),
                 ),
                 const Spacer(),
                 Text(
@@ -171,20 +174,21 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                         maxClusterRadius: 50,
                         size: const Size(44, 44),
                         markers: filtered
-                            .map<Marker>((loc) => Marker(
-                                  width: 38,
-                                  height: 38,
-                                  point: LatLng(loc.latitude, loc.longitude),
-                                  alignment: Alignment.center,
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _selected = loc),
-                                    child: _FoodMarker(
-                                      location: loc,
-                                      isSelected: _selected?.id == loc.id,
-                                    ),
+                            .map<Marker>(
+                              (loc) => Marker(
+                                width: 38,
+                                height: 38,
+                                point: LatLng(loc.latitude, loc.longitude),
+                                alignment: Alignment.center,
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selected = loc),
+                                  child: _FoodMarker(
+                                    location: loc,
+                                    isSelected: _selected?.id == loc.id,
                                   ),
-                                ))
+                                ),
+                              ),
+                            )
                             .toList(),
                         builder: (context, markers) => Container(
                           decoration: BoxDecoration(
@@ -236,8 +240,10 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                       ),
                       child: Text(
                         _error!,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -246,8 +252,10 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                   bottom: 4,
                   left: 4,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(4),
@@ -282,8 +290,7 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFF0D1B2A),
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Column(
                   children: [
@@ -315,7 +322,9 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                           Text(
                             '${filtered.length} locations',
                             style: const TextStyle(
-                                color: Colors.white38, fontSize: 12),
+                              color: Colors.white38,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -324,15 +333,17 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                     Expanded(
                       child: _loading
                           ? const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               itemCount: nearby.length,
                               itemBuilder: (context, i) {
                                 final loc = nearby[i];
-                                final dist =
-                                    FoodAccessService.distanceMiles(
+                                final dist = FoodAccessService.distanceMiles(
                                   _userLat,
                                   _userLng,
                                   loc.latitude,
@@ -341,8 +352,7 @@ class _FoodAccessScreenState extends State<FoodAccessScreen> {
                                 return _LocationCard(
                                   location: loc,
                                   distanceMiles: math.sqrt(dist),
-                                  onTap: () =>
-                                      setState(() => _selected = loc),
+                                  onTap: () => setState(() => _selected = loc),
                                 );
                               },
                             ),
@@ -517,8 +527,10 @@ class _LocationCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
-                child: Text(location.typeEmoji,
-                    style: const TextStyle(fontSize: 20)),
+                child: Text(
+                  location.typeEmoji,
+                  style: const TextStyle(fontSize: 20),
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -550,7 +562,9 @@ class _LocationCard extends StatelessWidget {
                     Text(
                       location.hours!,
                       style: const TextStyle(
-                          color: Colors.white38, fontSize: 11),
+                        color: Colors.white38,
+                        fontSize: 11,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -604,9 +618,14 @@ class _DetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dist = math.sqrt(FoodAccessService.distanceMiles(
-      userLat, userLng, location.latitude, location.longitude,
-    ));
+    final dist = math.sqrt(
+      FoodAccessService.distanceMiles(
+        userLat,
+        userLng,
+        location.latitude,
+        location.longitude,
+      ),
+    );
 
     return Container(
       width: double.infinity,
@@ -665,8 +684,7 @@ class _DetailCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   location.address,
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ),
             ],
@@ -681,8 +699,7 @@ class _DetailCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     location.hours!,
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 13),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ),
               ],
@@ -697,8 +714,7 @@ class _DetailCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   location.phone!,
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],
             ),

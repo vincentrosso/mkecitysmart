@@ -15,6 +15,7 @@ import '../services/prediction_api_service.dart';
 import '../widgets/citysmart_scaffold.dart';
 import '../services/location_service.dart';
 import '../services/nrel_charging_service.dart';
+import '../services/open_charge_map_service.dart';
 import '../services/weather_service.dart';
 import '../models/sighting_report.dart';
 
@@ -27,6 +28,7 @@ class ChargingMapScreen extends StatefulWidget {
 
 class _ChargingMapScreenState extends State<ChargingMapScreen> {
   final _nrel = NRELChargingService();
+  final _ocm = OpenChargeMapService();
   final _weather = WeatherService();
   bool _showFastOnly = true; // Default to DC Fast only to reduce clutter
   bool _showAvailableOnly = false;
@@ -166,14 +168,20 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
                   ),
                   FilterChip(
                     selected: _showFastOnly,
-                    label: const Text('DC Fast (50kW+)', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'DC Fast (50kW+)',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     avatar: const Icon(Icons.flash_on, size: 16),
                     onSelected: (v) => setState(() => _showFastOnly = v),
                     visualDensity: VisualDensity.compact,
                   ),
                   FilterChip(
                     selected: !_showFastOnly,
-                    label: const Text('All Chargers', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'All Chargers',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     avatar: const Icon(Icons.ev_station, size: 16),
                     onSelected: (v) => setState(() => _showFastOnly = !v),
                     visualDensity: VisualDensity.compact,
@@ -456,15 +464,26 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
     _currentLng = lng;
 
     try {
-      final stations = await _nrel.fetchStations(
+      var stations = await _nrel.fetchStations(
         lat: lat,
         lng: lng,
         radiusMiles: 10,
         maxResults: 100,
       );
+
+      if (stations.isEmpty) {
+        debugPrint('EV: NREL returned empty, trying OpenChargeMap fallback');
+        stations = await _ocm.fetchStations(
+          lat: lat,
+          lng: lng,
+          distanceKm: 16,
+          maxResults: 100,
+        );
+      }
+
       if (!mounted) return;
       if (stations.isEmpty) {
-        debugPrint('EV: API returned empty list, showing mock data');
+        debugPrint('EV: Both providers returned empty, showing mock data');
       } else {
         debugPrint('EV: Loaded ${stations.length} stations from API');
       }
@@ -477,7 +496,33 @@ class _ChargingMapScreenState extends State<ChargingMapScreen> {
       });
       _loadWeather();
     } catch (e) {
-      debugPrint('EV: API error: $e');
+      debugPrint('EV: Provider error: $e. Trying OpenChargeMap fallback.');
+      try {
+        final fallbackStations = await _ocm.fetchStations(
+          lat: lat,
+          lng: lng,
+          distanceKm: 16,
+          maxResults: 100,
+        );
+        if (!mounted) return;
+        setState(() {
+          _stations = fallbackStations.isEmpty
+              ? mockEvStations
+              : fallbackStations;
+          _loadingStations = false;
+          if (fallbackStations.isEmpty) {
+            _stationError =
+                'Could not load live stations. Showing sample locations.';
+          } else {
+            _stationError =
+                'Using fallback provider (OpenChargeMap) for station data.';
+          }
+        });
+        _loadWeather();
+        return;
+      } catch (fallbackError) {
+        debugPrint('EV: Fallback provider error: $fallbackError');
+      }
       if (!mounted) return;
       setState(() {
         _stationError = 'Could not load live stations. Showing samples.';
