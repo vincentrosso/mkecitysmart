@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+
+import 'safe_http_client.dart';
 import 'package:intl/intl.dart';
 
 import '../models/garbage_schedule.dart';
@@ -12,7 +14,7 @@ class GarbageScheduleService {
     required this.baseUrl,
     this.authToken,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? SafeHttpClient();
 
   final String baseUrl;
   final String? authToken;

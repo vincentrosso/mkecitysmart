@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'safe_http_client.dart';
+
 class StreetSegment {
   StreetSegment({
     required this.streetName,
@@ -25,7 +27,7 @@ class StreetSegmentService {
     this.baseUrl =
         'https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/reference/reference_map/MapServer/20',
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? SafeHttpClient();
 
   final String baseUrl;
   final http.Client _client;

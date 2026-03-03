@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/ticket.dart';
+import 'safe_http_client.dart';
 
 class TicketLookupService {
   TicketLookupService({
     required this.baseUrl,
     this.authToken,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? SafeHttpClient();
 
   final String baseUrl;
   final String? authToken;

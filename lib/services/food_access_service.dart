@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import 'safe_http_client.dart';
 import '../models/food_location.dart';
 
 /// Fetches Milwaukee food resource data from DYCU ArcGIS public services.
@@ -9,7 +11,7 @@ import '../models/food_location.dart';
 /// No API key required — all public feature services.
 class FoodAccessService {
   FoodAccessService({http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? SafeHttpClient();
 
   final http.Client _client;
 
