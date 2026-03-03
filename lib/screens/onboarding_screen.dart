@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 class OnboardingService {
   static const _onboardingCompleteKey = 'onboarding_complete';
   static const _onboardingVersionKey = 'onboarding_version';
-  static const int _currentVersion = 1;
+  static const int _currentVersion = 2;
 
   static final OnboardingService _instance = OnboardingService._internal();
   factory OnboardingService() => _instance;
@@ -69,6 +69,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ],
     ),
     _OnboardingPage(
+      icon: Icons.search,
+      title: 'Find Parking by Destination',
+      description:
+          'Heading somewhere? Enter your destination and we\'ll find the safest '
+          'open parking near where you\'re going — not just near where you are now.',
+      color: const Color(0xFF66BB6A),
+      tips: [
+        'Type any address, street, or landmark',
+        'Results stay within a reasonable distance from you',
+        'Leave it empty to search near your current location',
+        'Uses 466K+ real citations to rank spots by safety',
+      ],
+    ),
+    _OnboardingPage(
+      icon: Icons.campaign,
+      title: 'Live Parking Reports',
+      description:
+          'See real-time reports from other drivers in your area. Know exactly '
+          'what\'s happening — open spots, enforcement, tow trucks, and more.',
+      color: const Color(0xFF42A5F5),
+      tips: [
+        '🟢 Open spots — someone left or found a spot',
+        '👮 Enforcement — officers spotted nearby',
+        '🚛 Tow truck — tow activity in the area',
+        '🚫 Blocked/Taken — construction, sweeping, or full',
+        'Only open spots show as "available" — warnings are labeled clearly',
+      ],
+    ),
+    _OnboardingPage(
       icon: Icons.warning_amber_rounded,
       title: 'Parking Risk Heatmap',
       description:
@@ -126,8 +155,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description: 'A few quick tips to get the most out of CitySmart.',
       color: kCitySmartYellow,
       tips: [
+        'Report open spots to help other drivers nearby',
+        'Enter your destination before searching for parking',
         'Save frequent spots with "Saved Places"',
-        'Report parking availability for others nearby',
         'Invite friends to earn free Premium access',
         'Check "EV Chargers" for charging station locations',
       ],

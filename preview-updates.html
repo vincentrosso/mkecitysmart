@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>CitySmart Updates Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a1f19; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif; color: #e0e0e0; }
+  .phone-frame {
+    width: 390px; margin: 20px auto; background: #0d2a22;
+    border-radius: 40px; padding: 20px 16px 30px;
+    border: 2px solid #1f3a34;
+  }
+  .notch { width: 120px; height: 28px; background: #0a1f19; border-radius: 0 0 16px 16px; margin: 0 auto 16px; }
+  .section-label {
+    text-align: center; color: #ffd600; font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; margin: 20px 0 12px;
+    padding: 6px 14px; background: rgba(255,214,0,0.1); border-radius: 20px;
+    display: inline-block; width: 100%; 
+  }
+  .card {
+    background: #142e26; border: 1px solid #1f3a34; border-radius: 16px;
+    padding: 16px; margin-bottom: 12px;
+  }
+  .card-title { font-weight: 700; font-size: 16px; color: #e0e0e0; }
+  .card-subtitle { font-size: 13px; color: #8a9a94; margin-top: 4px; }
+  .input-field {
+    width: 100%; background: #142e26; border: 1px solid #1f3a34;
+    border-radius: 12px; padding: 12px 12px 12px 38px; color: #e0e0e0;
+    font-size: 14px; margin-top: 12px; position: relative;
+  }
+  .input-wrapper { position: relative; margin-top: 12px; }
+  .input-wrapper .icon-left {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #ffd600; font-size: 18px;
+  }
+  .input-wrapper input {
+    width: 100%; background: #142e26; border: 1px solid #1f3a34;
+    border-radius: 12px; padding: 12px 12px 12px 38px; color: #e0e0e0;
+    font-size: 14px; outline: none;
+  }
+  .input-wrapper input:focus { border-color: #ffd600; }
+  .input-wrapper input::placeholder { color: rgba(138,154,148,0.6); }
+  .dest-badge {
+    display: flex; align-items: center; gap: 4px; margin-top: 6px;
+    font-size: 12px; color: #81c784;
+  }
+  .dest-badge .check { color: #4caf50; }
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 12px;
+    font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-yellow { background: #ffd600; color: #000; }
+  .btn-outline { background: transparent; border: 1px solid #ffd600; color: #ffd600; }
+
+  /* Banner styles */
+  .banner {
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .banner-open { background: #142e26; border: 1px solid rgba(76,175,80,0.5); }
+  .banner-warning { background: #142e26; border: 1px solid rgba(255,167,38,0.5); }
+  .dot {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot-green { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.5); }
+  .dot-orange { background: #ffa726; box-shadow: 0 0 6px rgba(255,167,38,0.5); }
+  .banner-label { font-weight: 700; font-size: 14px; }
+  .banner-label-green { color: #4caf50; }
+  .banner-label-orange { color: #ffa726; }
+  .banner-sub { font-size: 11px; color: #8a9a94; }
+  .report-btn {
+    background: rgba(255,214,0,0.15); border: none; border-radius: 10px;
+    padding: 6px 10px; color: #ffd600; font-size: 12px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+  }
+  .enforcement-icon { color: #ef5350; font-size: 18px; margin-right: 4px; }
+
+  /* Comparison layout */
+  .comparison { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; padding: 20px; }
+  .version-label {
+    text-align: center; padding: 8px 16px; border-radius: 8px;
+    font-weight: 700; font-size: 13px; margin-bottom: 12px;
+  }
+  .old-label { background: rgba(239,83,80,0.15); color: #ef5350; }
+  .new-label { background: rgba(76,175,80,0.15); color: #4caf50; }
+  h1 { text-align: center; color: #ffd600; padding: 30px 20px 0; font-size: 22px; }
+  .page-sub { text-align: center; color: #8a9a94; font-size: 14px; padding: 8px 20px 10px; }
+  .divider { border: none; border-top: 1px solid #1f3a34; margin: 10px 0; }
+  .arrow { text-align: center; font-size: 28px; color: #ffd600; padding: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>🚗 CitySmart Updates Preview</h1>
+<p class="page-sub">3 changes · destination search + report clarity + crash fix</p>
+
+<!-- ============================================================ -->
+<!-- UPDATE 1: Destination-Aware Parking Search -->
+<!-- ============================================================ -->
+<div class="comparison">
+
+  <!-- BEFORE -->
+  <div class="phone-frame">
+    <div class="notch"></div>
+    <div class="version-label old-label">❌ BEFORE</div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="color:#ffd600;font-size:20px;">🔍</span>
+        <span class="card-title">Find Safest Parking</span>
+      </div>
+      <div class="card-subtitle">Uses 466K+ Milwaukee citations to find the safest spot near you.</div>
+
+      <!-- No destination field — just the button -->
+      <button class="btn btn-yellow" style="margin-top:16px;">
+        📍 Find Safest Spot Now
+      </button>
+      <div style="margin-top:12px; padding:10px; background:rgba(239,83,80,0.1); border-radius:8px; border:1px solid rgba(239,83,80,0.3);">
+        <div style="font-size:12px; color:#ef5350; font-weight:600;">⚠️ Problem</div>
+        <div style="font-size:11px; color:#ef9a9a; margin-top:4px;">
+          Always searches near your <strong>current GPS</strong>. If you're home looking for parking downtown, it finds spots near your house — not your destination.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="phone-frame">
+    <div class="notch"></div>
+    <div class="version-label new-label">✅ AFTER</div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="color:#ffd600;font-size:20px;">🔍</span>
+        <span class="card-title">Find Safest Parking</span>
+      </div>
+      <div class="card-subtitle">Uses 466K+ Milwaukee citations to find the safest spot near you.</div>
+
+      <!-- NEW: Destination input -->
+      <div class="input-wrapper">
+        <span class="icon-left">📍</span>
+        <input type="text" placeholder="Where are you heading? (optional)" value="Brady Street">
+      </div>
+      <div class="dest-badge">
+        <span class="check">✅</span> Finding parking near Brady Street
+      </div>
+
+      <button class="btn btn-yellow">
+        🔍 Find Parking Near Destination
+      </button>
+
+      <div style="margin-top:12px; padding:10px; background:rgba(76,175,80,0.1); border-radius:8px; border:1px solid rgba(76,175,80,0.3);">
+        <div style="font-size:12px; color:#4caf50; font-weight:600;">✨ New</div>
+        <div style="font-size:11px; color:#a5d6a7; margin-top:4px;">
+          Enter your destination → finds spots near <strong>where you're going</strong>. Won't send you 30+ min away. Leave empty to search near you.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- UPDATE 2: Clear Report Type Labeling -->
+<!-- ============================================================ -->
+<h1 style="font-size:18px; padding-top:40px;">📊 Live Report Banner — Clear Labeling</h1>
+<p class="page-sub">Users now know exactly what's live: open spots vs warnings</p>
+
+<div class="comparison">
+
+  <!-- BEFORE -->
+  <div class="phone-frame">
+    <div class="notch"></div>
+    <div class="version-label old-label">❌ BEFORE — Confusing</div>
+
+    <div class="banner banner-open">
+      <div class="dot dot-green"></div>
+      <div style="flex:1;">
+        <div class="banner-label banner-label-green">Good availability</div>
+        <div class="banner-sub">5 reports nearby • Live</div>
+      </div>
+      <button class="report-btn">+ Report</button>
+    </div>
+
+    <div style="padding:10px; background:rgba(239,83,80,0.1); border-radius:8px; border:1px solid rgba(239,83,80,0.3); margin-bottom:12px;">
+      <div style="font-size:12px; color:#ef5350; font-weight:600;">⚠️ Problem</div>
+      <div style="font-size:11px; color:#ef9a9a; margin-top:4px;">
+        Shows "5 reports" — but what kind?<br>
+        Could be 5 enforcement warnings with <strong>zero</strong> open spots.<br>
+        User thinks parking is available when it's not.
+      </div>
+    </div>
+
+    <div style="padding:12px; background:#1a2e28; border-radius:10px; font-size:12px;">
+      <div style="color:#8a9a94; margin-bottom:6px;">What those 5 reports actually are:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span style="background:rgba(239,83,80,0.2);color:#ef5350;padding:3px 8px;border-radius:6px;">🚛 Tow Truck</span>
+        <span style="background:rgba(239,83,80,0.2);color:#ef5350;padding:3px 8px;border-radius:6px;">👮 Enforcement</span>
+        <span style="background:rgba(239,83,80,0.2);color:#ef5350;padding:3px 8px;border-radius:6px;">👮 Enforcement</span>
+        <span style="background:rgba(255,167,38,0.2);color:#ffa726;padding:3px 8px;border-radius:6px;">🚫 Blocked</span>
+        <span style="background:rgba(255,167,38,0.2);color:#ffa726;padding:3px 8px;border-radius:6px;">🅿️ Taken</span>
+      </div>
+      <div style="color:#ef5350;font-weight:600;margin-top:8px;">0 actual open spots!</div>
+    </div>
+  </div>
+
+  <!-- AFTER — Scenario A: Warnings only -->
+  <div class="phone-frame">
+    <div class="notch"></div>
+    <div class="version-label new-label">✅ AFTER — Warning Only</div>
+
+    <div class="banner banner-warning">
+      <div class="dot dot-orange"></div>
+      <div style="flex:1;">
+        <div class="banner-label banner-label-orange">No open spots — 5 warnings nearby</div>
+        <div class="banner-sub">2 enforcement · 3 taken/blocked • Live</div>
+      </div>
+      <span class="enforcement-icon">🛡️</span>
+      <button class="report-btn">+ Report</button>
+    </div>
+
+    <div style="padding:10px; background:rgba(76,175,80,0.1); border-radius:8px; border:1px solid rgba(76,175,80,0.3); margin-bottom:16px;">
+      <div style="font-size:12px; color:#4caf50; font-weight:600;">✨ Clear</div>
+      <div style="font-size:11px; color:#a5d6a7; margin-top:4px;">
+        User instantly knows: <strong>no open spots</strong>, just warnings. The subtitle breaks down exactly what's live.
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="arrow">⬇️</div>
+    <div style="text-align:center;color:#8a9a94;font-size:11px;margin-bottom:12px;">Same area, after someone reports an open spot:</div>
+
+    <!-- AFTER — Scenario B: Mix of open + warnings -->
+    <div class="banner banner-open">
+      <div class="dot dot-green"></div>
+      <div style="flex:1;">
+        <div class="banner-label banner-label-green">2 open spots reported</div>
+        <div class="banner-sub">2 open · 1 enforcement · 2 taken/blocked • Live</div>
+      </div>
+      <span class="enforcement-icon">🛡️</span>
+      <button class="report-btn">+ Report</button>
+    </div>
+
+    <div style="padding:10px; background:rgba(76,175,80,0.1); border-radius:8px; border:1px solid rgba(76,175,80,0.3);">
+      <div style="font-size:12px; color:#4caf50; font-weight:600;">✨ Clear</div>
+      <div style="font-size:11px; color:#a5d6a7; margin-top:4px;">
+        Shows <strong>exactly</strong> 2 open spots + the warnings. No confusion about what's what.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- UPDATE 3: Crash Fix -->
+<!-- ============================================================ -->
+<h1 style="font-size:18px; padding-top:40px;">🛡️ Crashlytics Fix — Network Errors</h1>
+<p class="page-sub">No UI change — backend fix that stops the crash emails</p>
+
+<div style="max-width:600px; margin:0 auto 40px; padding:0 20px;">
+  <div class="card" style="border-color:rgba(76,175,80,0.4);">
+    <div style="font-size:14px; font-weight:700; color:#4caf50; margin-bottom:8px;">What was happening</div>
+    <div style="font-size:13px; color:#bbb; line-height:1.6;">
+      When a user's phone lost internet (subway, dead zone, airplane mode), any HTTP call crashed the app and sent an error to Firebase Crashlytics:<br><br>
+      <code style="background:#0a1f19; padding:4px 8px; border-radius:4px; color:#ef5350; font-size:11px;">
+        ClientException with SocketException: Network is unreachable
+      </code>
+    </div>
+
+    <div style="font-size:14px; font-weight:700; color:#4caf50; margin-top:16px; margin-bottom:8px;">What we fixed</div>
+    <div style="font-size:13px; color:#bbb; line-height:1.6;">
+      Created <strong>SafeHttpClient</strong> wrapper applied to all 9 HTTP services. Network errors are now caught gracefully — the app shows "unavailable" states instead of crashing.
+    </div>
+
+    <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">weather</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">street sweeping</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">garbage schedule</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">ticket lookup</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">EV charging</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">food access</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">street segments</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">API client</span>
+      <span style="background:rgba(76,175,80,0.15);color:#81c784;padding:4px 10px;border-radius:6px;font-size:11px;">NREL charging</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
