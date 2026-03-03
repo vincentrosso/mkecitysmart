@@ -40,12 +40,14 @@ class _DashboardBodyState extends State<_DashboardBody>
 
   // Showcase keys
   final _keyRiskBadge = GlobalKey();
+  final _keyLiveReports = GlobalKey();
   final _keyParking = GlobalKey();
   final _keyGarbage = GlobalKey();
   final _keyNightParking = GlobalKey();
   final _keyHeatmap = GlobalKey();
   final _keyTickets = GlobalKey();
   final _keyAlerts = GlobalKey();
+  final _keyReportSighting = GlobalKey();
   final _keySettings = GlobalKey();
 
   @override
@@ -63,11 +65,13 @@ class _DashboardBodyState extends State<_DashboardBody>
       if (mounted) {
         ShowCaseWidget.of(context).startShowCase([
           _keyRiskBadge,
+          _keyLiveReports,
           _keyParking,
           _keyGarbage,
           _keyNightParking,
           _keyAlerts,
           _keyHeatmap,
+          _keyReportSighting,
           _keyTickets,
           _keySettings,
         ]);
@@ -204,7 +208,29 @@ class _DashboardBodyState extends State<_DashboardBody>
             ),
             const SizedBox(height: 12),
             // Live crowdsource parking availability + report button
-            const CrowdsourceAvailabilityBanner(),
+            Showcase(
+              key: _keyLiveReports,
+              title: '📡 Live Parking Reports',
+              description:
+                  'Real-time reports from drivers nearby. Shows open spots, '
+                  'enforcement sightings, tow trucks, and blocked areas — '
+                  'each clearly labeled so you know exactly what\'s live.',
+              targetShapeBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              tooltipBackgroundColor: kCitySmartGreen,
+              textColor: Colors.white,
+              titleTextStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+              descTextStyle: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+              child: const CrowdsourceAvailabilityBanner(),
+            ),
             const SizedBox(height: 16),
             Expanded(
               child: GridView.count(
@@ -217,7 +243,9 @@ class _DashboardBodyState extends State<_DashboardBody>
                     key: _keyParking,
                     title: '🅿️ Parking Overview',
                     description:
-                        'Everything you need to know about parking rules, street sweeping, and restrictions in your area.',
+                        'Find safe parking near any destination. Enter where '
+                        'you\'re heading and we\'ll find open spots nearby — '
+                        'plus alt-side rules, street sweeping, and restrictions.',
                     targetShapeBorder: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -330,7 +358,9 @@ class _DashboardBodyState extends State<_DashboardBody>
                     key: _keyHeatmap,
                     title: '🗺️ Parking Heatmap',
                     description:
-                        'See where tickets are given most. Avoid the hot zones and park smarter.',
+                        'See where tickets are given most across Milwaukee. '
+                        'Red = danger zones. Tap any area for details and navigate '
+                        'to the nearest safe spot.',
                     targetShapeBorder: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -352,11 +382,34 @@ class _DashboardBodyState extends State<_DashboardBody>
                           Navigator.pushNamed(context, '/parking-heatmap'),
                     ),
                   ),
-                  HomeTile(
-                    icon: Icons.warning_amber_rounded,
-                    title: 'Report sighting',
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/report-sighting'),
+                  Showcase(
+                    key: _keyReportSighting,
+                    title: '📢 Report What You See',
+                    description:
+                        'Spot an open parking space? Enforcement officer? Tow truck? '
+                        'Report it to help other drivers. Your reports show up as '
+                        'live alerts — open spots are highlighted, warnings are '
+                        'clearly labeled.',
+                    targetShapeBorder: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    tooltipBackgroundColor: kCitySmartGreen,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    descTextStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    child: HomeTile(
+                      icon: Icons.warning_amber_rounded,
+                      title: 'Report sighting',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/report-sighting'),
+                    ),
                   ),
                   Showcase(
                     key: _keyTickets,
