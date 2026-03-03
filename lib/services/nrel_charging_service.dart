@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'safe_http_client.dart';
+
 import '../models/ev_station.dart';
 
 /// NREL Alternative Fuel Stations API (US Dept of Energy).
@@ -17,7 +19,7 @@ const String _nrelApiKey = String.fromEnvironment(
 
 class NRELChargingService {
   NRELChargingService({http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? SafeHttpClient();
 
   final http.Client _client;
 

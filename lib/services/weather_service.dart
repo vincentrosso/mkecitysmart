@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'safe_http_client.dart';
+
 class WeatherSummary {
   WeatherSummary({
     required this.temperatureF,
@@ -31,7 +33,8 @@ class WeatherAlert {
 }
 
 class WeatherService {
-  WeatherService({http.Client? client}) : _client = client ?? http.Client();
+  WeatherService({http.Client? client})
+      : _client = client ?? SafeHttpClient();
 
   final http.Client _client;
 
