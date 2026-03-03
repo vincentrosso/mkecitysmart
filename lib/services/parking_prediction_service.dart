@@ -245,14 +245,29 @@ class ParkingPredictionService {
   /// 4. Citation risk zones — safety scoring
   ///
   /// Results are ranked by: data freshness → availability → safety → distance.
+  ///
+  /// When [destinationLatitude] and [destinationLongitude] are provided, spots
+  /// are searched near the destination instead of the user's current location.
+  /// [maxDistanceFromUserKm] caps how far from the user the result can be
+  /// (prevents suggesting spots 30 min away from where the user currently is).
   Future<List<RecommendedSpot>> findBestOpenSpots({
     required double latitude,
     required double longitude,
     double radiusKm = 1.5,
     int maxResults = 5,
+    double? destinationLatitude,
+    double? destinationLongitude,
+    double maxDistanceFromUserKm = 8.0, // ~10 min drive
   }) async {
+    // If a destination is provided, search near the destination
+    final searchLat = destinationLatitude ?? latitude;
+    final searchLng = destinationLongitude ?? longitude;
+    final hasDestination = destinationLatitude != null &&
+        destinationLongitude != null;
+
     debugPrint(
-      'ParkingPredictionService: Finding best open spots near $latitude, $longitude',
+      'ParkingPredictionService: Finding best open spots near $searchLat, $searchLng'
+      '${hasDestination ? ' (destination-aware, user at $latitude, $longitude)' : ''}',
     );
 
     final now = DateTime.now();
@@ -261,8 +276,8 @@ class ParkingPredictionService {
     // ── Layer 1: Real-time crowdsource reports (highest priority) ─────────
     try {
       final nearbyReports = await _crowdsourceService.getNearbyReports(
-        latitude: latitude,
-        longitude: longitude,
+        latitude: searchLat,
+        longitude: searchLng,
         geohashPrecision: 5, // ~4.9km to cast a wider net
       );
 
@@ -270,13 +285,26 @@ class ParkingPredictionService {
         if (!report.reportType.isPositiveSignal) continue;
         if (!report.isStillRelevant) continue;
 
-        final dist = _haversineDistance(
-          latitude,
-          longitude,
+        final distFromSearch = _haversineDistance(
+          searchLat,
+          searchLng,
           report.latitude,
           report.longitude,
         );
-        if (dist > radiusKm) continue;
+        if (distFromSearch > radiusKm) continue;
+
+        // When destination-aware, also cap distance from user's location
+        if (hasDestination) {
+          final distFromUser = _haversineDistance(
+            latitude,
+            longitude,
+            report.latitude,
+            report.longitude,
+          );
+          if (distFromUser > maxDistanceFromUserKm) continue;
+        }
+
+        final dist = distFromSearch;
 
         final ageMinutes = now.difference(report.timestamp).inMinutes;
         // Freshness score: 1.0 at 0 min, decays toward 0 at TTL
@@ -317,8 +345,8 @@ class ParkingPredictionService {
     // ── Layer 2: Zone-level availability ──────────────────────────────────
     try {
       final zones = await _zoneService.getNearbyZones(
-        latitude: latitude,
-        longitude: longitude,
+        latitude: searchLat,
+        longitude: searchLng,
       );
 
       for (final zone in zones) {
@@ -329,12 +357,23 @@ class ParkingPredictionService {
         }
 
         final dist = _haversineDistance(
-          latitude,
-          longitude,
+          searchLat,
+          searchLng,
           zone.latitude,
           zone.longitude,
         );
         if (dist > radiusKm) continue;
+
+        // When destination-aware, also cap distance from user's location
+        if (hasDestination) {
+          final distFromUser = _haversineDistance(
+            latitude,
+            longitude,
+            zone.latitude,
+            zone.longitude,
+          );
+          if (distFromUser > maxDistanceFromUserKm) continue;
+        }
 
         // Check live open spots
         if (zone.estimatedOpenSpots > 0) {
@@ -389,13 +428,24 @@ class ParkingPredictionService {
     if (candidates.length < maxResults) {
       try {
         final safeSpots = await findSafestSpotsNearby(
-          latitude: latitude,
-          longitude: longitude,
+          latitude: searchLat,
+          longitude: searchLng,
           radiusKm: radiusKm,
           maxResults: maxResults,
         );
 
         for (final spot in safeSpots) {
+          // When destination-aware, cap distance from user
+          if (hasDestination) {
+            final distFromUser = _haversineDistance(
+              latitude,
+              longitude,
+              spot.latitude,
+              spot.longitude,
+            );
+            if (distFromUser > maxDistanceFromUserKm) continue;
+          }
+
           // Skip if we already have a candidate very close to this location
           final isDuplicate = candidates.any(
             (c) =>

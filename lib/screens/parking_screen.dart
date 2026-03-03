@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -216,13 +217,71 @@ class _PredictAndFindCard extends StatefulWidget {
 class _PredictAndFindCardState extends State<_PredictAndFindCard> {
   final _locationService = LocationService();
   final _predictionService = ParkingPredictionService.instance;
+  final _destinationController = TextEditingController();
 
   bool _loading = false;
+  bool _geocoding = false;
   String? _error;
   ParkingPrediction? _prediction;
   List<SafeParkingSpot> _safestSpots = [];
   List<RecommendedSpot> _recommendedSpots = [];
   List<String> _warnings = [];
+
+  /// Resolved destination coordinates (null = search near current location)
+  double? _destLat;
+  double? _destLng;
+  String? _destLabel;
+
+  @override
+  void dispose() {
+    _destinationController.dispose();
+    super.dispose();
+  }
+
+  /// Geocode the destination address entered by the user.
+  Future<bool> _resolveDestination() async {
+    final query = _destinationController.text.trim();
+    if (query.isEmpty) {
+      // No destination — search near current location
+      _destLat = null;
+      _destLng = null;
+      _destLabel = null;
+      return true;
+    }
+
+    setState(() => _geocoding = true);
+    try {
+      // Bias toward Milwaukee area by appending if no city is specified
+      final searchQuery = query.contains(',') ||
+              query.toLowerCase().contains('milwaukee') ||
+              query.toLowerCase().contains('mke')
+          ? query
+          : '$query, Milwaukee, WI';
+
+      final locations = await geocoding.locationFromAddress(searchQuery);
+      if (locations.isEmpty) {
+        setState(() {
+          _error = 'Could not find that address. Try a more specific location.';
+          _geocoding = false;
+        });
+        return false;
+      }
+
+      final loc = locations.first;
+      _destLat = loc.latitude;
+      _destLng = loc.longitude;
+      _destLabel = query;
+
+      setState(() => _geocoding = false);
+      return true;
+    } catch (e) {
+      setState(() {
+        _error = 'Could not look up address. Check your input and try again.';
+        _geocoding = false;
+      });
+      return false;
+    }
+  }
 
   Future<void> _findSafestSpot() async {
     setState(() {
@@ -231,6 +290,12 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
     });
 
     try {
+      // Resolve destination if one was entered
+      if (!await _resolveDestination()) {
+        setState(() => _loading = false);
+        return;
+      }
+
       // Get current location
       final pos = await _locationService.getCurrentPosition();
       if (pos == null) {
@@ -243,28 +308,34 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
 
       if (!mounted) return;
 
-      // Get prediction for current location
+      // Determine which location to predict for (destination or current)
+      final predictLat = _destLat ?? pos.latitude;
+      final predictLng = _destLng ?? pos.longitude;
+
+      // Get prediction for the target location
       final prediction = await _predictionService.predict(
         when: DateTime.now(),
-        latitude: pos.latitude,
-        longitude: pos.longitude,
+        latitude: predictLat,
+        longitude: predictLng,
       );
 
-      // Find best open spots using all data sources
+      // Find best open spots — destination-aware if destination was entered
       final recommendedSpots = await _predictionService.findBestOpenSpots(
         latitude: pos.latitude,
         longitude: pos.longitude,
-        radiusKm: 2.0,
+        radiusKm: _destLat != null ? 2.5 : 2.0,
         maxResults: 5,
+        destinationLatitude: _destLat,
+        destinationLongitude: _destLng,
       );
 
       // Fall back to safest spots if no recommended spots found
       List<SafeParkingSpot> safestSpots = [];
       if (recommendedSpots.isEmpty) {
         safestSpots = await _predictionService.findSafestSpotsNearby(
-          latitude: pos.latitude,
-          longitude: pos.longitude,
-          radiusKm: 2.0,
+          latitude: predictLat,
+          longitude: predictLng,
+          radiusKm: _destLat != null ? 2.5 : 2.0,
           maxResults: 3,
         );
       }
@@ -333,14 +404,112 @@ class _PredictAndFindCardState extends State<_PredictAndFindCard> {
             ),
             const SizedBox(height: 12),
 
+            // Destination input
+            TextField(
+              controller: _destinationController,
+              style: const TextStyle(color: kCitySmartText),
+              decoration: InputDecoration(
+                hintText: 'Where are you heading? (optional)',
+                hintStyle: TextStyle(
+                  color: kCitySmartMuted.withValues(alpha: 0.6),
+                ),
+                prefixIcon: const Icon(
+                  Icons.place_outlined,
+                  color: kCitySmartYellow,
+                  size: 20,
+                ),
+                suffixIcon: _destinationController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: kCitySmartMuted,
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          _destinationController.clear();
+                          setState(() {
+                            _destLat = null;
+                            _destLng = null;
+                            _destLabel = null;
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: kCitySmartCard,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF1F3A34)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF1F3A34)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kCitySmartYellow),
+                ),
+              ),
+              textInputAction: TextInputAction.search,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _findSafestSpot(),
+            ),
+
+            // Destination resolved badge
+            if (_destLabel != null && _destLat != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF4CAF50),
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Finding parking near $_destLabel',
+                      style: const TextStyle(
+                        color: Color(0xFF81C784),
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+
             // Find button
             if (_prediction == null && !_loading)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _findSafestSpot,
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Find Safest Spot Now'),
+                  onPressed: _geocoding ? null : _findSafestSpot,
+                  icon: _geocoding
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Icon(
+                          _destinationController.text.trim().isNotEmpty
+                              ? Icons.search
+                              : Icons.my_location,
+                        ),
+                  label: Text(
+                    _destinationController.text.trim().isNotEmpty
+                        ? 'Find Parking Near Destination'
+                        : 'Find Safest Spot Near Me',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kCitySmartYellow,
                     foregroundColor: Colors.black,

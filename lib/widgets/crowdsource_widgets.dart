@@ -514,6 +514,10 @@ class _CrowdsourceAvailabilityBannerState
         ? _zoneSpotCount
         : avail.estimatedOpenSpots;
 
+    // Count warning-only reports (not actual available spots)
+    final warningCount = avail.enforcementSignals + avail.takenSignals;
+    final openCount = avail.availableSignals;
+
     final String displayLabel;
     final Color displayColor;
 
@@ -524,10 +528,31 @@ class _CrowdsourceAvailabilityBannerState
           : spotCount >= 2
           ? Colors.orange
           : Colors.orange;
+    } else if (openCount > 0) {
+      displayLabel = '$openCount open spot${openCount == 1 ? '' : 's'} reported';
+      displayColor = Colors.green;
+    } else if (warningCount > 0) {
+      displayLabel = 'No open spots — $warningCount warning${warningCount == 1 ? '' : 's'} nearby';
+      displayColor = Colors.orange;
     } else {
       displayLabel = avail.label;
       displayColor = avail.color;
     }
+
+    // Build a clear subtitle showing what's live
+    final subtitleParts = <String>[];
+    if (openCount > 0) {
+      subtitleParts.add('$openCount open');
+    }
+    if (avail.enforcementSignals > 0) {
+      subtitleParts.add('${avail.enforcementSignals} enforcement');
+    }
+    if (avail.takenSignals > 0) {
+      subtitleParts.add('${avail.takenSignals} taken/blocked');
+    }
+    final subtitle = subtitleParts.isNotEmpty
+        ? '${subtitleParts.join(' · ')} • Live'
+        : '$_reportCount report${_reportCount == 1 ? '' : 's'} nearby • Live';
 
     return ScaleTransition(
       scale: _pulseAnim,
@@ -559,7 +584,7 @@ class _CrowdsourceAvailabilityBannerState
               ),
               const SizedBox(width: 10),
 
-              // Label + report count
+              // Label + detailed breakdown
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,7 +599,7 @@ class _CrowdsourceAvailabilityBannerState
                       ),
                     ),
                     Text(
-                      '$_reportCount report${_reportCount == 1 ? '' : 's'} nearby • Live',
+                      subtitle,
                       style: const TextStyle(
                         color: kCitySmartMuted,
                         fontSize: 11,
