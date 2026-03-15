@@ -54,6 +54,7 @@ dependencies:
   http: ^1.2.2
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.3
   drift: ^2.18.0
   drift_flutter: ^0.2.0
   sqlite3_flutter_libs: ^0.5.24
