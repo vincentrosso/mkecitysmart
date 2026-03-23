@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/subscription_plan.dart';
 import '../providers/user_provider.dart';
@@ -259,6 +260,72 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
               // Feature list
               _FeatureComparisonSection(),
+
+              const SizedBox(height: 24),
+
+              // Legal links — required by App Store guideline 3.1.2(c)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://mkecitysmart.com/privacy.html'),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Text(
+                      'Privacy Policy',
+                      style: TextStyle(
+                        color: kCitySmartText.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    ' • ',
+                    style: TextStyle(
+                      color: kCitySmartText.withValues(alpha: 0.4),
+                      fontSize: 12,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://mkecitysmart.com/terms.html'),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Text(
+                      'Terms of Use',
+                      style: TextStyle(
+                        color: kCitySmartText.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    ' • ',
+                    style: TextStyle(
+                      color: kCitySmartText.withValues(alpha: 0.4),
+                      fontSize: 12,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse(
+                        'https://mkecitysmart.com/terms.html#subscriptions',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Text(
+                      'EULA',
+                      style: TextStyle(
+                        color: kCitySmartText.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
             ],
           ),
         );

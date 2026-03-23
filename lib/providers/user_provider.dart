@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -329,7 +331,11 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> continueAsGuest() async {
-    await _auth?.signOut();
+    try {
+      await _auth?.signOut();
+    } catch (e) {
+      debugPrint('[GuestMode] signOut error (ignored): $e');
+    }
     _guestMode = true;
     _profile = null;
     _guestPermits = _seedPermits();
@@ -830,6 +836,24 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  /// Generates a cryptographically secure random nonce string for Apple Sign-In.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  /// Returns the SHA-256 hex digest of [input].
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   Future<String?> signInWithApple() async {
     final auth = _auth;
     if (auth == null || !_firebaseEnabled) {
@@ -845,11 +869,17 @@ class UserProvider extends ChangeNotifier {
       return msg;
     }
     try {
+      // Generate a secure nonce for Apple Sign-In.
+      // Firebase requires the raw nonce to verify the identity token.
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+
       final appleId = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: nonce,
       );
       if (appleId.identityToken == null || appleId.identityToken!.isEmpty) {
         const msg = 'Apple sign-in failed: missing identity token.';
@@ -859,6 +889,7 @@ class UserProvider extends ChangeNotifier {
       final oauth = OAuthProvider('apple.com').credential(
         idToken: appleId.identityToken,
         accessToken: appleId.authorizationCode,
+        rawNonce: rawNonce,
       );
       final credential = await auth.signInWithCredential(oauth);
       final user = credential.user;

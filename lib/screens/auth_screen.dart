@@ -48,8 +48,12 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _continueAsGuest() async {
-    final provider = context.read<UserProvider>();
-    await provider.continueAsGuest();
+    try {
+      final provider = context.read<UserProvider>();
+      await provider.continueAsGuest();
+    } catch (e) {
+      debugPrint('[AuthScreen] continueAsGuest error (ignored): $e');
+    }
     if (!mounted) return;
     _showMessage('Exploring in guest mode. Sign in anytime to save your data!');
     Navigator.pushReplacementNamed(context, '/dashboard');
